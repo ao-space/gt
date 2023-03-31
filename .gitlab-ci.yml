@@ -1,0 +1,388 @@
+# Copyright (c) 2022 Institute of Software, Chinese Academy of Sciences (ISCAS)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+image: golang:1.19
+
+stages:
+  - license_check
+  - license_fix
+  - package
+  - docker
+  - manifest
+  - sign
+  - codelint
+  - cloc
+
+include:
+  - project: 'bp/ams-ci-template'
+    ref: main
+    file: '/sonarqube.yml'
+  - project: 'bp/ams-ci-template'
+    ref: main
+    file: '/license.yml'
+  - project: 'bp/ams-ci-template'
+    ref: main
+    file: '/cloc.yml'
+
+variables:
+  ENV_SONARQUBE_TYPE: golang
+  ENV_LICENSE_TYPE: golang
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_DEPTH: 1
+  GIT_STRATEGY: fetch
+
+check:aarch64:
+  stage: package
+  retry: 2
+  tags:
+    - aarch64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  allow_failure: true
+  variables:
+    ARCH: arm64
+  before_script:
+    - sed -i "s/security.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - sed -i "s/deb.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - apt update && apt install make git gn ninja-build python3 python3-pip libgtk-3-dev -y
+  script:
+    - go env -w GO111MODULE=on
+    - go env -w GOPROXY="https://goproxy.cn,direct"
+    - make test
+
+check:x86_64:
+  stage: package
+  retry: 2
+  tags:
+    - x86_64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  allow_failure: true
+  before_script:
+    - sed -i "s/security.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - sed -i "s/deb.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - apt update && apt install make git gn ninja-build python3 python3-pip libgtk-3-dev -y
+  script:
+    - go env -w GO111MODULE=on
+    - go env -w GOPROXY="https://goproxy.cn,direct"
+    - make test
+
+package:client:aarch64:
+  stage: package
+  retry: 2
+  tags:
+    - aarch64
+  variables:
+    ARCH: arm64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  artifacts:
+    paths:
+      - release/
+  before_script:
+    - sed -i "s/security.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - sed -i "s/deb.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - apt update && apt install make git gn ninja-build python3 python3-pip libgtk-3-dev -y
+  script:
+    - go env -w GO111MODULE=on
+    - go env -w GOPROXY="https://goproxy.cn,direct"
+    - make release_client
+    - mv release/*-client release/client
+
+package:client:x86_64:
+  stage: package
+  retry: 2
+  tags:
+    - x86_64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  artifacts:
+    paths:
+      - release/
+  before_script:
+    - sed -i "s/security.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - sed -i "s/deb.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - apt update && apt install make git gn ninja-build python3 python3-pip libgtk-3-dev -y
+  script:
+    - go env -w GO111MODULE=on
+    - go env -w GOPROXY="https://goproxy.cn,direct"
+    - make release_client
+    - mv release/*-client release/client
+
+package:server:aarch64:
+  stage: package
+  retry: 2
+  tags:
+    - aarch64
+  variables:
+    ARCH: arm64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  artifacts:
+    paths:
+      - release/
+  before_script:
+    - sed -i "s/security.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - sed -i "s/deb.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - apt update && apt install make git gn ninja-build python3 python3-pip libgtk-3-dev -y
+  script:
+    - go env -w GO111MODULE=on
+    - go env -w GOPROXY="https://goproxy.cn,direct"
+    - make release_server
+    - mv release/*-server release/server
+
+package:server:x86_64:
+  stage: package
+  retry: 2
+  tags:
+    - x86_64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  artifacts:
+    paths:
+      - release/
+  before_script:
+    - sed -i "s/security.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - sed -i "s/deb.debian.org/mirrors.nju.edu.cn/g" /etc/apt/sources.list
+    - apt update && apt install make git gn ninja-build python3 python3-pip libgtk-3-dev -y
+  script:
+    - go env -w GO111MODULE=on
+    - go env -w GOPROXY="https://goproxy.cn,direct"
+    - make release_server
+    - mv release/*-server release/server
+
+docker:client:aarch64:
+  stage: docker
+  tags:
+    - docker_build-aarch64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  needs: ["package:client:aarch64"]
+  dependencies:
+    - package:client:aarch64
+  before_script:
+    - docker login -u $GITLAB_DOCKER_AUTH_USERNAME -p $GITLAB_DOCKER_AUTH_PASSWORD $GITLAB_DOCKER_REGISTRY_HOST
+    - docker login -u $DOCKER_AUTH_USERNAME -p $DOCKER_AUTH_PASSWORD $DOCKER_REGISTRY_HOST
+    - export DOCKER_BUILD_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-client:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+  script:
+    - docker build --build-arg CI_PIPELINE_ID=$CI_PIPELINE_ID --build-arg CI_COMMIT_SHA=$CI_COMMIT_SHA -t $DOCKER_BUILD_IMAGE-aarch64 -f Dockerfile-client .
+    - docker push $DOCKER_BUILD_IMAGE-aarch64
+
+docker:client:x86_64:
+  stage: docker
+  tags:
+    - docker_build-x86_64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  needs: ["package:client:x86_64"]
+  dependencies:
+    - package:client:x86_64
+  before_script:
+    - docker login -u $GITLAB_DOCKER_AUTH_USERNAME -p $GITLAB_DOCKER_AUTH_PASSWORD $GITLAB_DOCKER_REGISTRY_HOST
+    - docker login -u $DOCKER_AUTH_USERNAME -p $DOCKER_AUTH_PASSWORD $DOCKER_REGISTRY_HOST
+    - export DOCKER_BUILD_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-client:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+  script:
+    - docker build --build-arg CI_PIPELINE_ID=$CI_PIPELINE_ID --build-arg CI_COMMIT_SHA=$CI_COMMIT_SHA -t $DOCKER_BUILD_IMAGE-x86_64 -f Dockerfile-client .
+    - docker push $DOCKER_BUILD_IMAGE-x86_64
+
+docker:server:aarch64:
+  stage: docker
+  tags:
+    - docker_build-aarch64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  needs: ["package:server:aarch64"]
+  dependencies:
+    - package:server:aarch64
+  before_script:
+    - docker login -u $GITLAB_DOCKER_AUTH_USERNAME -p $GITLAB_DOCKER_AUTH_PASSWORD $GITLAB_DOCKER_REGISTRY_HOST
+    - docker login -u $DOCKER_AUTH_USERNAME -p $DOCKER_AUTH_PASSWORD $DOCKER_REGISTRY_HOST
+    - export DOCKER_BUILD_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-server:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+  script:
+    - docker build --build-arg CI_PIPELINE_ID=$CI_PIPELINE_ID --build-arg CI_COMMIT_SHA=$CI_COMMIT_SHA -t $DOCKER_BUILD_IMAGE-aarch64 -f Dockerfile-server .
+    - docker push $DOCKER_BUILD_IMAGE-aarch64
+
+docker:server:x86_64:
+  stage: docker
+  tags:
+    - docker_build-x86_64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  needs: ["package:server:x86_64"]
+  dependencies:
+    - package:server:x86_64
+  before_script:
+    - docker login -u $GITLAB_DOCKER_AUTH_USERNAME -p $GITLAB_DOCKER_AUTH_PASSWORD $GITLAB_DOCKER_REGISTRY_HOST
+    - docker login -u $DOCKER_AUTH_USERNAME -p $DOCKER_AUTH_PASSWORD $DOCKER_REGISTRY_HOST
+    - export DOCKER_BUILD_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-server:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+  script:
+    - docker build --build-arg CI_PIPELINE_ID=$CI_PIPELINE_ID --build-arg CI_COMMIT_SHA=$CI_COMMIT_SHA -t $DOCKER_BUILD_IMAGE-x86_64 -f Dockerfile-server .
+    - docker push $DOCKER_BUILD_IMAGE-x86_64
+
+manifest:client:
+  stage: manifest
+  tags:
+    - docker_build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  needs: ["docker:client:aarch64","docker:client:x86_64"]
+  before_script:
+    - '[ -n "$CI_COMMIT_BRANCH" ] || export CI_COMMIT_BRANCH=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'
+    - docker login -u $GITLAB_DOCKER_AUTH_USERNAME -p $GITLAB_DOCKER_AUTH_PASSWORD $GITLAB_DOCKER_REGISTRY_HOST
+    - docker login -u $DOCKER_AUTH_USERNAME -p $DOCKER_AUTH_PASSWORD $DOCKER_REGISTRY_HOST
+    - export DOCKER_BUILD_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-client:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+    - export DOCKER_LATEST_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-client:$CI_COMMIT_BRANCH
+    - export DOCKER_BUILD_IMAGE_GITLAB=$GITLAB_DOCKER_REGISTRY_IMAGE/aonetwork-client:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+    - export DOCKER_LATEST_IMAGE_GITLAB=$GITLAB_DOCKER_REGISTRY_IMAGE/aonetwork-client:$CI_COMMIT_BRANCH
+  script:
+    - sleep 10
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - docker pull $DOCKER_BUILD_IMAGE-x86_64
+    - docker pull $DOCKER_BUILD_IMAGE-aarch64
+    - docker tag $DOCKER_BUILD_IMAGE-x86_64 $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker push $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker tag $DOCKER_BUILD_IMAGE-aarch64 $DOCKER_BUILD_IMAGE_GITLAB-aarch64
+    - docker push $DOCKER_BUILD_IMAGE_GITLAB-aarch64
+    - docker manifest create --amend $DOCKER_BUILD_IMAGE $DOCKER_BUILD_IMAGE-aarch64 $DOCKER_BUILD_IMAGE-x86_64
+    - docker manifest annotate --os linux --arch amd64 $DOCKER_BUILD_IMAGE $DOCKER_BUILD_IMAGE-x86_64
+    - docker manifest annotate --os linux --arch arm64 $DOCKER_BUILD_IMAGE $DOCKER_BUILD_IMAGE-aarch64
+    - docker manifest push -p $DOCKER_BUILD_IMAGE
+    - docker manifest create --amend $DOCKER_LATEST_IMAGE $DOCKER_BUILD_IMAGE-aarch64 $DOCKER_BUILD_IMAGE-x86_64
+    - docker manifest annotate --os linux --arch amd64 $DOCKER_LATEST_IMAGE $DOCKER_BUILD_IMAGE-x86_64
+    - docker manifest annotate --os linux --arch arm64 $DOCKER_LATEST_IMAGE $DOCKER_BUILD_IMAGE-aarch64
+    - docker manifest push -p $DOCKER_LATEST_IMAGE
+    - docker manifest create --amend $DOCKER_BUILD_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-aarch64 $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker manifest annotate --os linux --arch amd64 $DOCKER_BUILD_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker manifest annotate --os linux --arch arm64 $DOCKER_BUILD_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-aarch64
+    - docker manifest push -p $DOCKER_BUILD_IMAGE_GITLAB
+    - docker manifest create --amend $DOCKER_LATEST_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-aarch64 $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker manifest annotate --os linux --arch amd64 $DOCKER_LATEST_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker manifest annotate --os linux --arch arm64 $DOCKER_LATEST_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-aarch64
+    - docker manifest push -p $DOCKER_LATEST_IMAGE_GITLAB
+
+manifest:server:
+  stage: manifest
+  tags:
+    - docker_build
+  retry: 2
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_MERGE_REQUEST_ID
+  needs: ["docker:server:aarch64","docker:server:x86_64"]
+  before_script:
+    - '[ -n "$CI_COMMIT_BRANCH" ] || export CI_COMMIT_BRANCH=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'
+    - docker login -u $GITLAB_DOCKER_AUTH_USERNAME -p $GITLAB_DOCKER_AUTH_PASSWORD $GITLAB_DOCKER_REGISTRY_HOST
+    - docker login -u $DOCKER_AUTH_USERNAME -p $DOCKER_AUTH_PASSWORD $DOCKER_REGISTRY_HOST
+    - export DOCKER_BUILD_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-server:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+    - export DOCKER_LATEST_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-server:$CI_COMMIT_BRANCH
+    - export DOCKER_BUILD_IMAGE_GITLAB=$GITLAB_DOCKER_REGISTRY_IMAGE/aonetwork-server:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+    - export DOCKER_LATEST_IMAGE_GITLAB=$GITLAB_DOCKER_REGISTRY_IMAGE/aonetwork-server:$CI_COMMIT_BRANCH
+  script:
+    - sleep 10
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - docker pull $DOCKER_BUILD_IMAGE-x86_64
+    - docker pull $DOCKER_BUILD_IMAGE-aarch64
+    - docker tag $DOCKER_BUILD_IMAGE-x86_64 $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker push $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker tag $DOCKER_BUILD_IMAGE-aarch64 $DOCKER_BUILD_IMAGE_GITLAB-aarch64
+    - docker push $DOCKER_BUILD_IMAGE_GITLAB-aarch64
+    - docker manifest create --amend $DOCKER_BUILD_IMAGE $DOCKER_BUILD_IMAGE-aarch64 $DOCKER_BUILD_IMAGE-x86_64
+    - docker manifest annotate --os linux --arch amd64 $DOCKER_BUILD_IMAGE $DOCKER_BUILD_IMAGE-x86_64
+    - docker manifest annotate --os linux --arch arm64 $DOCKER_BUILD_IMAGE $DOCKER_BUILD_IMAGE-aarch64
+    - docker manifest push -p $DOCKER_BUILD_IMAGE
+    - docker manifest create --amend $DOCKER_LATEST_IMAGE $DOCKER_BUILD_IMAGE-aarch64 $DOCKER_BUILD_IMAGE-x86_64
+    - docker manifest annotate --os linux --arch amd64 $DOCKER_LATEST_IMAGE $DOCKER_BUILD_IMAGE-x86_64
+    - docker manifest annotate --os linux --arch arm64 $DOCKER_LATEST_IMAGE $DOCKER_BUILD_IMAGE-aarch64
+    - docker manifest push -p $DOCKER_LATEST_IMAGE
+    - docker manifest create --amend $DOCKER_BUILD_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-aarch64 $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker manifest annotate --os linux --arch amd64 $DOCKER_BUILD_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker manifest annotate --os linux --arch arm64 $DOCKER_BUILD_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-aarch64
+    - docker manifest push -p $DOCKER_BUILD_IMAGE_GITLAB
+    - docker manifest create --amend $DOCKER_LATEST_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-aarch64 $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker manifest annotate --os linux --arch amd64 $DOCKER_LATEST_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-x86_64
+    - docker manifest annotate --os linux --arch arm64 $DOCKER_LATEST_IMAGE_GITLAB $DOCKER_BUILD_IMAGE_GITLAB-aarch64
+    - docker manifest push -p $DOCKER_LATEST_IMAGE_GITLAB
+
+artifacts-sign:
+  stage: sign
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+  image:
+    name: registry.eulix.xyz/collab/infra/infrastructure/sigstore/cosign:v1.10.1
+    entrypoint: ['']
+  script:
+    - cosign login -u $GITLAB_DOCKER_AUTH_USERNAME -p $GITLAB_DOCKER_AUTH_PASSWORD $GITLAB_DOCKER_REGISTRY_HOST
+    - cosign login -u $DOCKER_AUTH_USERNAME -p $DOCKER_AUTH_PASSWORD $DOCKER_REGISTRY_HOST
+    - echo $COSIGN_KEY | base64 -d > /tmp/cosign.key
+    - export DOCKER_BUILD_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-client:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+    - export DOCKER_LATEST_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-client:$CI_COMMIT_BRANCH
+    - export DOCKER_BUILD_IMAGE_GITLAB=$GITLAB_DOCKER_REGISTRY_IMAGE/aonetwork-client:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+    - export DOCKER_LATEST_IMAGE_GITLAB=$GITLAB_DOCKER_REGISTRY_IMAGE/aonetwork-client:$CI_COMMIT_BRANCH
+    - cosign sign --key /tmp/cosign.key $DOCKER_BUILD_IMAGE
+    - cosign sign --key /tmp/cosign.key $DOCKER_LATEST_IMAGE
+    - cosign sign --key /tmp/cosign.key $DOCKER_BUILD_IMAGE_GITLAB
+    - cosign sign --key /tmp/cosign.key $DOCKER_LATEST_IMAGE_GITLAB
+    - export DOCKER_BUILD_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-server:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+    - export DOCKER_LATEST_IMAGE=$DOCKER_REGISTRY_IMAGE/aonetwork-server:$CI_COMMIT_BRANCH
+    - export DOCKER_BUILD_IMAGE_GITLAB=$GITLAB_DOCKER_REGISTRY_IMAGE/aonetwork-server:`head -1 VERSION`-alpha.$CI_PIPELINE_ID
+    - export DOCKER_LATEST_IMAGE_GITLAB=$GITLAB_DOCKER_REGISTRY_IMAGE/aonetwork-server:$CI_COMMIT_BRANCH
+    - cosign sign --key /tmp/cosign.key $DOCKER_BUILD_IMAGE
+    - cosign sign --key /tmp/cosign.key $DOCKER_LATEST_IMAGE
+    - cosign sign --key /tmp/cosign.key $DOCKER_BUILD_IMAGE_GITLAB
+    - cosign sign --key /tmp/cosign.key $DOCKER_LATEST_IMAGE_GITLAB
