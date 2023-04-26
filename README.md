@@ -39,9 +39,10 @@ Focus on high-performance, low-latency intranet penetration solutions.
     - [Configure TCP Through Command Line](#configure-tcp-through-command-line)
   - [Server API](#server-api)
 - [Benchmark](#benchmark)
-  - [GT benchmark](#GT-benchmark)
+  - [GT benchmark](#gt-benchmark)
   - [frp dev branch 42745a3](#frp-dev-branch-42745a3)
 - [Compile](#compile)
+- [TODO](#todo)
 - [中文文档](./README_CN.md)
 
 ## Working Principle
@@ -696,3 +697,9 @@ GOOS=linux GOARCH=386 make release
 
 The compiled executable file is in the release directory.
 
+## TODO
+
+- Add web management capabilities
+- Support for using QUIC protocol, BBR congestion algorithm
+- Support for configuring P2P connections to forward data to multiple services
+- Authentication function supports public and private keys
