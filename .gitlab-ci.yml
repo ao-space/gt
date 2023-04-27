@@ -33,9 +33,9 @@ stages:
   - cloc
 
 include:
-  - project: 'bp/ams-ci-template'
-    ref: main
-    file: '/sonarqube.yml'
+#  - project: 'bp/ams-ci-template'
+#    ref: main
+#    file: '/sonarqube.yml'
   - project: 'bp/ams-ci-template'
     ref: main
     file: '/license.yml'
