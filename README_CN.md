@@ -39,13 +39,14 @@
     - [通过命令行配置 TCP](#%E9%80%9A%E8%BF%87%E5%91%BD%E4%BB%A4%E8%A1%8C%E9%85%8D%E7%BD%AE-tcp)
   - [服务端 API](#%E6%9C%8D%E5%8A%A1%E7%AB%AF-api)
 - [性能测试](#%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95)
-  - [AONetwork benchmark](#aonetwork-benchmark)
+  - [GT benchmark](#gt-benchmark)
   - [frp dev branch 42745a3](#frp-dev-branch-42745a3)
 - [编译](#%E7%BC%96%E8%AF%91)
+- [贡献者](#贡献者)
 
 ## 工作原理
 
-```
+```text
       ┌──────────────────────────────────────┐
       │  Web    Android     iOS    PC    ... │
       └──────────────────┬───────────────────┘
@@ -89,7 +90,7 @@ Sat Nov 19 20:18:59 CST 2022 INF tunnel started connID=1
 
 ### HTTPS 解密成 HTTP 后内网穿透
 
-- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 https://id1.example.com
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 <https://id1.example.com>
   来访问内网服务器上 80 端口提供的 HTTP 网页。
 
 - 服务端（公网服务器）
@@ -113,7 +114,7 @@ Sat Nov 19 20:20:06 CST 2022 INF tunnel started connID=1
 
 ### HTTPS 直接内网穿透
 
-- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 https://id1.example.com
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 <https://id1.example.com>
   来访问内网服务器上 443 端口提供的 HTTPS 网页。
 
 - 服务端（公网服务器）
@@ -160,31 +161,6 @@ Sat Nov 19 20:26:33 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - goog
 Sat Nov 19 20:26:33 CST 2022 INF remote url remote=tls://id1.example.com stun=
 Sat Nov 19 20:26:33 CST 2022 INF trying to connect to remote connID=1
 Sat Nov 19 20:26:33 CST 2022 INF tunnel started connID=1
-```
-
-### TCP 内网穿透
-
-- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:2222
-  来访问内网服务器上 22 端口上的 SSH 服务，如果服务端 2222 端口不可以，则由服务端选择一个随机端口。
-
-- 服务端（公网服务器）
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 1 -tcpRange 1024-65535
-Sat Nov 19 20:21:34 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":["1"],"TCPRanges":["1024-65535"],"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:21:34 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:21:34 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-- 客户端（内网服务器）
-
-```shell
-# ./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
-Sat Nov 19 20:21:53 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"tcp://127.0.0.1:22","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":2222,"RemoteTCPRandom":true,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:21:53 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Sat Nov 19 20:21:53 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:21:53 CST 2022 INF receive server information: tcp port 2222 opened successfully connID=1
-Sat Nov 19 20:21:53 CST 2022 INF tunnel started connID=1
 ```
 
 ### TCP 内网穿透
@@ -452,7 +428,7 @@ Usage of ./release/linux-amd64-server:
 
 ### 配置文件
 
-配置文件使用 yaml 格式，客户端与服务端均可以使用配置文件。[HTTP 内网穿透](#HTTP-内网穿透)
+配置文件使用 yaml 格式，客户端与服务端均可以使用配置文件。[HTTP 内网穿透](#http-内网穿透)
 示例中的客户端也可以使用下面的文件（client.yaml）启动。启动命令为：`./release/linux-amd64-client -config client.yaml`
 
 ```yaml
@@ -600,93 +576,6 @@ apiCertFile 和 apiKeyFile 选项不为空时使用 HTTPS，其他情况使用 H
 
 ```shell
 # ./release/linux-amd64-server -addr 8080 -apiAddr 8081
-Sat Nov 19 20:23:16 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"8081","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":null,"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":null,"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:23:16 CST 2022 WRN working on -allowAnyClient mode, because no user is configured
-Sat Nov 19 20:23:16 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:23:16 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-- 用户
-
-```shell
-# curl http://id1.example.com:8081/status
-{"status": "ok", "version":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e"}
-```
-
-### 服务端配置 TCP
-
-以下三种方式可同时使用。优先级：用户 > 全局。用户优先级：users 配置文件 > config 配置文件。全局优先级：命令行 > config
-配置文件。如果没有配置 TCP 则表示不启用 TCP 功能。
-
-#### 通过 users 配置文件配置 TCP
-
-通过 users 配置文件可以配置单个用户的 TCP。下面的配置文件表示用户 id1 可以开启任意数量的任意 TCP 端口，用户 id2 没有开启
-TCP 端口的权限。
-
-```yaml
-id1:
-  secret: secret1
-  tcp:
-    - number: 65535
-      range: 1-65535
-id2:
-  secret: secret2
-```
-
-#### 通过 config 配置文件配置 TCP
-
-通过 config 配置文件可以配置全局 TCP 和单个用户的 TCP。下面的配置文件表示用户 id1 可以开启任意数量的任意 TCP 端口，用户
-id2 可以在 1024 到 65535 的 TCP 端口之间开启 1 个 TCP 端口。
-
-```yaml
-version: 1.0
-users:
-  id1:
-    secret: secret1
-    tcp:
-      - number: 65535
-        range: 1-65535
-  id2:
-    secret: secret2
-tcp:
-  - number: 1
-    range: 1024-65535
-options:
-  apiAddr: 1.2.3.4:1234
-  certFile: /path
-  host: 1.2.3.4
-  keyFile: /path
-  logFile: /path
-  logFileMaxCount: 1234
-  logFileMaxSize: 1234
-  logLevel: debug
-  addr: 1234
-  timeout: 1234m1234ms
-  tlsAddr: 1234
-  tlsVersion: tls1.3
-  users: testdata/users.yaml
-```
-
-#### 通过命令行配置 TCP
-
-通过命令行可以配置全局 TCP。下面的命令表示同一时间内每个用户都可以在 1024 到 65535 的 TCP 端口之间开启 1 个 TCP 端口。
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 1 -tcpRange 1024-65535
-Sat Nov 19 20:27:41 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":["1"],"TCPRanges":["1024-65535"],"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:27:41 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:27:41 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-### 服务端 API
-
-服务端 API 通过模拟客户端检测服务是否正常。下面的例子可以帮助你更好地理解这一点，其中，id1.example.com 解析到公网服务器的地址。当
-apiCertFile 和 apiKeyFile 选项不为空时使用 HTTPS，其他情况使用 HTTP。
-
-- 服务端（公网服务器）
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -apiAddr 8081
 Fri Dec  9 18:41:46 CST 2022 INF linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f config={"APIAddr":"8081","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":10,"HTTPMUXHeader":"Host","Host":{"Number":null,"Regex":null,"RegexStr":null,"WithID":null},"HostNumber":1,"HostRegex":null,"HostWithID":false,"IDs":null,"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDuration":300000000000,"ReconnectTimes":3,"SNIAddr":"","STUNAddr":"","Secrets":null,"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
 Fri Dec  9 18:41:46 CST 2022 WRN working on -allowAnyClient mode, because no user is configured
 Fri Dec  9 18:41:46 CST 2022 INF Listening addr=:8080
@@ -712,7 +601,7 @@ Total Number of Cores: 8 (4 performance and 4 efficiency)
 Memory: 16 GB
 ```
 
-### AONetwork benchmark
+### GT benchmark
 
 ```shell
 $ wrk -c 100 -d 30s -t 10 http://pi.example.com:7001
@@ -753,10 +642,44 @@ $ ps aux
 
 ## 编译
 
+### 获取代码
+
 ```shell
 git clone <url>
 cd <folder>
+```
+
+### 下载依赖库
+
+您可以从官网或镜像中下载webrtc：
+
+#### 1. 从官网下载webrtc
+
+```shell
+mkdir -p dep/_google-webrtc
+cd dep/_google-webrtc
+git clone https://webrtc.googlesource.com/src
+```
+
+然后按照以下步骤检出构建工具和许多依赖项：<https://webrtc.googlesource.com/src/+/main/docs/native-code/development/>
+
+#### 2. 从镜像下载webrtc
+
+待更新
+
+### 构建
+
+在Linux上构建：
+
+```shell
 make release
 ```
 
-编译好的执行文件在 release 目录下。
+编译后的可执行文件在 release 目录中。
+
+## 贡献者
+
+感谢以下人员为项目做出的贡献：
+
+- [zhiyi](https://github.com/vyloy)
+- [jianti](https://github.com/FH0)
