@@ -43,11 +43,12 @@ Focus on high-performance, low-latency intranet penetration solutions.
   - [frp dev branch 42745a3](#frp-dev-branch-42745a3)
 - [Compile](#compile)
 - [TODO](#todo)
+- [Contributors](#contributors)
 - [中文文档](./README_CN.md)
 
 ## Working Principle
 
-```
+```text
       ┌──────────────────────────────────────┐
       │  Web    Android     iOS    PC    ... │
       └──────────────────┬───────────────────┘
@@ -93,7 +94,7 @@ Sat Nov 19 20:18:59 CST 2022 INF tunnel started connID=1
 
 - Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of
   the public network server. Want to access the HTTP web page served on port 80 on the intranet server by
-  visiting https://id1.example.com.
+  visiting <https://id1.example.com>.
 - Server (public)
 
 ```shell
@@ -118,7 +119,7 @@ Sat Nov 19 20:20:06 CST 2022 INF tunnel started connID=1
 
 - Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of
   the public network server. Want to access the HTTPS webpage served on port 443 on the intranet server by
-  visiting https://id1.example.com.
+  visiting <https://id1.example.com>.
 - Server (public)
 
 ```shell
@@ -141,8 +142,8 @@ Sat Nov 19 20:25:49 CST 2022 INF tunnel started connID=1
 ### Client HTTP Convert to HTTPS
 
 - Requirements: There is an internal gt server and a public gt server, id1.example.com resolves to the address of the
-  public gt server. Hope to visit the webpage served by port 80 on the intranet server by visiting id1.example.com:
-  8080. At the same time, TLS is used to encrypt the communication between the client and the server.
+  public gt server. Hope to visit the webpage served by port 80 on the intranet server by visiting id1.example.com:8080.
+  At the same time, TLS is used to encrypt the communication between the client and the server.
 
 - Server (public)
 
@@ -164,32 +165,6 @@ Sat Nov 19 20:26:33 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - goog
 Sat Nov 19 20:26:33 CST 2022 INF remote url remote=tls://id1.example.com stun=
 Sat Nov 19 20:26:33 CST 2022 INF trying to connect to remote connID=1
 Sat Nov 19 20:26:33 CST 2022 INF tunnel started connID=1
-```
-
-### TCP
-
-- Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of
-  the public network server. Hope to access the SSH service on port 22 on the intranet server by accessing
-  id1.example.com:2222. If the server port 2222 cannot be used, the server will choose a random port.
-
-- Server (public)
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 1 -tcpRange 1024-65535
-Sat Nov 19 20:21:34 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":["1"],"TCPRanges":["1024-65535"],"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:21:34 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:21:34 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-- Client (internal)
-
-```shell
-# ./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
-Sat Nov 19 20:21:53 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"tcp://127.0.0.1:22","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":2222,"RemoteTCPRandom":true,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:21:53 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Sat Nov 19 20:21:53 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:21:53 CST 2022 INF receive server information: tcp port 2222 opened successfully connID=1
-Sat Nov 19 20:21:53 CST 2022 INF tunnel started connID=1
 ```
 
 ### TCP
@@ -688,11 +663,38 @@ $ ps aux
 
 ## Compile
 
+### Get the code
+
 ```shell
 git clone <url>
 cd <folder>
-# GOOS and GOARCH default to corresponding to the installed go
-GOOS=linux GOARCH=386 make release
+```
+
+### Download Dependencies
+
+You can either download webrtc from official or from mirror:
+
+#### 1. Download webrtc from official
+
+```shell
+mkdir -p dep/_google-webrtc
+cd dep/_google-webrtc
+git clone https://webrtc.googlesource.com/src
+```
+
+And then follow the steps to check out the build toolchain and many
+dependencies: <https://webrtc.googlesource.com/src/+/main/docs/native-code/development/>
+
+#### 2. Download webrtc from mirror
+
+WIP
+
+### Build
+
+Build it on linux:
+
+```shell
+make release
 ```
 
 The compiled executable file is in the release directory.
@@ -703,3 +705,10 @@ The compiled executable file is in the release directory.
 - Support for using QUIC protocol, BBR congestion algorithm
 - Support for configuring P2P connections to forward data to multiple services
 - Authentication function supports public and private keys
+
+## Contributors
+
+Many thanks to the following people who have contributed to this project:
+
+- [zhiyi](https://github.com/vyloy)
+- [jianti](https://github.com/FH0)
