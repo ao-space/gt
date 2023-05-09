@@ -663,18 +663,37 @@ $ ps aux
 
 ## Compile
 
-### Get the code
+You can either build GT with webrtc downloaded from mirror or from official:
+
+### 1. Build GT with webrtc downloaded from ISCAS mirror:
+
+#### Get the code
 
 ```shell
 git clone <url>
 cd <folder>
 ```
 
-### Download Dependencies
+#### Build
 
-You can either download webrtc from official or from mirror:
+Build it on linux:
 
-#### 1. Download webrtc from official
+```shell
+make release
+```
+
+The compiled executable file is in the release directory.
+
+### 2. Build GT with webrtc downloaded from official repo:
+
+#### Get the code
+
+```shell
+git clone <url>
+cd <folder>
+```
+
+#### Download webrtc from official
 
 ```shell
 mkdir -p dep/_google-webrtc
@@ -682,19 +701,16 @@ cd dep/_google-webrtc
 git clone https://webrtc.googlesource.com/src
 ```
 
-And then follow the steps to check out the build toolchain and many
-dependencies: <https://webrtc.googlesource.com/src/+/main/docs/native-code/development/>
+And then follow [the steps in the link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
+check out the build toolchain and many
+dependencies.
 
-#### 2. Download webrtc from mirror
-
-WIP
-
-### Build
+#### Build
 
 Build it on linux:
 
 ```shell
-make release
+WITH_OFFICIAL_WEBRTC=1 make release
 ```
 
 The compiled executable file is in the release directory.
