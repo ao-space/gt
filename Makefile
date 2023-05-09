@@ -24,6 +24,10 @@ endif
 ifdef RACE_CHECK
 	export GO_RACE=-race
 endif
+UPDATE_SUBMODULE_COMMAND=git submodule update --init --recursive
+ifdef WITH_OFFICIAL_WEBRTC
+	UPDATE_SUBMODULE_COMMAND=echo 'skiped update_submodule'
+endif
 RELEASE_OPTIONS=$(GO_RACE) -tags release -trimpath -ldflags "$(GO_STATIC_LINK_FLAG) -s -w -X 'github.com/isrc-cas/gt/predef.Version=$(VERSION)'"
 DEBUG_OPTIONS=$(GO_RACE) -trimpath -ldflags "$(GO_STATIC_LINK_FLAG) -X 'github.com/isrc-cas/gt/predef.Version=$(VERSION)'"
 SOURCES=$(shell ls -1 **/*.go)
@@ -78,7 +82,7 @@ golangci-lint:
 		--exclude 'S1000: should use a simple channel send/receive instead of `select` with a single case'
 
 update_submodule:
-	git submodule update --init --recursive
+	$(UPDATE_SUBMODULE_COMMAND)
 
 docker_create_image: update_submodule
 	docker images | grep -cim1 -E "^gtbuild\s+?v1" || docker build -t gtbuild:v1 .

@@ -20,7 +20,7 @@ workflow:
       when: never
     - if: $CI_COMMIT_BRANCH
 
-image: golang:1.19
+image: golang:1.20
 
 stages:
   - license_check

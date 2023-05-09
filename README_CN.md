@@ -643,18 +643,37 @@ $ ps aux
 
 ## 编译
 
-### 获取代码
+你可以选择从镜像或者官方获取 WebRTC 并编译 GT：
+
+### 1. 从 ISCAS 镜像获取 WebRTC 并编译 GT：
+
+#### 获取代码
 
 ```shell
 git clone <url>
 cd <folder>
 ```
 
-### 下载依赖库
+#### 编译
 
-您可以从官网或镜像中下载webrtc：
+在 Linux 上编译：
 
-#### 1. 从官网下载webrtc
+```shell
+make release
+```
+
+编译后的可执行文件在 release 目录下。
+
+### 2. 从官方获取 WebRTC 并编译 GT：
+
+#### 获取代码
+
+```shell
+git clone <url>
+cd <folder>
+```
+
+#### 从官方获取 WebRTC
 
 ```shell
 mkdir -p dep/_google-webrtc
@@ -662,21 +681,17 @@ cd dep/_google-webrtc
 git clone https://webrtc.googlesource.com/src
 ```
 
-然后按照以下步骤检出构建工具和许多依赖项：<https://webrtc.googlesource.com/src/+/main/docs/native-code/development/>
+然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
 
-#### 2. 从镜像下载webrtc
+#### 编译
 
-待更新
-
-### 构建
-
-在Linux上构建：
+在 Linux 上编译：
 
 ```shell
-make release
+WITH_OFFICIAL_WEBRTC=1 make release
 ```
 
-编译后的可执行文件在 release 目录中。
+编译后的可执行文件在 release 目录下。
 
 ## 演进计划
 
