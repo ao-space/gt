@@ -42,7 +42,8 @@
   - [GT benchmark](#gt-benchmark)
   - [frp dev branch 42745a3](#frp-dev-branch-42745a3)
 - [编译](#%E7%BC%96%E8%AF%91)
-- [贡献者](#贡献者)
+- [演进计划](#演进计划)
+- [贡献指南](#贡献指南)
 
 ## 工作原理
 
