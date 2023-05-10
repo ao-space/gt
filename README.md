@@ -772,7 +772,7 @@ Feature requests should be clear and follow the feature request conventions of t
 
 Finally, thank you for your contribution to this project. We welcome contributions in all forms, including but not limited to code contributions, issue reports, feature requests, documentation writing, etc. We believe that with your help, this project will become more perfect and stronger.
 
-## Contributors
+### Contributors
 
 Many thanks to the following people who have contributed to this project:
 
