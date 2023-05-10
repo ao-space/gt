@@ -43,7 +43,7 @@ Focus on high-performance, low-latency intranet penetration solutions.
   - [frp dev branch 42745a3](#frp-dev-branch-42745a3)
 - [Compile](#compile)
 - [TODO](#todo)
-- [Contributors](#contributors)
+- [Contribution Guidelines](#contribution-guidelines)
 - [中文文档](./README_CN.md)
 
 ## Working Principle
