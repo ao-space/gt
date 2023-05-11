@@ -247,7 +247,12 @@ func (s *Server) Start() (err error) {
 		if strings.IndexByte(s.config.APIAddr, ':') == -1 {
 			s.config.APIAddr = ":" + s.config.APIAddr
 		}
-		apiServer := api.NewServer(s.config.APIAddr, s.Logger.With().Str("scope", "api").Logger(), s.users.isIDConflict)
+		apiServer := api.NewServer(
+			s.config.APIAddr,
+			s.Logger.With().Str("scope", "api").Logger(),
+			s.users.isIDConflict,
+			s.config.HTTPMUXHeader,
+		)
 		s.apiServer = apiServer
 	}
 
