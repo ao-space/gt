@@ -16,6 +16,7 @@ package api
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
@@ -45,6 +46,7 @@ type Server struct {
 	id         atomic.Value
 	secret     atomic.Value
 	idConflict func(id string) bool
+	muxHeader  string
 }
 
 // ID 返回 api server 生成的 id
@@ -66,7 +68,7 @@ func (s *Server) Secret() string {
 }
 
 // NewServer returns an api server instance.
-func NewServer(addr string, logger zerolog.Logger, idConflict func(id string) bool) *Server {
+func NewServer(addr string, logger zerolog.Logger, idConflict func(id string) bool, header string) *Server {
 	mux := http.NewServeMux()
 	s := &Server{
 		Server: http.Server{
@@ -75,6 +77,7 @@ func NewServer(addr string, logger zerolog.Logger, idConflict func(id string) bo
 		},
 		logger:     logger,
 		idConflict: idConflict,
+		muxHeader:  header,
 	}
 	mux.HandleFunc("/status", s.status)
 	mux.HandleFunc("/statusResp", s.statusResp)
@@ -142,13 +145,15 @@ func (s *Server) check(writer http.ResponseWriter) (err error) {
 		return
 	}
 
+	id := s.ID()
 	cArgs := []string{
 		"client",
-		"-id", s.ID(),
+		"-id", id,
 		"-secret", s.Secret(),
 		"-local", "http://" + s.Addr,
 		"-remote", s.RemoteSchema + s.RemoteAddr,
 		"-logLevel", "info",
+		"-remoteCertInsecure",
 	}
 	c, err := client.New(cArgs, nil)
 	if err != nil {
@@ -175,6 +180,9 @@ func (s *Server) check(writer http.ResponseWriter) (err error) {
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
 			DisableKeepAlives:     true,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
 		},
 	}
 	err = c.WaitUntilReady(30 * time.Second)
@@ -184,11 +192,18 @@ func (s *Server) check(writer http.ResponseWriter) (err error) {
 	var url string
 	switch s.RemoteSchema {
 	case "tcp://":
-		url = fmt.Sprintf("http://%v.example.com/statusResp", s.ID())
+		url = fmt.Sprintf("http://%v.example.com/statusResp", id)
 	case "tls://":
-		url = fmt.Sprintf("https://%v.example.com/statusResp", s.ID())
+		url = fmt.Sprintf("https://%v.example.com/statusResp", id)
 	}
-	resp, err := httpClient.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	if len(s.muxHeader) > 0 && s.muxHeader != "Host" {
+		req.Header[s.muxHeader] = []string{id}
+	}
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return
 	}
