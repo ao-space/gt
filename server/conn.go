@@ -312,18 +312,14 @@ func (c *conn) handleTunnel(remoteIP string) (handled bool) {
 		c.server.reconnect[remoteIP] = reconnectTimes
 		c.server.reconnectRWMutex.Unlock()
 
-		if reconnectTimes > c.server.config.ReconnectTimes {
-			go func() {
-				// ReconnectDuration 为 0 表示不进行限制解除
-				if c.server.config.ReconnectDuration == 0 {
-					return
-				}
-				time.Sleep(c.server.config.ReconnectDuration)
+		// ReconnectDuration 为 0 表示不进行限制解除
+		if c.server.config.ReconnectDuration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
+			time.AfterFunc(c.server.config.ReconnectDuration, func() {
 				c.server.reconnectRWMutex.Lock()
 				c.server.reconnect[remoteIP] = 0
 				c.server.reconnectRWMutex.Unlock()
 				c.Logger.Debug().Msgf("unlimit IP: '%v'", remoteIP)
-			}()
+			})
 		}
 
 		e := c.SendErrorSignalInvalidIDAndSecret()
