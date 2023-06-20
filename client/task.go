@@ -42,6 +42,7 @@ type httpTask struct {
 	skipping bool
 	passing  bool
 	closing  uint32
+	service  *service
 }
 
 func newHTTPTask(c net.Conn) (t *httpTask) {
@@ -241,7 +242,7 @@ func (t *httpTask) IsClosingByRemote() (closingByRemote bool) {
 	return atomic.LoadUint32(&t.closing) == connection.CloseByRemote
 }
 
-func (t *httpTask) process(connID uint, taskID uint32, c *conn, timeout time.Duration) {
+func (t *httpTask) process(connID uint, taskID uint32, c *conn) {
 	count := c.TasksCount.Add(1)
 	c.client.idleManager.SetRunningWithTaskCount(connID, count)
 	var rErr error
@@ -279,8 +280,8 @@ func (t *httpTask) process(connID uint, taskID uint32, c *conn, timeout time.Dur
 	buf[4] = byte(predef.Data >> 8)
 	buf[5] = byte(predef.Data)
 	for {
-		if timeout > 0 {
-			dl := time.Now().Add(timeout)
+		if t.service.LocalTimeout > 0 {
+			dl := time.Now().Add(t.service.LocalTimeout)
 			rErr = t.conn.SetReadDeadline(dl)
 			if rErr != nil {
 				return
@@ -302,8 +303,8 @@ func (t *httpTask) process(connID uint, taskID uint32, c *conn, timeout time.Dur
 			if wErr != nil {
 				return
 			}
-			if c.client.config.RemoteTimeout > 0 {
-				dl := time.Now().Add(c.client.config.RemoteTimeout)
+			if c.client.Config().RemoteTimeout > 0 {
+				dl := time.Now().Add(c.client.Config().RemoteTimeout)
 				wErr = c.Conn.SetReadDeadline(dl)
 				if wErr != nil {
 					return

@@ -21,8 +21,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	connection "github.com/isrc-cas/gt/conn"
-	"github.com/isrc-cas/gt/predef"
+	ssync "github.com/isrc-cas/gt/server/sync"
 )
 
 type client struct {
@@ -32,8 +33,8 @@ type client struct {
 	taskIDSeed   uint32
 	closeOnce    sync.Once
 
-	tcps                   []tcp
-	associatedTCPListeners sync.Map // key: serverIndex value: net.Listener
+	tcpConfigs   []tcp
+	tcpListeners ssync.Map // key: serverIndex value: net.Listener
 
 	speedMutex    sync.Mutex
 	speedNum      uint32
@@ -42,8 +43,10 @@ type client struct {
 
 	connections uint32
 
-	hostPrefixMap map[string]uint16 // key: hostPrefix value: serverIndex
-	host          host
+	host host
+
+	checksumBlacklist     *lru.Cache[[32]byte, any]
+	lastProcessedChecksum [32]byte
 }
 
 func newClient() interface{} {
@@ -52,36 +55,16 @@ func newClient() interface{} {
 
 // 这一步不在 newClient() 中进行，因为 newClient() 时有锁的存在
 func (c *client) init(id string, u user) {
+	c.host = u.Host
+	c.tcpConfigs = u.TCPs
+	c.speedNum = u.Speed
+	c.connections = u.Connections
+	c.checksumBlacklist, _ = lru.New[[32]byte, any](10)
+
 	c.tunnelsRWMtx.Lock()
 	c.id = id
-	c.host = u.Host
-	c.hostPrefixMap = make(map[string]uint16)
 	c.tunnels = make(map[*conn]struct{})
 	c.tunnelsRWMtx.Unlock()
-
-	c.tcps = u.TCPs
-
-	c.speedMutex.Lock()
-	c.speedNum = u.Speed
-	c.speedMutex.Unlock()
-
-	c.connections = u.Connections
-}
-
-func (c *client) getHostPrefix(hostPrefix string) (uint16, bool) {
-	serviceIndex, ok := c.hostPrefixMap[hostPrefix]
-	return serviceIndex, ok
-}
-
-func (c *client) addHostPrefix(hostPrefix string, serviceIndex uint16) (err error) {
-	// 数量限制
-	if atomic.LoadUint32(&c.host.usedHost) >= *c.host.Number {
-		return connection.ErrHostNumberLimited
-	}
-	atomic.AddUint32(&c.host.usedHost, 1)
-
-	c.hostPrefixMap[hostPrefix] = serviceIndex
-	return
 }
 
 func (c *client) process(task *conn) (err error) {
@@ -105,37 +88,157 @@ func (c *client) process(task *conn) (err error) {
 	return nil
 }
 
-func (c *client) canAddTunnel() (ok bool) {
-	c.tunnelsRWMtx.RLock()
-	defer c.tunnelsRWMtx.RUnlock()
-	return uint32(len(c.tunnels)) < c.connections
+type hostPrefixChanges struct {
+	oldServiceIndex hostPrefixOption
+	serviceIndex    hostPrefixOption
+	remove          bool
 }
 
-func (c *client) addTunnel(conn *conn) (ok bool) {
+func (c *client) addTunnel(t *conn, reload bool, o options) (ok bool, err error) {
 	c.tunnelsRWMtx.Lock()
 	defer c.tunnelsRWMtx.Unlock()
 
-	if c.tunnels == nil {
-		return false
+	if uint32(len(c.tunnels)) >= c.connections {
+		err = connection.ErrReachedMaxConnections
+		if e := t.SendErrorSignalReachedMaxConnections(); e != nil {
+			t.Logger.Error().Err(e).Msg("failed to SendErrorSignalReachedMaxConnections")
+		}
+		return
 	}
-	c.tunnels[conn] = struct{}{}
-	return true
+
+	if c.tunnels == nil {
+		return
+	}
+
+	if c.checksumBlacklist.Contains(o.configChecksum) {
+		err = connection.ErrDifferentConfigClientConnected
+		if e := t.SendErrorSignalDifferentConfigClientConnected(); e != nil {
+			t.Logger.Error().Err(e).Msg("failed to SendErrorSignalDifferentConfigClientConnected")
+		}
+		return
+	}
+
+	if c.lastProcessedChecksum == o.configChecksum {
+		t.ids = o.ids
+		t.configChecksum = o.configChecksum
+		c.tunnels[t] = struct{}{}
+		ok = true
+		t.Logger.Info().Msg("checksum is same with last processed checksum")
+		return
+	}
+
+	c.lastProcessedChecksum = o.configChecksum
+
+	err = t.processHostPrefixes(o, c)
+	if err != nil {
+		return
+	}
+
+	if reload {
+		c.tunnels[t] = struct{}{}
+		ok = true
+		return
+	}
+	// remove old tunnels that checksum is old and its host prefixes does not need anymore
+	// for new tunnel connection from another client process
+	var oldTunnels []*conn
+	for tunnel := range c.tunnels {
+		if o.configChecksum != tunnel.configChecksum {
+			tunnel.Logger.Info().
+				Hex("newChecksum", o.configChecksum[:]).
+				Hex("oldChecksum", tunnel.configChecksum[:]).
+				Msg("old connection closing")
+			oldTunnels = append(oldTunnels, tunnel)
+		}
+	}
+	if len(oldTunnels) > 0 {
+		// remove host prefixes from old connections
+		// checksum -> id -> hostPrefixChanges
+		oldIds := make(map[[32]byte]map[string]hostPrefixChanges)
+		for _, tunnel := range oldTunnels {
+			delete(c.tunnels, tunnel)
+			tunnel.SendCloseSignal()
+
+			m, ok := oldIds[tunnel.configChecksum]
+			if ok {
+				for id, osi := range tunnel.ids {
+					if si, e := o.ids[id]; !e {
+						m[id] = hostPrefixChanges{remove: true, oldServiceIndex: osi}
+					} else if osi != si {
+						m[id] = hostPrefixChanges{oldServiceIndex: osi, serviceIndex: si}
+					}
+				}
+			} else {
+				m = make(map[string]hostPrefixChanges)
+				for id, osi := range tunnel.ids {
+					if si, e := o.ids[id]; !e {
+						m[id] = hostPrefixChanges{remove: true, oldServiceIndex: osi}
+					} else if osi != si {
+						m[id] = hostPrefixChanges{oldServiceIndex: osi, serviceIndex: si}
+					}
+				}
+				oldIds[tunnel.configChecksum] = m
+			}
+		}
+		for checksum, ids := range oldIds {
+			c.checksumBlacklist.Add(checksum, struct{}{})
+			t.Logger.Info().
+				Str("id", c.id).
+				Hex("oldChecksum", checksum[:]).
+				Hex("newChecksum", o.configChecksum[:]).
+				Msg("added old checksum to blacklist")
+			for id, changes := range ids {
+				if changes.remove || changes.oldServiceIndex.tls != changes.serviceIndex.tls {
+					t.server.removeHostPrefix(id, changes.oldServiceIndex.tls)
+					t.Logger.Info().
+						Str("id", c.id).
+						Hex("oldChecksum", checksum[:]).
+						Hex("newChecksum", o.configChecksum[:]).
+						Str("prefix", id).
+						Str("oldServiceIndex", changes.oldServiceIndex.String()).
+						Msg("removed associated host prefix")
+				} else {
+					t.server.storeHostPrefix(id, changes.serviceIndex.tls,
+						clientWithServiceIndex{
+							client:       c,
+							serviceIndex: changes.serviceIndex.serviceIndex,
+						})
+					t.Logger.Info().
+						Str("id", c.id).
+						Hex("oldChecksum", checksum[:]).
+						Hex("newChecksum", o.configChecksum[:]).
+						Str("prefix", id).
+						Str("oldServiceIndex", changes.oldServiceIndex.String()).
+						Str("newServiceIndex", changes.serviceIndex.String()).
+						Msg("updated associated host prefix")
+				}
+			}
+		}
+	}
+	c.tunnels[t] = struct{}{}
+	ok = true
+	return
 }
 
 func (c *client) removeTunnel(tunnel *conn) {
 	c.tunnelsRWMtx.Lock()
+	defer c.tunnelsRWMtx.Unlock()
 	if _, ok := c.tunnels[tunnel]; ok {
 		delete(c.tunnels, tunnel)
 		if len(c.tunnels) < 1 {
 			c.tunnels = nil
 			tunnel.server.removeClient(c.id)
-			for hostPrefix := range c.hostPrefixMap {
-				tunnel.Logger.Info().Msgf("remove associated host prefix: %v", hostPrefix)
-				tunnel.server.removeHostPrefix(hostPrefix)
+			for hostPrefix, o := range tunnel.ids {
+				tunnel.Logger.Info().
+					Hex("checksum", tunnel.configChecksum[:]).
+					Str("prefix", hostPrefix).
+					Str("serviceIndex", o.String()).
+					Msg("remove associated host prefix")
+				tunnel.server.removeHostPrefix(hostPrefix, o.tls)
 			}
+			c.closeTcpListeners()
 		}
 	}
-	c.tunnelsRWMtx.Unlock()
 }
 
 func (c *client) getTunnel() (conn *conn) {
@@ -176,10 +279,7 @@ func (c *client) close() {
 		}
 		c.tunnelsRWMtx.Unlock()
 
-		c.associatedTCPListeners.Range(func(key, value interface{}) bool {
-			_ = value.(net.Listener).Close()
-			return true
-		})
+		c.closeTcpListeners()
 	})
 }
 
@@ -190,28 +290,86 @@ func (c *client) shutdown() {
 	}
 	c.tunnelsRWMtx.Unlock()
 
-	c.associatedTCPListeners.Range(func(key, value interface{}) bool {
-		_ = value.(net.Listener).Close()
+	c.closeTcpListeners()
+}
+
+func (c *client) closeTcpListeners() {
+	c.tcpListeners.Range(func(key, value interface{}) bool {
+		l, ok := value.(tcpListener)
+		if ok {
+			_ = l.Close()
+		}
 		return true
 	})
 }
 
-func (c *client) openTCPPort(serviceIndex uint16, tcpPort uint16, random bool, tunnel *conn) (openedTCPPort uint16, err error) {
-	if len(c.tcps) == 0 {
+func (c *client) deleteTcpListener(si uint16) {
+	value, loaded := c.tcpListeners.LoadAndDelete(si)
+	if loaded {
+		listener := value.(*tcpListener)
+		_ = listener.Close()
+	}
+}
+
+type tcpListener struct {
+	l    atomic.Pointer[net.Listener]
+	tcp  atomic.Pointer[tcp]
+	port openTCPOption
+}
+
+func (t *tcpListener) Close() (err error) {
+	if v := t.tcp.Load(); v != nil {
+		v.usedPort.Add(-1)
+	}
+	if v := t.l.Load(); v != nil {
+		err = (*v).Close()
+	}
+	return
+}
+
+func (c *client) validateTcpPortOption(tcpPort uint16, random bool) (err error) {
+	if len(c.tcpConfigs) == 0 {
 		err = errors.New("no permission to open tcp port")
 		return
 	}
 
-	for i := 0; i < len(c.tcps); i++ {
-		if tcpPort < c.tcps[i].PortRange.Min || tcpPort > c.tcps[i].PortRange.Max {
+	match := false
+	for i := 0; i < len(c.tcpConfigs); i++ {
+		if tcpPort < c.tcpConfigs[i].PortRange.Min || tcpPort > c.tcpConfigs[i].PortRange.Max {
 			continue
 		}
 
-		err = c.openSpecifiedTCPPort(serviceIndex, tcpPort, tunnel, &c.tcps[i])
+		match = true
+		break
+	}
+	if match {
+		return
+	}
+
+	if !random {
+		err = errors.New("user disable random tcp port when specified tcp port failed to open")
+	}
+	return
+}
+
+func (c *client) openTCPPort(serviceIndex uint16, l *tcpListener, tunnel *conn) (openedTCPPort uint16, err error) {
+	if len(c.tcpConfigs) == 0 {
+		err = errors.New("no permission to open tcp port")
+		return
+	}
+
+	tcpPort := l.port.port
+	random := l.port.random
+
+	for i := 0; i < len(c.tcpConfigs); i++ {
+		if tcpPort < c.tcpConfigs[i].PortRange.Min || tcpPort > c.tcpConfigs[i].PortRange.Max {
+			tunnel.Logger.Warn().Str("id", c.id).Msgf("tcp port(%d) is invalid, allowed %v", tcpPort, c.tcpConfigs)
+			continue
+		}
+
+		err = c.openSpecifiedTCPPort(serviceIndex, tcpPort, tunnel, &c.tcpConfigs[i])
 		if err != nil {
-			if predef.Debug {
-				tunnel.Logger.Debug().Err(err).Msg("failed to open tcp port")
-			}
+			tunnel.Logger.Warn().Err(err).Msg("failed to open tcp port")
 			continue
 		}
 		openedTCPPort = tcpPort
@@ -222,13 +380,11 @@ func (c *client) openTCPPort(serviceIndex uint16, tcpPort uint16, random bool, t
 		err = errors.New("user disable random tcp port when specified tcp port failed to open")
 		return
 	}
-	for i := 0; i < len(c.tcps); i++ {
-		for openedTCPPort = uint16(c.tcps[i].PortRange.Min); openedTCPPort <= uint16(c.tcps[i].PortRange.Max); openedTCPPort++ {
-			err = c.openSpecifiedTCPPort(serviceIndex, openedTCPPort, tunnel, &c.tcps[i])
+	for i := 0; i < len(c.tcpConfigs); i++ {
+		for openedTCPPort = c.tcpConfigs[i].PortRange.Min; openedTCPPort <= c.tcpConfigs[i].PortRange.Max; openedTCPPort++ {
+			err = c.openSpecifiedTCPPort(serviceIndex, openedTCPPort, tunnel, &c.tcpConfigs[i])
 			if err != nil {
-				if predef.Debug {
-					tunnel.Logger.Debug().Err(err).Msg("failed to open tcp port")
-				}
+				tunnel.Logger.Warn().Err(err).Msg("failed to open tcp port")
 				continue
 			}
 			return
@@ -243,12 +399,15 @@ func (c *client) openSpecifiedTCPPort(serviceIndex uint16, tcpPort uint16, tunne
 	if err != nil {
 		return err
 	}
-	tunnel.Logger.Info().Msgf("tcp port %v opened", tcpPort)
-
-	c.associatedTCPListeners.Store(serviceIndex, listener)
+	tunnel.Logger.Info().Uint16("port", tcpPort).Msg("tcp port opened")
 
 	// 启动 goroutine 处理 tcp 连接
 	go tunnel.server.acceptLoop(listener, func(conn *conn) {
+		defer func() {
+			c.deleteTcpListener(serviceIndex)
+			tunnel.Logger.Debug().Uint16("serviceIndex", serviceIndex).Uint16("tcpPort", tcpPort).Msg("tcp forward stop")
+		}()
+		tunnel.Logger.Debug().Uint16("serviceIndex", serviceIndex).Uint16("tcpPort", tcpPort).Msg("tcp forward start")
 		conn.serviceIndex = serviceIndex
 		conn.handle(func() bool {
 			err = c.process(conn)
@@ -261,11 +420,6 @@ func (c *client) openSpecifiedTCPPort(serviceIndex uint16, tcpPort uint16, tunne
 	})
 
 	return nil
-}
-
-func (c *client) needOpenTCPPort(serverIndex uint16) bool {
-	_, ok := c.associatedTCPListeners.Load(serverIndex)
-	return !ok
 }
 
 func (c *client) needSpeedLimit() (ok bool) {

@@ -15,7 +15,9 @@
 FROM golang:1.20-bullseye
 
 # apt 切换国内源，安装 google webrtc 依赖安装脚本的依赖
-RUN sed -i 's|deb.debian.org|repo.huaweicloud.com|g' /etc/apt/sources.list && \
+# mirrors.163.com
+# repo.huaweicloud.com
+RUN sed -i 's|deb.debian.org|mirrors.163.com|g' /etc/apt/sources.list && \
     apt update && \
     apt install xz-utils bzip2 sudo lsb-release ninja-build generate-ninja file patch -y
 

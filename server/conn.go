@@ -16,16 +16,20 @@ package server
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"io"
 	"net"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
 
+	"github.com/emirpasic/gods/trees/btree"
+	"github.com/emirpasic/gods/utils"
 	"github.com/isrc-cas/gt/bufio"
 	connection "github.com/isrc-cas/gt/conn"
 	"github.com/isrc-cas/gt/pool"
@@ -43,10 +47,12 @@ var (
 
 type conn struct {
 	connection.Connection
-	server       *Server
-	tasks        map[uint32]*conn
-	tasksRWMtx   sync.RWMutex
-	serviceIndex uint16 // 0 表示客户端只有一个 Local，使用 predef.Data，兼容老客户端；大于 0 使用 predef.ServicesData
+	server         *Server
+	tasks          map[uint32]*conn
+	tasksRWMtx     sync.RWMutex
+	serviceIndex   uint16 // 0 表示客户端只有一个 Local，使用 predef.Data，兼容老客户端；大于 0 使用 predef.ServicesData
+	ids            hostPrefixOptions
+	configChecksum [32]byte
 }
 
 func newConn(c net.Conn, s *Server) *conn {
@@ -129,6 +135,8 @@ func (c *conn) handle(handleFunc func() bool) {
 				return
 			}
 
+			c.Logger = c.Logger.With().Time("tunnel", time.Now()).Logger()
+
 			// 判断 IP 是否处于被限制状态
 			remoteAddr, ok := c.RemoteAddr().(*net.TCPAddr)
 			if !ok {
@@ -145,7 +153,7 @@ func (c *conn) handle(handleFunc func() bool) {
 			}
 
 			// 不能将 reconnectTimes 传参，多线程环境下这个值应该实时获取
-			handled = c.handleTunnel(remoteIP)
+			handled = c.handleTunnelLoop(remoteIP)
 			return
 		}
 	}
@@ -184,9 +192,9 @@ func (c *conn) handleSNI() (handled bool) {
 		err = ErrInvalidID
 		return
 	}
-	client, ok := c.server.getHostPrefix(string(id))
+	client, ok := c.server.getTLSHostPrefix(string(id))
 	if ok {
-		c.serviceIndex = client.hostPrefixMap[string(id)]
+		c.serviceIndex = client.serviceIndex
 		err = client.process(c)
 	} else {
 		err = ErrIDNotFound
@@ -236,7 +244,7 @@ func (c *conn) handleHTTP() (handled bool) {
 	}
 	client, ok := c.server.getHostPrefix(string(id))
 	if ok {
-		c.serviceIndex = client.hostPrefixMap[string(id)]
+		c.serviceIndex = client.serviceIndex
 		err = client.process(c)
 	} else {
 		err = ErrIDNotFound
@@ -244,20 +252,25 @@ func (c *conn) handleHTTP() (handled bool) {
 	return
 }
 
-func (c *conn) handleTunnel(remoteIP string) (handled bool) {
-	reader := c.Reader
-
-	var err error
+func (c *conn) handleTunnelLoop(remoteIP string) (handled bool) {
+	var reload bool
+	var cli *client
 	defer func() {
-		switch err {
-		case connection.ErrFailedToOpenTCPPort:
-			err = c.SendErrorSignalFailedToOpenTCPPort()
-			if err != nil {
-				c.Logger.Error().Err(err).Msg("failed to send FailedToOpenTCPPort signal")
-				return
-			}
+		if cli != nil {
+			cli.removeTunnel(c)
 		}
 	}()
+	for {
+		handled, reload, cli = c.handleTunnel(remoteIP, reload)
+		if !reload {
+			break
+		}
+	}
+	return
+}
+
+func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli *client) {
+	reader := c.Reader
 
 	// id
 	idLen, err := reader.ReadByte()
@@ -304,7 +317,8 @@ func (c *conn) handleTunnel(remoteIP string) (handled bool) {
 	}
 
 	// 验证 id secret
-	if err := c.server.authUser(idStr, secretStr); err != nil {
+	u, err := c.server.authUser(idStr, secretStr)
+	if err != nil {
 		// 使用局部锁而不是全局锁可以明显提高并发性能，但少数情况下会降低限制效果
 		c.server.reconnectRWMutex.Lock()
 		reconnectTimes := c.server.reconnect[remoteIP]
@@ -318,257 +332,375 @@ func (c *conn) handleTunnel(remoteIP string) (handled bool) {
 				c.server.reconnectRWMutex.Lock()
 				c.server.reconnect[remoteIP] = 0
 				c.server.reconnectRWMutex.Unlock()
-				c.Logger.Debug().Msgf("unlimit IP: '%v'", remoteIP)
+				c.Logger.Debug().Msgf("release blocked IP: '%v'", remoteIP)
 			})
 		}
 
 		e := c.SendErrorSignalInvalidIDAndSecret()
-		c.Logger.Debug().Err(err).AnErr("respErr", e).Msg("invalid id and secret")
+		c.Logger.Info().Err(err).AnErr("respErr", e).Msg("invalid id and secret")
 		return
 	}
 
+	options, err := c.parseOptions(reader, idStr, u)
+	if err != nil {
+		c.Logger.Info().Err(err).Msg("failed to parse options")
+		return
+	}
+	if len(u.Host.Prefixes) > 0 {
+		for id := range options.ids {
+			if _, ok := u.Host.Prefixes[id]; !ok {
+				c.Logger.Info().Err(err).
+					AnErr("sendSignalError", c.SendErrorSignalHostRegexMismatch()).
+					Msg("invalid host prefixes")
+				return
+			}
+		}
+	}
+
+	c.Logger.Info().Hex("checksum", options.configChecksum[:]).Bool("reload", r).Msg("handling tunnel")
+
 	// 获取或创建 client
-	var cli *client
 	var ok bool
 	var exists bool
 	for i := 0; i < 5; i++ {
 		cli, exists = c.server.getOrCreateClient(idStr, newClient)
 		if !exists {
-			// 默认使用全局的配置，如果用户单独配置了则使用用户配置的
-			value, ok := c.server.users.Load(idStr)
-			if !ok {
-				value = user{
-					// Secret:      secretStr, // 这个字段暂时用不到
-					TCPs:        append([]tcp(nil), c.server.config.TCPs...),
-					Speed:       c.server.config.Speed,
-					Connections: c.server.config.Connections,
-					Host:        c.server.config.Host,
-				}
-			}
-			cli.init(idStr, value.(user))
+			cli.init(idStr, u)
 		}
 
-		if !cli.canAddTunnel() {
-			e := c.SendErrorSignalReachedTheMaxConnections()
-			c.Logger.Error().AnErr("respErr", e).Msg("client has reached the max number of tunnel connections")
-			return
-		}
-		ok = cli.addTunnel(c)
+		ok, err = cli.addTunnel(c, r, options)
 		if ok {
 			break
+		}
+		if err != nil {
+			c.Logger.Error().Err(err).Msg("failed to add tunnels")
+			return
 		}
 	}
 	if !ok || cli == nil {
 		c.Logger.Error().Msg("failed to create client")
 		return
 	}
-	defer cli.removeTunnel(c)
 
-	// options
+	//err = c.processTCPOptions(cli, options)
+	//if err != nil {
+	//	return
+	//}
+	if !r {
+		atomic.AddUint64(&c.server.tunneling, 1)
+		err = c.SendReadySignal()
+	} else {
+		err = c.SendServicesSignal()
+	}
+	if err != nil {
+		c.Logger.Error().Err(err).Bool("reload", r).Msg("failed to send ready/services signal")
+		return
+	}
+
+	handled = true
+	reload = c.readLoop(cli)
+	return
+}
+
+func (c *conn) processHostPrefixes(options options, cli *client) (err error) {
+	rollbackIds := make(map[string]bool)
+	// add host prefixes
+	for id, o := range options.ids {
+		v, ok := c.server.getOrCreateHostPrefix(id, o.tls, func() interface{} {
+			return clientWithServiceIndex{client: cli, serviceIndex: o.serviceIndex}
+		})
+		if ok {
+			if v.client == cli {
+				continue
+			} else {
+				c.Logger.Error().
+					Str("id", cli.id).
+					Str("prefix", id).
+					Bool("tls", o.tls).
+					Err(connection.ErrHostConflict).
+					Msg("failed to add host prefix")
+				for id, tls := range rollbackIds {
+					c.server.removeHostPrefix(id, tls)
+					c.Logger.Info().
+						Hex("checksum", options.configChecksum[:]).
+						Str("id", cli.id).
+						Str("prefix", id).
+						Bool("tls", tls).
+						Msg("rollback added associated host prefix because host prefixes conflict")
+				}
+				err = c.SendErrorSignalHostConflict()
+				if err != nil {
+					c.Logger.Error().Err(err).Msg("failed to SendErrorSignalHostConflict")
+				}
+				return connection.ErrHostConflict
+			}
+		}
+		c.Logger.Info().
+			Hex("checksum", options.configChecksum[:]).
+			Str("id", cli.id).
+			Str("prefix", id).
+			Str("newServiceIndex", o.String()).
+			Msg("added associated host prefix")
+		rollbackIds[id] = o.tls
+	}
+	// remove host prefixes that are no longer used
+	for id, oo := range c.ids {
+		o, ok := options.ids[id]
+		if !ok || oo.tls != o.tls {
+			c.server.removeHostPrefix(id, oo.tls)
+			c.Logger.Info().
+				Str("id", cli.id).
+				Hex("last checksum", c.configChecksum[:]).
+				Hex("checksum", options.configChecksum[:]).
+				Str("oldServiceIndex", oo.String()).
+				Str("prefix", id).Msg("removed associated host prefix no longer needed")
+		} else if oo.serviceIndex != o.serviceIndex {
+			c.server.storeHostPrefix(id, oo.tls, clientWithServiceIndex{client: cli, serviceIndex: o.serviceIndex})
+			c.Logger.Info().
+				Str("id", cli.id).
+				Hex("last checksum", c.configChecksum[:]).
+				Hex("checksum", options.configChecksum[:]).
+				Str("oldServiceIndex", oo.String()).
+				Str("newServiceIndex", o.String()).
+				Str("prefix", id).Msg("updated associated host prefix with different service index")
+		}
+	}
+	c.Logger.Info().
+		Str("old prefixes", c.ids.String()).
+		Str("prefixes", options.ids.String()).
+		Msg("updated tunnel host prefixes")
+	c.ids = options.ids
+	c.configChecksum = options.configChecksum
+	return
+}
+
+type options struct {
+	ids            hostPrefixOptions
+	ports          map[uint16]openTCPOption
+	configChecksum [32]byte
+}
+
+type openTCPOption struct {
+	port   uint16
+	random bool
+}
+
+type hostPrefixOption struct {
+	serviceIndex uint16
+	tls          bool
+}
+
+func (h *hostPrefixOption) String() string {
+	if h.tls {
+		return strconv.FormatUint(uint64(h.serviceIndex), 10) + "tls"
+	}
+	return strconv.FormatUint(uint64(h.serviceIndex), 10)
+}
+
+type hostPrefixOptions map[string]hostPrefixOption
+
+func (h hostPrefixOptions) String() string {
+	var sb strings.Builder
+	for id, option := range h {
+		sb.WriteString(id)
+		sb.WriteString(":")
+		sb.WriteString(option.String())
+		sb.WriteByte(',')
+	}
+	return sb.String()
+}
+
+func (c *conn) parseOptions(reader *bufio.Reader, idStr string, u user) (options options, err error) {
+	var optionsCount uint16
 	var serviceIndex uint16
+	ids := make(hostPrefixOptions)
+	ports := make(map[uint16]openTCPOption)
+	num := *u.Host.Number
 	for leftOptions := 1; leftOptions > 0; leftOptions-- {
-		optionFirst, err := reader.ReadByte()
+		if optionsCount+1 > c.server.config.MaxHandShakeOptions {
+			c.Logger.Error().
+				AnErr("SendError", c.SendErrorSignalReachedMaxOptions()).
+				Msg("client has reached the max number of options")
+			return options, connection.ErrReachedMaxOptions
+		}
+		optionsCount++
+		var optionFirst byte
+		optionFirst, err = reader.ReadByte()
 		if err != nil {
 			c.Logger.Error().Err(err).Msg("failed to read option")
-			return
+			return options, err
 		}
 		optionLeftLen := optionFirst >> 6
-		optionLeft, err := reader.Peek(int(optionLeftLen))
+		var optionLeft []byte
+		optionLeft, err = reader.Peek(int(optionLeftLen))
 		if err != nil {
 			c.Logger.Error().Err(err).Msg("failed to read option left")
-			return
+			return options, err
 		}
 		option := append([]byte{optionFirst}, optionLeft...)
 		_, err = reader.Discard(int(optionLeftLen))
 		if err != nil {
 			c.Logger.Error().Err(err).Msg("failed to discard option left")
-			return
+			return options, err
 		}
-		// 按照正常的逻辑，多个 tunnel 只有第一个 tunnel 的 option 需要执行，
-		// 但是这样需要加上一个层次比较高的锁，会影响并发性能，
-		// 所以重复的 option 需要各个 option 自己处理
-		switch {
-		case bytes.Equal(option, predef.IDAsHostPrefix):
-			// 如果这个 host prefix 已经在这个 client 的中添加过了，那么跳过
-			if _, ok := cli.getHostPrefix(idStr); ok {
-				break
-			}
 
-			_, ok = c.server.getHostPrefix(idStr)
-			if ok {
-				c.Logger.Error().Err(err).Msg("failed to add host prefix")
-				err = c.SendErrorSignalHostConflict()
-				if err != nil {
-					c.Logger.Error().Err(err).Msg("failed to send error signal")
-				}
-				return
+		tls := false
+		switch {
+		case bytes.Equal(option, predef.IDAsTLSHostPrefix):
+			tls = true
+			fallthrough
+		case bytes.Equal(option, predef.IDAsHostPrefix):
+			if num != 0 && uint32(len(ids))+1 > num {
+				err = connection.ErrHostNumberLimited
+				e := c.SendErrorSignalHostNumberLimited()
+				c.Logger.Error().Err(err).AnErr("SendError", e).Msg("client has reached the max number of host prefixes")
+				return options, err
 			}
-			c.server.addHostPrefix(idStr, cli)
-			_, ok := cli.getHostPrefix(idStr)
-			if ok {
-				c.Logger.Error().Err(connection.ErrHostConflict).Msg("failed to add host prefix")
-				err = c.SendErrorSignalHostConflict()
-				if err != nil {
-					c.Logger.Error().Err(err).Msg("failed to send error signal")
-				}
-				return
-			}
-			err = cli.addHostPrefix(idStr, serviceIndex)
-			if err != nil {
-				c.Logger.Error().Err(err).Msg("failed to add host prefix")
-				if err == connection.ErrHostNumberLimited {
-					err = c.SendErrorSignalHostNumberLimited()
-					if err != nil {
-						c.Logger.Error().Err(err).Msg("failed to send error signal")
-					}
-				}
-				return
-			}
+			c.Logger.Info().
+				Str("prefix", idStr).
+				Uint16("serviceIndex", serviceIndex).
+				Str("id", idStr).
+				Msg("adding associated host prefix")
+			ids[idStr] = hostPrefixOption{serviceIndex: serviceIndex, tls: tls}
+			serviceIndex++
 		case bytes.Equal(option, predef.OpenTCPPort):
-			random, err := reader.ReadByte()
+			var random byte
+			random, err = reader.ReadByte()
 			if err != nil {
 				c.Logger.Error().Err(err).Msg("failed to read random byte")
-				return
+				return options, err
 			}
 			var peekBytes []byte
 			peekBytes, err = reader.Peek(2)
 			if err != nil {
 				c.Logger.Error().Err(err).Msg("failed to peek tcp port range")
-				return
+				return options, err
 			}
 			tcpPort := uint16(peekBytes[1]) | uint16(peekBytes[0])<<8
 			_, err = reader.Discard(2)
 			if err != nil {
 				c.Logger.Error().Err(err).Msg("failed to discard tcp port range")
-				return
+				return options, err
 			}
 
-			// 将 serverIndex 与 tcp 端口绑定，如果这个 serverIndex 已经绑定了，那么跳过
-			if !cli.needOpenTCPPort(serviceIndex) {
-				break
-			}
-			openedPort, err := cli.openTCPPort(serviceIndex, tcpPort, random != 0, c)
-			if err != nil {
-				c.Logger.Error().Err(err).Msg("failed to open tcp port")
-
-				err = c.SendErrorSignalFailedToOpenTCPPort()
-				if err != nil {
-					c.Logger.Error().Err(err).Msg("failed to send FailedToOpenTCPPort signal")
-				}
-
-				return
-			}
-			err = c.SendInfoTCPPortOpened(openedPort)
-			if err != nil {
-				c.Logger.Error().Err(err).Msg("failed to send Info signal")
-				return
-			}
+			ports[serviceIndex] = openTCPOption{port: tcpPort, random: random != 0}
+			serviceIndex++
 		case bytes.Equal(option, predef.OptionAndNextOption):
 			leftOptions += 2
 			continue // 跳过 serverIndex++
+		case bytes.Equal(option, predef.OpenTLSHost):
+			tls = true
+			fallthrough
 		case bytes.Equal(option, predef.OpenHost):
-			hostPrefixLen, err := reader.ReadByte()
+			if num != 0 && uint32(len(ids))+1 > num {
+				err = connection.ErrHostNumberLimited
+				e := c.SendErrorSignalHostNumberLimited()
+				c.Logger.Error().Err(err).AnErr("SendError", e).Msg("client has reached the max number of host prefixes")
+				return options, err
+			}
+			var hostPrefixLen byte
+			hostPrefixLen, err = reader.ReadByte()
 			if err != nil {
 				c.Logger.Error().Err(err).Msg("failed to read host prefix length")
-				return
+				return options, err
 			}
 			hostPrefix, err := reader.Peek(int(hostPrefixLen))
 			if err != nil {
 				c.Logger.Error().Err(err).Msg("failed to peek host prefix")
-				return
+				return options, err
 			}
 			hostPrefixStr := string(hostPrefix)
 			_, err = reader.Discard(int(hostPrefixLen))
 			if err != nil {
 				c.Logger.Error().Err(err).Msg("failed to discard host prefix")
-				return
+				return options, err
 			}
 
-			// 如果这个 host prefix 已经在这个 client 的中添加过了，那么跳过
-			if _, ok := cli.getHostPrefix(hostPrefixStr); ok {
-				break
-			}
-
-			// 检查 host prefix 是否符合要求
-			if len(*cli.host.Regex) > 0 {
-				matched := false
-				for _, regex := range *cli.host.Regex {
-					if regex.Match([]byte(hostPrefix)) {
-						matched = true
+			if len(*u.Host.Regex) > 0 {
+				match := false
+				for _, r := range *u.Host.Regex {
+					if r.MatchString(hostPrefixStr) {
+						match = true
 						break
 					}
 				}
-				if !matched {
-					c.Logger.Error().Err(connection.ErrHostRegexMismatch).Msg("failed when check host prefix")
-					err = c.SendErrorSignalHostRegexMismatch()
-					if err != nil {
-						c.Logger.Error().Err(err).Msg("failed when check host prefix")
-					}
-					return
+				if !match {
+					c.Logger.Info().Err(err).
+						AnErr("sendSignalError", c.SendErrorSignalHostRegexMismatch()).
+						Msg("invalid host prefixes")
+					return options, connection.ErrHostRegexMismatch
 				}
 			}
-
-			if *cli.host.WithID {
-				hostPrefixStr = cli.id + "-" + hostPrefixStr
+			if *u.Host.WithID {
+				hostPrefixStr = idStr + "-" + hostPrefixStr
 			}
-
-			_, ok = c.server.getHostPrefix(hostPrefixStr)
-			if ok {
-				c.Logger.Error().Err(err).Msg("failed to add host prefix")
-				err = c.SendErrorSignalHostConflict()
-				if err != nil {
-					c.Logger.Error().Err(err).Msg("failed to send error signal")
-				}
-				return
-			}
-			c.server.addHostPrefix(hostPrefixStr, cli)
-			_, ok := cli.getHostPrefix(hostPrefixStr)
-			if ok {
-				c.Logger.Error().Err(connection.ErrHostConflict).Msg("failed to add host prefix")
-				err = c.SendErrorSignalHostConflict()
-				if err != nil {
-					c.Logger.Error().Err(err).Msg("failed to send error signal")
-				}
-				return
-			}
-			err = cli.addHostPrefix(hostPrefixStr, serviceIndex)
-			if err != nil {
-				c.Logger.Error().Err(err).Msg("failed to add host prefix")
-				if err == connection.ErrHostNumberLimited {
-					err = c.SendErrorSignalHostNumberLimited()
-					if err != nil {
-						c.Logger.Error().Err(err).Msg("failed to send error signal")
-					}
-				}
-				return
-			}
+			c.Logger.Info().
+				Str("prefix", hostPrefixStr).
+				Uint16("serviceIndex", serviceIndex).
+				Str("id", idStr).
+				Msg("adding associated host prefix")
+			ids[hostPrefixStr] = hostPrefixOption{serviceIndex: serviceIndex, tls: tls}
+			serviceIndex++
 		default:
 			c.Logger.Error().Msgf("invalid option: %v", optionFirst)
-			return
+			return options, errors.New("invalid option")
 		}
-		serviceIndex++
 	}
-
-	atomic.AddUint64(&c.server.tunneling, 1)
-	handled = true
-	c.readLoop(cli)
+	sum := calChecksum(ids, ports)
+	options.ids = ids
+	options.ports = ports
+	options.configChecksum = sum
 	return
 }
 
-func (c *conn) readLoop(cli *client) {
+func calChecksum(ids hostPrefixOptions, ports map[uint16]openTCPOption) (result [32]byte) {
+	tree := btree.NewWith(3, utils.UInt16Comparator)
+	for id, o := range ids {
+		si := o.serviceIndex
+		if o.tls {
+			id = id + "-tls"
+		}
+		tree.Put(si, id)
+	}
+	for si, port := range ports {
+		tree.Put(si, port)
+	}
+	h := sha256.New()
+	it := tree.Iterator()
+	k := []byte{0x0, 0x0}
+	for it.Next() {
+		key := it.Key().(uint16)
+		k[0], k[1] = byte(key>>8), byte(key)
+		h.Write(k)
+		value := it.Value()
+		switch v := value.(type) {
+		case string:
+			h.Write([]byte(v))
+		case openTCPOption:
+			k[0], k[1] = byte(v.port>>8), byte(v.port)
+			h.Write(k)
+			if v.random {
+				h.Write([]byte{0x1})
+			} else {
+				h.Write([]byte{0x0})
+			}
+		}
+	}
+	h.Sum(result[:0])
+	return
+}
+
+func (c *conn) readLoop(cli *client) (reload bool) {
 	var err error
+	c.Logger.Info().Msg("readLoop begin")
 	defer func() {
-		c.Logger.Debug().Err(err).Msg("readLoop ended")
+		c.Logger.Info().Err(err).Msg("readLoop ended")
 		c.tasksRWMtx.RLock()
 		for _, t := range c.tasks {
 			t.Close()
 		}
 		c.tasksRWMtx.RUnlock()
 	}()
-	err = c.SendReadySignal()
-	if err != nil {
-		return
-	}
 	r := &bufio.LimitedReader{}
 	isClosing := false
 	for {
@@ -611,6 +743,11 @@ func (c *conn) readLoop(cli *client) {
 			cli.removeTunnel(c)
 			c.SendCloseSignal()
 			continue
+		case connection.ServicesSignal:
+			if predef.Debug {
+				c.Logger.Trace().Msg("readLoop read services signal")
+			}
+			return true
 		}
 		taskID := signal
 		if predef.Debug {
@@ -734,21 +871,43 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 	buf[2] = byte(taskID >> 8)
 	buf[3] = byte(taskID)
 	bufIndex := 4
-	if task.serviceIndex == 0 {
-		buf[bufIndex] = byte(predef.Data >> 8)
-		bufIndex++
-		buf[bufIndex] = byte(predef.Data)
-		bufIndex++
-	} else {
-		buf[bufIndex] = byte(predef.ServicesData >> 8)
-		bufIndex++
-		buf[bufIndex] = byte(predef.ServicesData)
-		bufIndex++
-		buf[bufIndex] = byte(task.serviceIndex >> 8)
-		bufIndex++
-		buf[bufIndex] = byte(task.serviceIndex)
-		bufIndex++
+	buf[bufIndex] = byte(predef.ServicesData >> 8)
+	buf[bufIndex+1] = byte(predef.ServicesData)
+	buf[bufIndex+2] = byte(task.serviceIndex >> 8)
+	buf[bufIndex+3] = byte(task.serviceIndex)
+	bufIndex += 4
+
+	buffered := task.Reader.Buffered()
+	var l int
+	if buffered > 0 {
+		var peek []byte
+		peek, rErr = task.Reader.Peek(buffered)
+		if rErr != nil {
+			return
+		}
+		l = copy(buf[bufIndex+4:], peek)
+		_, rErr = task.Reader.Discard(l)
+		if rErr != nil {
+			return
+		}
 	}
+	if cli.needSpeedLimit() {
+		cli.speedLimit(uint32(l), false) // 对客户端下行进行限速
+	}
+	buf[bufIndex] = byte(l >> 24)
+	buf[bufIndex+1] = byte(l >> 16)
+	buf[bufIndex+2] = byte(l >> 8)
+	buf[bufIndex+3] = byte(l)
+	l += bufIndex + 4
+	_, wErr = c.Write(buf[:l])
+	if wErr != nil {
+		return
+	}
+
+	bufIndex -= 4
+	buf[bufIndex] = byte(predef.Data >> 8)
+	buf[bufIndex+1] = byte(predef.Data)
+	bufIndex += 2
 	for {
 		if c.server.config.Timeout > 0 {
 			dl := time.Now().Add(c.server.config.Timeout)
@@ -757,7 +916,6 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 				return
 			}
 		}
-		var l int
 		l, rErr = task.Reader.Read(buf[bufIndex+4:])
 		if cli.needSpeedLimit() {
 			cli.speedLimit(uint32(l), false) // 对客户端下行进行限速
@@ -788,4 +946,88 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 			return
 		}
 	}
+}
+
+type clientWithServiceIndex struct {
+	*client
+	serviceIndex uint16
+}
+
+func (c *conn) processTCPOptions(cli *client, o options) (err error) {
+	for _, portOption := range o.ports {
+		err = cli.validateTcpPortOption(portOption.port, portOption.random)
+		if err != nil {
+			c.Logger.Error().AnErr("SendError", c.SendErrorSignalFailedToOpenTCPPort()).Err(err).Msg("failed to validate tcp options")
+			return
+		}
+	}
+	for si, portOption := range o.ports {
+		v, ok := cli.tcpListeners.LoadOrCreate(si, func() interface{} {
+			return &tcpListener{
+				port: portOption,
+			}
+		})
+		if ok {
+			vl := v.(*tcpListener)
+			// other tunnel goroutine is working on this service
+			if vl.l.Load() == nil {
+				continue
+			}
+			l := *vl.l.Load()
+			port := l.Addr().(*net.TCPAddr).Port
+			if port == int(portOption.port) {
+				err = c.SendInfoTCPPortOpened(uint16(port))
+				if err != nil {
+					c.Logger.Error().Err(err).Msg("failed to send Info signal")
+					return err
+				}
+				continue
+			} else if portOption.random {
+				err = c.SendInfoTCPPortOpened(uint16(port))
+				if err != nil {
+					c.Logger.Error().Err(err).Msg("failed to send Info signal")
+					return err
+				}
+				continue
+			} else {
+				_ = vl.Close()
+			}
+		}
+
+		openedPort, err := cli.openTCPPort(si, v.(*tcpListener), c)
+		if err != nil {
+			c.Logger.Error().Err(err).
+				Uint16("port", portOption.port).
+				Bool("random", portOption.random).
+				Msg("failed to open tcp port")
+			if err := c.SendErrorSignalFailedToOpenTCPPort(); err != nil {
+				c.Logger.Error().Err(err).Msg("failed to send FailedToOpenTCPPort signal")
+			}
+			return err
+		}
+		err = c.SendInfoTCPPortOpened(openedPort)
+		if err != nil {
+			c.Logger.Error().Err(err).Msg("failed to send Info signal")
+			return err
+		}
+	}
+
+	// remove old tcp listeners that are no longer needed
+	var oldServiceIndexes []uint16
+	cli.tcpListeners.Range(func(key, value any) bool {
+		si := key.(uint16)
+		_, ok := o.ports[si]
+		if !ok {
+			oldServiceIndexes = append(oldServiceIndexes, si)
+		}
+		return true
+	})
+	for _, si := range oldServiceIndexes {
+		value, loaded := cli.tcpListeners.LoadAndDelete(si)
+		if loaded {
+			listener := value.(*tcpListener)
+			_ = listener.Close()
+		}
+	}
+	return
 }
