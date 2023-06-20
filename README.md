@@ -1,18 +1,31 @@
 # GT
 
-Focus on high-performance, low-latency intranet penetration solutions.
+GT is an open source reverse proxy project that supports peer-to-peer (P2P) and Internet relay.
 
-- Supports forwarding of TCP-based communication protocols such as HTTP(S), WebSocket(S), SSH, SMB, etc.
-- Supports WebRTC peer-to-peer connection
-- Supports log reporting to Sentry service
-- Multi-user configurations
-  - Support multiple user authentication methods: API service, local configuration
-  - Independent configuration for each user
-  - Limit user speed
-  - Limit the number of client connections
-  - Deny access for a period of time after a certain number of failed authentication attempts
-- Uses TCP connection pooling for communication between server and client
-- Keep command line parameters consistent with yaml configuration parameters
+It has the following design features:
+
+- Focus on privacy protection , in the case of ensuring that meet the needs of functional implementation , minimize the
+  server side of the packet analysis , for example : the implementation of TCP-based connection , the application layer
+  HTTP protocol transmission only analyze the target data of the HTTP protocol header of the first packet , without any
+  redundant analysis , the subsequent data will be forwarded directly .
+- Performance-oriented, code implementations tend to use higher performance designs, e.g. modifying the standard library
+  to achieve a design solution that reduces memory allocation and replication.
+- WebRTC-based implementation of peer-to-peer connectivity, supporting all platforms that support WebRTC, e.g. iOS,
+  Android, browsers, etc.
+
+The main features that have been implemented so far:
+
+- Support for TCP-based communication protocols such as HTTP(S), WebSocket(S), SSH, SMB, etc.
+- Support for WebRTC peer-to-peer connections.
+- Multi-user functionalities.
+  - Support for multiple user authentication methods: API services, local configuration.
+  - Individual configuration for each user.
+  - Limit user speed.
+  - Limit the number of client connections.
+  - Deny access for a certain period of time after a certain number of failed authentication attempts.
+- TCP connection pooling for communication between server and client.
+- Keep command line arguments consistent with yaml configuration parameters.
+- Support logging to the Sentry service.
 
 ## Index
 
@@ -724,15 +737,19 @@ The compiled executable file is in the release directory.
 
 ## Contribution Guidelines
 
-Contributions to this project are very welcome. Here are some guidelines and suggestions to help you get involved in the project.
+Contributions to this project are very welcome. Here are some guidelines and suggestions to help you get involved in the
+project.
 
 ### Contributing Code
 
-If you want to contribute to the project, the best way is to submit code. Before submitting code, please ensure that you have downloaded and familiarized yourself with the project code repository, and that your code adheres to the following guidelines:
+If you want to contribute to the project, the best way is to submit code. Before submitting code, please ensure that you
+have downloaded and familiarized yourself with the project code repository, and that your code adheres to the following
+guidelines:
 
 - The code should be as concise as possible, and easy to maintain and expand.
 - The code should follow the naming convention agreed by the project to ensure the consistency of the code.
-- The code should follow the code style guide of the project, and you can refer to the existing code in the project code library.
+- The code should follow the code style guide of the project, and you can refer to the existing code in the project code
+  library.
 
 If you want to submit code to the project, you can do so by following these steps:
 
@@ -752,7 +769,8 @@ We attach great importance to the quality of the code, so the code you submit sh
 
 ### Submit Information
 
-Before committing code, please ensure that you provide a meaningful and detailed commit message. This helps us better understand your code contribution and merge it more quickly.
+Before committing code, please ensure that you provide a meaningful and detailed commit message. This helps us better
+understand your code contribution and merge it more quickly.
 
 Submission information should include the following:
 
@@ -760,11 +778,14 @@ Submission information should include the following:
 - Describe the content or changes of this code contribution.
 - (Optional) Describe the test methods or results of this code contribution.
 
-The submission information should be clear and consistent with the submission information agreement of the project code base.
+The submission information should be clear and consistent with the submission information agreement of the project code
+base.
 
 ### Problem Reporting
 
-If you encounter problems with the project, or find bugs, please submit an issue report to us. Before submitting an issue report, please ensure that you have thoroughly investigated and experimented with the issue and include as much of the following information as possible:
+If you encounter problems with the project, or find bugs, please submit an issue report to us. Before submitting an
+issue report, please ensure that you have thoroughly investigated and experimented with the issue and include as much of
+the following information as possible:
 
 - Describe the symptoms and manifestations of the problem.
 - Describe the scenario and conditions under which the problem occurred.
@@ -776,7 +797,9 @@ Issue reports should be clear and follow the issue reporting conventions of the 
 
 ### Feature Request
 
-If you want to add new functionality or features to the project, you are welcome to submit a feature request to us. Before submitting a feature request, please make sure you understand the history and current state of the project, and provide as much of the following information as possible:
+If you want to add new functionality or features to the project, you are welcome to submit a feature request to us.
+Before submitting a feature request, please make sure you understand the history and current state of the project, and
+provide as much of the following information as possible:
 
 - Describe the functionality or features you would like to add.
 - Describe the purpose and purpose of this function or feature.
@@ -786,7 +809,9 @@ Feature requests should be clear and follow the feature request conventions of t
 
 ### Thanks for your contribution
 
-Finally, thank you for your contribution to this project. We welcome contributions in all forms, including but not limited to code contributions, issue reports, feature requests, documentation writing, etc. We believe that with your help, this project will become more perfect and stronger.
+Finally, thank you for your contribution to this project. We welcome contributions in all forms, including but not
+limited to code contributions, issue reports, feature requests, documentation writing, etc. We believe that with your
+help, this project will become more perfect and stronger.
 
 ### Contributors
 
