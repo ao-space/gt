@@ -19,18 +19,24 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
-var position uint32 // 用于需要存储位置的变量存储相对位置信息
+var position atomic.Uint32 // 用于需要存储位置的变量存储相对位置信息
+var positionMtx sync.Mutex
 
 // ParseFlags parses args and sets the result to config and options.
 func ParseFlags(args []string, config, options interface{}) error {
 	if len(args) < 2 {
 		return nil
 	}
+	positionMtx.Lock()
+	defer positionMtx.Unlock()
+	position.Store(0)
 
 	flagSet, n2fi, configPath := registerFlags(args[0], options)
 	err := flagSet.Parse(args[1:])

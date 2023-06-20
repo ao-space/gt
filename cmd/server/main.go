@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/isrc-cas/gt/server"
 	"github.com/rs/zerolog/log"
@@ -40,5 +41,9 @@ func main() {
 	select {
 	case sig := <-osSig:
 		s.Logger.Info().Str("signal", sig.String()).Msg("received os signal")
+		time.AfterFunc(3*time.Minute, func() {
+			os.Exit(0)
+		})
+		s.Shutdown()
 	}
 }

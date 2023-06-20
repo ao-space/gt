@@ -20,6 +20,7 @@ import (
 	"net"
 	"regexp"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/isrc-cas/gt/config"
@@ -63,7 +64,8 @@ type Options struct {
 	HostRegex         config.Slice[string] `yaml:"hostRegex" usage:"The host prefix started by user must conform to one of these rules"`
 	HostWithID        bool                 `yaml:"hostWithID" usage:"The prefix of host will become the form of id-host"`
 
-	HTTPMUXHeader string `yaml:"httpMUXHeader" usage:"The http multiplexing header to be used"`
+	HTTPMUXHeader       string `yaml:"httpMUXHeader" usage:"The http multiplexing header to be used"`
+	MaxHandShakeOptions uint16 `yaml:"maxHandShakeOptions" usage:"The max number of hand shake options"`
 
 	Timeout                        time.Duration `yaml:"timeout" usage:"The timeout of connections. Supports values like '30s', '5m'"`
 	TimeoutOnUnidirectionalTraffic bool          `yaml:"timeoutOnUnidirectionalTraffic" usage:"Timeout will happens when traffic is unidirectional"`
@@ -112,7 +114,10 @@ func defaultConfig() Config {
 			Connections:       10,
 			ReconnectTimes:    3,
 			ReconnectDuration: 5 * time.Minute,
-			HostNumber:        1,
+
+			HostNumber: 0,
+
+			MaxHandShakeOptions: 30,
 		},
 	}
 }
@@ -122,19 +127,19 @@ type tcp struct {
 	Range  string
 	Number uint16
 
-	PortRange *util.PortRange `yaml:"-"`
+	PortRange util.PortRange `yaml:"-"`
 
-	usedPort uint32
+	usedPort atomic.Int32
 }
 
 func (t *tcp) openTCPPort(tcpPort uint16) (listener net.Listener, err error) {
-	if t.usedPort >= uint32(t.Number) {
+	if t.usedPort.Load() >= int32(t.Number) {
 		return nil, connection.ErrFailedToOpenTCPPort
 	}
 
 	listener, err = net.Listen("tcp", ":"+strconv.Itoa(int(tcpPort)))
 	if err == nil {
-		t.usedPort++ // 只在单线程中调用，不需要加锁
+		t.usedPort.Add(1)
 	}
 	return
 }
@@ -209,13 +214,20 @@ func (u *users) empty() (empty bool) {
 	return
 }
 
-func (u *users) auth(id string, secret string) (ok bool) {
+func (u *users) auth(id string, secret string) (result user, err error) {
 	value, ok := u.Load(id)
 	if !ok {
+		err = ErrInvalidUser
 		return
 	}
-	ud, ok := value.(user)
-	ok = ok && ud.Secret == secret
+	result, ok = value.(user)
+	if !ok {
+		err = ErrInvalidUser
+		return
+	}
+	if result.Secret != secret {
+		err = ErrInvalidUser
+	}
 	return
 }
 
@@ -230,6 +242,5 @@ type host struct {
 	RegexStr *config.Slice[string] `yaml:"regex"`
 	Regex    *[]*regexp.Regexp     `yaml:"-"`
 	WithID   *bool                 `yaml:"withID"`
-
-	usedHost uint32
+	Prefixes map[string]struct{}   `yaml:"-"`
 }

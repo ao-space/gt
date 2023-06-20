@@ -134,7 +134,7 @@ func (c *Client) tcpForwardStart(dialer dialer) {
 
 func (c *Client) createPeerConnections(dialer dialer) (getPeerConnection func() *webrtc.PeerConnection, err error) {
 	var peerConnections []*webrtc.PeerConnection
-	for i := uint(0); i < c.config.TCPForwardConnections; i++ {
+	for i := uint(0); i < c.Config().TCPForwardConnections; i++ {
 		var peerConnection *webrtc.PeerConnection
 		peerConnection, err = c.createPeerConnection(dialer)
 		if err != nil {
@@ -245,7 +245,7 @@ func (c *Client) createPeerConnection(dialer dialer) (peerConnection *webrtc.Pee
 			ExpectContinueTimeout: 1 * time.Second,
 		},
 	}
-	req, err := http.NewRequest("XP", "http://"+c.config.TCPForwardHostPrefix+".example.com", nil)
+	req, err := http.NewRequest("XP", "http://"+c.Config().TCPForwardHostPrefix+".example.com", nil)
 	if err != nil {
 		return
 	}

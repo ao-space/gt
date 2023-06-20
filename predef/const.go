@@ -57,6 +57,8 @@ var (
 	OpenTCPPort         = []byte{1}
 	OptionAndNextOption = []byte{2}
 	OpenHost            = []byte{3}
+	IDAsTLSHostPrefix   = []byte{4}
+	OpenTLSHost         = []byte{5}
 )
 
 // MagicNumber 常量数字，见 https://en.wikipedia.org/wiki/Magic_number_(programming)

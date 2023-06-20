@@ -72,7 +72,7 @@ func TestUser(t *testing.T) {
 		{
 			Range:  "1-1",
 			Number: 11,
-			PortRange: &util.PortRange{
+			PortRange: util.PortRange{
 				Min: 1,
 				Max: 1,
 			},
@@ -80,7 +80,7 @@ func TestUser(t *testing.T) {
 		{
 			Range:  "2-2",
 			Number: 2,
-			PortRange: &util.PortRange{
+			PortRange: util.PortRange{
 				Min: 2,
 				Max: 2,
 			},
@@ -88,7 +88,7 @@ func TestUser(t *testing.T) {
 		{
 			Range:  "7-7",
 			Number: 7,
-			PortRange: &util.PortRange{
+			PortRange: util.PortRange{
 				Min: 7,
 				Max: 7,
 			},
@@ -96,7 +96,7 @@ func TestUser(t *testing.T) {
 		{
 			Range:  "8-8",
 			Number: 8,
-			PortRange: &util.PortRange{
+			PortRange: util.PortRange{
 				Min: 8,
 				Max: 8,
 			},
@@ -129,7 +129,7 @@ func TestUser(t *testing.T) {
 			{
 				Range:  "5-5",
 				Number: 5,
-				PortRange: &util.PortRange{
+				PortRange: util.PortRange{
 					Min: 5,
 					Max: 5,
 				},
@@ -137,7 +137,7 @@ func TestUser(t *testing.T) {
 			{
 				Range:  "6-6",
 				Number: 6,
-				PortRange: &util.PortRange{
+				PortRange: util.PortRange{
 					Min: 6,
 					Max: 6,
 				},
@@ -157,7 +157,7 @@ func TestUser(t *testing.T) {
 			{
 				Range:  "3-3",
 				Number: 3,
-				PortRange: &util.PortRange{
+				PortRange: util.PortRange{
 					Min: 3,
 					Max: 3,
 				},
@@ -165,7 +165,7 @@ func TestUser(t *testing.T) {
 			{
 				Range:  "4-4",
 				Number: 4,
-				PortRange: &util.PortRange{
+				PortRange: util.PortRange{
 					Min: 4,
 					Max: 4,
 				},

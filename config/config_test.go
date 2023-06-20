@@ -153,41 +153,41 @@ func TestPositionFromCommandLine(t *testing.T) {
 				BoolPositionSlice: PositionSlice[bool]{
 					{
 						Value:    true,
-						Position: 0,
+						Position: 1,
 					},
 					{
 						Value:    false,
-						Position: 1,
+						Position: 2,
 					},
 				},
 				DurationPositionSlice: PositionSlice[time.Duration]{
 					{
 						Value:    1 * time.Second,
-						Position: 2,
+						Position: 3,
 					},
 					{
 						Value:    2 * time.Second,
-						Position: 3,
+						Position: 4,
 					},
 				},
 				StringPositionSlice: PositionSlice[string]{
 					{
 						Value:    "abc",
-						Position: 4,
+						Position: 5,
 					},
 					{
 						Value:    "def",
-						Position: 5,
+						Position: 6,
 					},
 				},
 				Uint16PositionSlice: PositionSlice[uint16]{
 					{
 						Value:    1,
-						Position: 6,
+						Position: 7,
 					},
 					{
 						Value:    2,
-						Position: 7,
+						Position: 8,
 					},
 				},
 			},

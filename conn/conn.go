@@ -116,23 +116,28 @@ const (
 	ErrorSignal
 	// InfoSignal is a signal used for information
 	InfoSignal
+	// ServicesSignal is a signal used for services changes
+	ServicesSignal
 
 	// PreservedSignal is a signal used for preserved signals
 	PreservedSignal Signal = math.MaxUint32 - 3000
 )
 
 var (
-	pingBytes                        = []byte{0xFF, 0xFF, 0xFF, 0xFF}
-	closeBytes                       = []byte{0xFF, 0xFF, 0xFF, 0xFE}
-	forceCloseBytes                  = []byte{0xFF, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFF, 0xFE}
-	readyBytes                       = []byte{0xFF, 0xFF, 0xFF, 0xFD}
-	errInvalidIDAndSecretBytes       = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x01}
-	errFailedToOpenTCPPortBytes      = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x02}
-	errReachedTheMaxConnectionsBytes = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x03}
-	errHostNumberLimitedBytes        = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x04}
-	errHostConflictBytes             = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x05}
-	errHostRegexMismatchBytes        = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x06}
-	infoTCPPortOpened                = []byte{0xFF, 0xFF, 0xFF, 0xFB, 0x00, 0x01}
+	pingBytes                              = []byte{0xFF, 0xFF, 0xFF, 0xFF}
+	closeBytes                             = []byte{0xFF, 0xFF, 0xFF, 0xFE}
+	forceCloseBytes                        = []byte{0xFF, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFF, 0xFE}
+	readyBytes                             = []byte{0xFF, 0xFF, 0xFF, 0xFD}
+	errInvalidIDAndSecretBytes             = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x01}
+	errFailedToOpenTCPPortBytes            = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x02}
+	errReachedTheMaxConnectionsBytes       = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x03}
+	errHostNumberLimitedBytes              = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x04}
+	errHostConflictBytes                   = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x05}
+	errHostRegexMismatchBytes              = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x06}
+	errDifferentConfigClientConnectedBytes = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x07}
+	errReachedMaxOptionsBytes              = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x08}
+	infoTCPPortOpened                      = []byte{0xFF, 0xFF, 0xFF, 0xFB, 0x00, 0x01}
+	ServicesBytes                          = []byte{0xFF, 0xFF, 0xFF, 0xFA}
 )
 
 // Error represents a specific error signal
@@ -144,7 +149,7 @@ func (e Error) Error() string {
 		return "invalid id and secret"
 	case ErrFailedToOpenTCPPort:
 		return "failed to open tcp port"
-	case ErrReachedTheMaxConnections:
+	case ErrReachedMaxConnections:
 		return "reached the max connections"
 	case ErrHostNumberLimited:
 		return "host number limited"
@@ -152,6 +157,10 @@ func (e Error) Error() string {
 		return "host conflict"
 	case ErrHostRegexMismatch:
 		return "host regex mismatch"
+	case ErrDifferentConfigClientConnected:
+		return "another client that with different config already connected"
+	case ErrReachedMaxOptions:
+		return "reached the max options"
 	}
 	return "unknown error"
 }
@@ -162,14 +171,18 @@ const (
 	ErrInvalidIDAndSecret
 	// ErrFailedToOpenTCPPort represents failed to open tcp port
 	ErrFailedToOpenTCPPort
-	// ErrReachedTheMaxConnections represents reached the max connections
-	ErrReachedTheMaxConnections
+	// ErrReachedMaxConnections represents reached the max connections
+	ErrReachedMaxConnections
 	// ErrHostNumberLimited represents host number limited
 	ErrHostNumberLimited
 	// ErrHostConflict represents host conflict
 	ErrHostConflict
 	// ErrHostRegexMismatch represents host regex mismatch
 	ErrHostRegexMismatch
+	// ErrDifferentConfigClientConnected represents a client that with different config already connected
+	ErrDifferentConfigClientConnected
+	// ErrReachedMaxOptions represents reached the max options
+	ErrReachedMaxOptions
 )
 
 // Info represents a specific information signal
@@ -232,6 +245,12 @@ func (c *Connection) SendReadySignal() (err error) {
 	return
 }
 
+// SendServicesSignal sends services signal to the other side
+func (c *Connection) SendServicesSignal() (err error) {
+	_, err = c.Write(ServicesBytes)
+	return
+}
+
 // SendErrorSignalInvalidIDAndSecret sends InvalidIDAndSecret signal to the other side
 func (c *Connection) SendErrorSignalInvalidIDAndSecret() (err error) {
 	_, err = c.Write(errInvalidIDAndSecretBytes)
@@ -246,13 +265,13 @@ func (c *Connection) SendErrorSignalFailedToOpenTCPPort() (err error) {
 
 // SendInfoTCPPortOpened sends InfoTCPPortOpened signal to the other side
 func (c *Connection) SendInfoTCPPortOpened(tcpPort uint16) (err error) {
-	wirteBuf := append(infoTCPPortOpened, byte(tcpPort>>8), byte(tcpPort))
-	_, err = c.Write(wirteBuf)
+	writeBuf := append(infoTCPPortOpened, byte(tcpPort>>8), byte(tcpPort))
+	_, err = c.Write(writeBuf)
 	return
 }
 
-// SendErrorSignalReachedTheMaxConnections sends ReachedTheMaxConnections signal to the other side
-func (c *Connection) SendErrorSignalReachedTheMaxConnections() (err error) {
+// SendErrorSignalReachedMaxConnections sends ReachedMaxConnections signal to the other side
+func (c *Connection) SendErrorSignalReachedMaxConnections() (err error) {
 	_, err = c.Write(errReachedTheMaxConnectionsBytes)
 	return
 }
@@ -272,5 +291,17 @@ func (c *Connection) SendErrorSignalHostConflict() (err error) {
 // SendErrorSignalHostRegexMismatch sends HostRegexMismatch signal to the other side
 func (c *Connection) SendErrorSignalHostRegexMismatch() (err error) {
 	_, err = c.Write(errHostRegexMismatchBytes)
+	return
+}
+
+// SendErrorSignalDifferentConfigClientConnected sends DifferentConfigClientConnected signal to the other side
+func (c *Connection) SendErrorSignalDifferentConfigClientConnected() (err error) {
+	_, err = c.Write(errDifferentConfigClientConnectedBytes)
+	return
+}
+
+// SendErrorSignalReachedMaxOptions sends ReachedMaxOptions signal to the other side
+func (c *Connection) SendErrorSignalReachedMaxOptions() (err error) {
+	_, err = c.Write(errReachedMaxOptionsBytes)
 	return
 }
