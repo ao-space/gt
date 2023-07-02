@@ -20,10 +20,10 @@ ENV CI_COMMIT_SHA=${CI_COMMIT_SHA}
 ENV CI_PIPELINE_ID=${CI_PIPELINE_ID}
 ENV TZ=Asia/Shanghai
 
-RUN sed -i "s/deb.debian.org/mirrors.aliyun.com/g" /etc/apt/sources.list && sed -i "s/security.debian.org/mirrors.aliyun.com/g" /etc/apt/sources.list
 RUN apt update && DEBIAN_FRONTEND=noninteractive TZ=Asia/Shanghai apt-get -y install tzdata ca-certificates && rm -rf /var/lib/apt/lists/*
 
-COPY release/server /usr/bin
+COPY release/*-server /
+RUN cp /linux-`arch`-server /usr/bin/server && rm -rf /*-server
 COPY entrypoint-server.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh
 
