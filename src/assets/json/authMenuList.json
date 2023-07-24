@@ -1,0 +1,78 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "path": "/home/index",
+      "name": "home",
+      "component": "/home/index",
+      "meta": {
+        "icon": "HomeFilled",
+        "title": "首页",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": true,
+        "isKeepAlive": true
+      }
+    },
+    {
+      "path": "/about/index",
+      "name": "about",
+      "component": "/about/index",
+      "meta": {
+        "icon": "InfoFilled",
+        "title": "关于项目",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
+      "path": "/config/index",
+      "name": "config",
+      "redirect": "/config/children",
+      "meta": {
+        "icon": "Setting",
+        "title": "配置项目",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      },
+      "children": [
+        {
+          "path": "/config/client",
+          "name": "client",
+          "component": "/config/ClientConfig/index",
+          "meta": {
+            "icon": "Connection",
+            "title": "配置客户端",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/config/server",
+          "name": "server",
+          "component": "/config/ServerConfig/index",
+          "meta": {
+            "icon": "Connection",
+            "title": "配置服务端",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        }
+      ]
+    }
+  ],
+  "msg": "成功"
+}
