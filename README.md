@@ -281,22 +281,22 @@ options:
   remote: tcp://id1.example.com:8080
 ```
 
-## Parameters
+## Usage
 
-### Client Parameters
+### Client Command-line Arguments
 
 ```shell
 # ./release/linux-amd64-client -h
 Usage of ./release/linux-amd64-client:
   -config string
         The config file path to load
-  -hostPrefix
+  -hostPrefix value
         The server will recognize this host prefix and forward data to local
   -id string
         The unique id used to connect to server. Now it's the prefix of the domain.
-  -local
+  -local value
         The local service url
-  -localTimeout
+  -localTimeout value
         The timeout of local connections. Supports values like '30s', '5m'
   -logFile string
         Path to save the log file
@@ -322,12 +322,14 @@ Usage of ./release/linux-amd64-client:
         The number of idle server connections kept in the pool (default 1)
   -remoteSTUN string
         The remote STUN server address
-  -remoteTCPPort
+  -remoteTCPPort value
         The TCP port that the remote server will open
   -remoteTCPRandom
         Whether to choose a random tcp port by the remote server
   -remoteTimeout duration
         The timeout of remote connections. Supports values like '30s', '5m' (default 45s)
+  -s string
+        Send signal to client processes. Supports values: reload, restart, stop, kill
   -secret string
         The secret used to verify the id
   -sentryDSN string
@@ -336,7 +338,7 @@ Usage of ./release/linux-amd64-client:
         Sentry debug mode, the debug information is printed to help you understand what sentry is doing
   -sentryEnvironment string
         Sentry environment to be sent with events
-  -sentryLevel
+  -sentryLevel value
         Sentry levels: trace, debug, info, warn, error, fatal, panic (default ["error", "fatal", "panic"])
   -sentryRelease string
         Sentry release to be sent with events
@@ -364,7 +366,7 @@ Usage of ./release/linux-amd64-client:
         The min port of WebRTC peer connection
 ```
 
-### Server Parameters
+### Server Command-line Arguments
 
 ```shell
 # ./release/linux-amd64-server -h
