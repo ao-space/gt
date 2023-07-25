@@ -262,6 +262,9 @@
 import { ElMessage } from "element-plus";
 import { computed, reactive, ref } from "vue";
 import { ClientConfig } from "./interface";
+// import http from "@/api";
+import yaml from "js-yaml";
+import axios from "axios";
 
 const inputRemote = ref("");
 const selectRemote = ref("tcp://");
@@ -339,8 +342,27 @@ const clientConfig = reactive<ClientConfig.Config>({
   Options: options
 });
 
-const onSubmit = () => {
-  ElMessage.success("提交的数据为 : " + JSON.stringify(clientConfig));
+// const clientConfigApi = (params: ClientConfig.Config) => {
+//   return http.post("/config/client", params);
+// };
+
+const onSubmit = async () => {
+  const json1 = JSON.stringify(clientConfig);
+  console.log(json1);
+  const yamlData = yaml.dump(clientConfig);
+  console.log(yamlData);
+  try {
+    const response = await axios.post("/api/config/client", yamlData, {
+      headers: {
+        "Content-Type": "application/x-yaml"
+      }
+    });
+    console.log(response);
+  } catch (e) {
+    console.log(e);
+  }
+  // const { data } = await clientConfigApi({ ...clientConfig });
+  // console.log(data);
 };
 </script>
 
