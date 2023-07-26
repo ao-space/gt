@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  EULIX_REGISTRY: ${{ secrets.EULIX_REGISTRY }}
+  EULIX_REGISTRY: hub.eulix.xyz
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
