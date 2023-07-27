@@ -6,11 +6,17 @@
     <el-descriptions :column="2" :border="true">
       <template #title> General Setting </template>
       <el-descriptions-item>
-        <template #label> ID </template>
-        <el-input v-model="options.ID"></el-input>
+        <template #label>
+          ID
+          <UsageTooltip :usage-text="ClientConfig.usage['ID']" />
+        </template>
+        <el-input width="100px" v-model="options.ID"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label>Secret</template>
+        <template #label>
+          Secret
+          <UsageTooltip :usage-text="ClientConfig.usage['Secret']" />
+        </template>
         <el-input v-model="options.Secret" type="password" show-password></el-input>
       </el-descriptions-item>
     </el-descriptions>
@@ -18,18 +24,27 @@
     <!-- ReconnectDelay And  RemoteTimeout-->
     <el-descriptions :column="2" :border="true">
       <el-descriptions-item>
-        <template #label> ReconnectDelay </template>
+        <template #label>
+          ReconnectDelay
+          <UsageTooltip :usage-text="ClientConfig.usage['ReconnectDelay']" />
+        </template>
         <el-input v-model="options.ReconnectDelay"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> RemoteTimeout</template>
+        <template #label>
+          RemoteTimeout
+          <UsageTooltip :usage-text="ClientConfig.usage['RemoteTimeout']" />
+        </template>
         <el-input v-model="options.RemoteTimeout"></el-input>
       </el-descriptions-item>
     </el-descriptions>
     <!-- Remote Setting -->
     <el-descriptions :border="true">
       <el-descriptions-item>
-        <template #label> Remote</template>
+        <template #label>
+          Remote
+          <UsageTooltip :usage-text="ClientConfig.usage['Remote']" />
+        </template>
         <el-input v-model="inputRemote" placeholder="Please input">
           <template #prepend>
             <el-select v-model="selectRemote" style="width: 115px">
@@ -39,31 +54,52 @@
         </el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label>RemoteSTUN </template>
+        <template #label>
+          RemoteSTUN
+          <UsageTooltip :usage-text="ClientConfig.usage['RemoteSTUN']" />
+        </template>
         <el-input v-model="options.RemoteSTUN"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label>RemoteAPI </template>
+        <template #label>
+          RemoteAPI
+          <UsageTooltip :usage-text="ClientConfig.usage['RemoteAPI']" />
+        </template>
         <el-input v-model="options.RemoteAPI"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label>RemoteCert </template>
+        <template #label>
+          RemoteCert
+          <UsageTooltip :usage-text="ClientConfig.usage['RemoteCert']" />
+        </template>
         <el-input v-model="options.RemoteCert"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label>RemoteCertInsecure </template>
+        <template #label>
+          RemoteCertInsecure
+          <UsageTooltip :usage-text="ClientConfig.usage['RemoteCertInsecure']" />
+        </template>
         <el-switch v-model="options.RemoteCertInsecure" active-text="true" inactive-text="false" />
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label>RemoteConnections </template>
+        <template #label>
+          RemoteConnections
+          <UsageTooltip :usage-text="ClientConfig.usage['RemoteConnections']" />
+        </template>
         <el-input-number v-model="options.RemoteConnections" :min="1" :max="10" />
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label>RemoteIdleConnections </template>
+        <template #label>
+          RemoteIdleConnections
+          <UsageTooltip :usage-text="ClientConfig.usage['RemoteIdleConnections']" />
+        </template>
         <el-input-number v-model="options.RemoteIdleConnections" :min="0" :max="options.RemoteConnections" />
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label>Version </template>
+        <template #label>
+          Version
+          <UsageTooltip :usage-text="ClientConfig.usage['Version']" />
+        </template>
         <el-switch v-model="options.Version" active-text="true" inactive-text="false" />
       </el-descriptions-item>
     </el-descriptions>
@@ -74,11 +110,17 @@
     <el-descriptions :border="true">
       <template #title> Sentry Setting </template>
       <el-descriptions-item>
-        <template #label> SentryDSN </template>
+        <template #label>
+          SentryDSN
+          <UsageTooltip :usage-text="ClientConfig.usage['SentryDSN']" />
+        </template>
         <el-input v-model="options.SentryDSN"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> SentryLevel</template>
+        <template #label>
+          SentryLevel
+          <UsageTooltip :usage-text="ClientConfig.usage['SentryLevel']" />
+        </template>
         <el-checkbox-group v-model="options.SentryLevel">
           <el-checkbox label="trace"></el-checkbox>
           <el-checkbox label="debug"></el-checkbox>
@@ -92,23 +134,39 @@
     </el-descriptions>
     <el-descriptions :border="true">
       <el-descriptions-item>
-        <template #label> SentrySampleRate </template>
+        <template #label>
+          SentrySampleRate
+          <UsageTooltip :usage-text="ClientConfig.usage['SentrySampleRate']" />
+        </template>
         <el-slider v-model="options.SentrySampleRate" :step="0.1" :min="0" :max="1" show-input></el-slider>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> SentryRelease </template>
+        <template #label>
+          SentryRelease
+          <UsageTooltip :usage-text="ClientConfig.usage['SentryRelease']" />
+        </template>
         <el-input v-model="options.SentryRelease"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> SentryEnvironment </template>
+        <template #label>
+          SentryEnvironment
+          <UsageTooltip :usage-text="ClientConfig.usage['SentryEnvironment']" />
+        </template>
         <el-input v-model="options.SentryEnvironment"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> SentryServerName </template>
+        <template #label>
+          SentryServerName
+
+          <UsageTooltip :usage-text="ClientConfig.usage['SentryServerName']" />
+        </template>
         <el-input v-model="options.SentryServerName"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> SentryDebug </template>
+        <template #label>
+          SentryDebug
+          <UsageTooltip :usage-text="ClientConfig.usage['SentryDebug']" />
+        </template>
         <el-switch v-model="options.SentryDebug" active-text="true" inactive-text="false" />
       </el-descriptions-item>
     </el-descriptions>
@@ -119,11 +177,17 @@
     <el-descriptions :border="true">
       <template #title> WebRTC Setting </template>
       <el-descriptions-item>
-        <template #label> WebRTCConnectionIdleTimeout </template>
+        <template #label>
+          WebRTCConnectionIdleTimeout
+          <UsageTooltip :usage-text="ClientConfig.usage['WebRTCConnectionIdleTimeout']" />
+        </template>
         <el-input v-model="options.WebRTCConnectionIdleTimeout"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> WebRTCLogLevel</template>
+        <template #label>
+          WebRTCLogLevel
+          <UsageTooltip :usage-text="ClientConfig.usage['WebRTCLogLevel']" />
+        </template>
         <!-- TODO:美化代码 -->
         <el-select v-model="options.WebRTCLogLevel" placeholder="Select log level">
           <el-option label="verbose" value="verbose"></el-option>
@@ -133,30 +197,45 @@
         </el-select>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> WebRTCMinPort </template>
+        <template #label>
+          WebRTCMinPort
+          <UsageTooltip :usage-text="ClientConfig.usage['WebRTCMinPort']" />
+        </template>
         <el-input-number v-model="options.WebRTCMinPort" :min="0" :max="65535" />
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> WebRTCMaxPort </template>
+        <template #label>
+          WebRTCMaxPort
+          <UsageTooltip :usage-text="ClientConfig.usage['WebRTCMaxPort']" />
+        </template>
         <el-input-number v-model="options.WebRTCMaxPort" :min="0" :max="65535" />
       </el-descriptions-item>
     </el-descriptions>
   </div>
-  <!-- TCP Setting -->
+  <!-- TCPForward Setting -->
   <div class="card content-box">
     <!-- TCP -->
     <el-descriptions :border="true">
-      <template #title> TCP Setting </template>
+      <template #title> TCPForward Setting</template>
       <el-descriptions-item>
-        <template #label> TcpForwardAddr </template>
+        <template #label>
+          TcpForwardAddr
+          <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardAddr']" />
+        </template>
         <el-input v-model="options.TCPForwardAddr"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> TcpForwardHostPrefix</template>
+        <template #label>
+          TcpForwardHostPrefix
+          <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardHostPrefix']" />
+        </template>
         <el-input v-model="options.TCPForwardHostPrefix"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> TcpForwardConnections </template>
+        <template #label>
+          TcpForwardConnections
+          <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardConnections']" />
+        </template>
         <el-input-number v-model="options.TCPForwardConnections" :min="1" :max="10" />
       </el-descriptions-item>
     </el-descriptions>
@@ -167,19 +246,31 @@
     <el-descriptions :border="true">
       <template #title> Log Setting </template>
       <el-descriptions-item>
-        <template #label> LogFile </template>
+        <template #label>
+          LogFile
+          <UsageTooltip :usage-text="ClientConfig.usage['LogFile']" />
+        </template>
         <el-input v-model="options.LogFile"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> LogFileMaxSize</template>
+        <template #label>
+          LogFileMaxSize
+          <UsageTooltip :usage-text="ClientConfig.usage['LogFileMaxSize']" />
+        </template>
         <el-input-number v-model="options.LogFileMaxSize" :min="0" :max="100" />
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> LogFileMaxCount </template>
+        <template #label>
+          LogFileMaxCount
+          <UsageTooltip :usage-text="ClientConfig.usage['LogFileMaxCount']" />
+        </template>
         <el-input-number v-model="options.LogFileMaxCount" :min="0" :max="100" />
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> LogLevel </template>
+        <template #label>
+          LogLevel
+          <UsageTooltip :usage-text="ClientConfig.usage['LogLevel']" />
+        </template>
         <el-select v-model="options.LogLevel" placeholder="Select log level">
           <el-option label="trace" value="trace"></el-option>
           <el-option label="debug" value="debug"></el-option>
@@ -202,59 +293,49 @@
         <el-button type="danger" @click="removeService(index)">Delete</el-button>
       </template>
       <el-descriptions-item>
-        <template #label> HostPrefix </template>
+        <template #label>
+          HostPrefix
+          <UsageTooltip :usage-text="ClientConfig.usage['HostPrefix']" />
+        </template>
         <el-input v-model="service.HostPrefix"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> RemoteTCPPort </template>
+        <template #label>
+          RemoteTCPPort
+          <UsageTooltip :usage-text="ClientConfig.usage['RemoteTCPPort']" />
+        </template>
         <el-input-number v-model="service.RemoteTCPPort" :min="0" :max="65535" />
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> RemoteTCPRandom </template>
+        <template #label>
+          RemoteTCPRandom
+          <UsageTooltip :usage-text="ClientConfig.usage['RemoteTCPRandom']" />
+        </template>
         <el-switch v-model="service.RemoteTCPRandom" active-text="true" inactive-text="false" />
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> LocalURL </template>
+        <template #label>
+          LocalURL
+          <UsageTooltip :usage-text="ClientConfig.usage['LocalURL']" />
+        </template>
         <el-input v-model="service.LocalURL"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> LocalTimeout </template>
+        <template #label>
+          LocalTimeout
+          <UsageTooltip :usage-text="ClientConfig.usage['LocalTimeout']" />
+        </template>
         <el-input v-model="service.LocalTimeout"></el-input>
       </el-descriptions-item>
       <el-descriptions-item>
-        <template #label> UseLocalAsHTTPHost </template>
+        <template #label>
+          UseLocalAsHTTPHost
+          <UsageTooltip :usage-text="ClientConfig.usage['UseLocalAsHTTPHost']" />
+        </template>
         <el-switch v-model="service.UseLocalAsHTTPHost" active-text="true" inactive-text="false" />
       </el-descriptions-item>
     </el-descriptions>
   </div>
-  <!-- <div class="card content-box">
-    <el-descriptions :border="true">
-      <template #title> Setting </template>
-      <el-descriptions-item>
-        <template #label> HostPrefix </template>
-        <el-input v-model="services[0].HostPrefix"></el-input>
-      </el-descriptions-item>
-      <el-button type="primary" @click="addService">Add Service</el-button>
-    </el-descriptions>
-    <el-form>
-      <el-form-item v-for="(srv, index) in services" :key="index" :label="'Service ' + (index + 1)" :prop="'srv' + index">
-        <el-input v-model=""></el-input>
-      </el-form-item>
-    </el-form>
-    <el-button type="primary" @click="addService">Add Service</el-button>
-  </div> -->
-
-  <!-- <div class="card content-box">
-    <el-form :model="ClientConfig" label-width="140px">
-      <el-form-item v-for="(value, key) in options" :key="key" :label="key" :prop="key">
-        <el-input v-model="options[key]"></el-input>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="onSubmit"> Create </el-button>
-        <el-button>Cancel</el-button>
-      </el-form-item>
-    </el-form>
-  </div> -->
   <el-button type="primary" @click="onSubmit"> Submit</el-button>
 </template>
 
@@ -262,6 +343,7 @@
 import { ElMessage } from "element-plus";
 import { computed, reactive, ref } from "vue";
 import { ClientConfig } from "./interface";
+import UsageTooltip from "@/components/UsageTooltip/index.vue";
 // import http from "@/api";
 import yaml from "js-yaml";
 import axios from "axios";

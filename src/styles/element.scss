@@ -73,13 +73,25 @@
       border-left: 5px solid #1890ff;
     }
     .el-descriptions__label {
-      width: 150px;
+      width: 250px; //TODO: table width
+      // min-width: 200px;
+      // max-width: 200px;
+      font-size: medium;
+      text-align: center;
 
-      // background-color: yellow;
-      // text-align: center;
+      // background-color: red;
+      .el-icon {
+        vertical-align: top;
+      }
+    }
+    .el-input {
+      // width: 100%;
+      // max-width: 374px;
+
+      // width: 160px;
     }
     .el-descriptions__content {
-      // width: 160px;
+      // width: 200px;
       font-weight: 700;
 
       // background-color: yellow;
@@ -89,9 +101,7 @@
       // background: var(--el-descriptions-item-bordered-label-background);
     }
     .el-descriptions__cell {
-      width: 20px;
-
-      // background-color: red;
+      // width: 20px;
     }
   }
 }
