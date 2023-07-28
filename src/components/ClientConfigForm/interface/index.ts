@@ -105,4 +105,10 @@ export namespace ClientConfig {
 
     Version: "Show the version of this program"
   };
+  export interface RuleForm {
+    ReconnectDelay: string;
+    RemoteTimeout: string;
+    LocalTimeout: string;
+    WebRTCConnectionIdleTimeout: string;
+  }
 }

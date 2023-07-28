@@ -72,9 +72,17 @@
       font-size: xx-large;
       border-left: 5px solid #1890ff;
     }
+
+    $label-width: 300px;
+    $input-prepend-width: 25px;
+    $min-input-width: 200px;
+    $max-input-width: 350px;
     .el-descriptions__label {
-      width: 250px; //TODO: table width
-      // min-width: 200px;
+      width: $label-width;
+
+      // padding: 8 0;
+
+      // width: 250px; //TODO: table width
       // max-width: 200px;
       font-size: medium;
       text-align: center;
@@ -84,24 +92,99 @@
         vertical-align: top;
       }
     }
-    .el-input {
-      // width: 100%;
-      // max-width: 374px;
+    .el-descriptions__cell {
+      // background-color: black;
+      // width: 20px;
+    }
+    .el-descriptions__table {
+      box-sizing: border-box;
+      width: calc(100% - #{$label-width * 2}) / 2 !important;
 
-      // width: 160px;
+      // width: fit-content;
+
+      // min-width: calc(100% - #{$label-width * 2}) / 2 !important;
+      // max-width: calc(100% - #{$label-width * 2}) / 2 !important;
+
+      // background-color: red;
+    }
+
+    // .el-input.el-input--default.el-input-group.el-input-group--prepend {
+    //   position: relative;
+    //   .el-input-group__prepend {
+    //     position: absolute;
+    //     top: 0;
+    //     left: 0;
+    //     z-index: 3;
+    //     width: $input-prepend-width;
+
+    //     // background-color: red;
+    //   }
+    //   .el-input__wrapper {
+    //     // max-width: calc(100% - #{$input-prepend-width});
+    //     padding-left: $input-prepend-width + 50px;
+
+    //     // padding-left: $input-prepend-width;
+
+    //     // background-color: green;
+    //   }
+    //   .el-input__inner {
+    //     // left: $input-prepend-width;
+
+    //     // left: $input-prepend-width;
+    //     z-index: 4;
+
+    //     // position: absolute;
+    //     // width: calc(100% - #{$input-prepend-width});
+
+    //     // padding-left: $input-prepend-width;
+
+    //     // position: absolute;
+    //     // background-color: yellow;
+    //   }
+    // }
+    .el-input-group__prepend {
+      // position: absolute;
+      width: 25px;
+
+      // background-color: red;
     }
     .el-descriptions__content {
-      // width: 200px;
-      font-weight: 700;
-
-      // background-color: yellow;
-
-      // color: var(--el-text-color-regular);
-
-      // background: var(--el-descriptions-item-bordered-label-background);
+      // background-color: #1890ff;
     }
-    .el-descriptions__cell {
-      // width: 20px;
+    .el-descriptions__cell.el-descriptions__content.is-bordered-content {
+      // background-color: red;
+      // .el-input.el-input--default.el-input--suffix {
+      .el-input.el-input--default {
+        position: relative;
+
+        // width: fit-content;
+        width: 100%;
+
+        // min-width: $min-input-width;
+        max-width: $max-input-width;
+
+        // width: 50%;
+        .el-input__wrapper {
+          // width: 50%;
+          // background-color: green;
+          .el-input__inner {
+            // width: 50%;
+            // background-color: blue;
+          }
+          .el-input__suffix {
+            position: absolute;
+            top: 0;
+            right: 5px;
+
+            // background-color: yellow;
+            .el-input__suffix-inner {
+              flex: content;
+
+              // background-color: yellow;
+            }
+          }
+        }
+      }
     }
   }
 }

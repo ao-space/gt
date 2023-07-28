@@ -1,0 +1,72 @@
+// .content-box {
+//   display: flex;
+//   flex-direction: column;
+//   align-items: center;
+//   height: 100%;
+//   .text {
+//     margin: 20px 0 30px;
+//     font-size: 23px;
+//     font-weight: bold;
+//     color: var(--el-text-color-regular);
+//   }
+//   .el-descriptions {
+//     width: 100%;
+//     .el-descriptions__title {
+//       padding-left: 5px;
+//       font-size: xx-large;
+//       border-left: 5px solid #1890ff;
+//     }
+//     .el-descriptions__label {
+//       width: 250px; //TODO: table width
+//       // min-width: 200px;
+//       // max-width: 200px;
+//       font-size: medium;
+//       text-align: center;
+
+//       // background-color: red;
+//       .el-icon {
+//         vertical-align: top;
+//       }
+//     }
+//     .el-descriptions__cell.el-descriptions__content.is-bordered-content {
+//       // max-width: 400p
+//       background-color: red;
+
+//       // width: 100%;
+//       // max-width: 374px;
+//       // width: 160px;x;
+//       .el-input.el-input--default.el-input--suffix {
+//         // max-width: 400px;
+//         position: relative;
+
+//         // width: 100%;
+//         // background-color: pink;
+
+//         // max-width: 375px;
+
+//         // width: 90%;
+//         .el-input__wrapper {
+//           // width: 50%;
+//           // background-color: green;
+//           .el-input__inner {
+//             // width: 50%;
+//             // background-color: blue;
+//           }
+//           .el-input__suffix {
+//             position: absolute;
+//             top: 0;
+//             right: 0;
+
+//             // width: 70%;
+//             // background-color: yellow;
+//             .el-input__suffix-inner {
+//               // flex: content;
+
+//               // background-color: black;
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+// }
