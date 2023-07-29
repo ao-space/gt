@@ -3,6 +3,7 @@
   <el-form ref="ruleFormRef" :model="options" :rules="rules">
     <!-- General Setting -->
     <div class="card content-box">
+      <!-- <div class="card content-box"> -->
       <!-- ID And Secret -->
       <el-descriptions :column="2" :border="true">
         <template #title> General Setting </template>
@@ -348,7 +349,7 @@
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
-import { ElMessage, FormInstance, FormRules } from "element-plus";
+import { ElMessage, ElMessageBox, FormInstance, FormRules } from "element-plus";
 import { computed, reactive, ref } from "vue";
 import { ClientConfig } from "./interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
@@ -458,21 +459,34 @@ const rules = reactive<FormRules<ClientConfig.RuleForm>>({
 //   return http.post("/config/client", params);
 // };
 
+// TODO: api update
 const onSubmit = async () => {
   const json1 = JSON.stringify(clientConfig);
   console.log(json1);
   const yamlData = yaml.dump(clientConfig);
   console.log(yamlData);
-  try {
-    const response = await axios.post("/api/config/client", yamlData, {
-      headers: {
-        "Content-Type": "application/x-yaml"
+  ElMessageBox.confirm("确定要发送以下数据吗？\n" + json1, "确认发送", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "info"
+  })
+    .then(async () => {
+      try {
+        const response = await axios.post("/api/config/client", yamlData, {
+          headers: {
+            "Content-Type": "application/x-yaml;charset=utf-8"
+          }
+        });
+        console.log(response);
+        ElMessage.success("发送成功");
+      } catch (e) {
+        console.log(e);
+        ElMessage.error("发送失败");
       }
+    })
+    .catch(() => {
+      ElMessage.info("已取消发送");
     });
-    console.log(response);
-  } catch (e) {
-    console.log(e);
-  }
   // const { data } = await clientConfigApi({ ...clientConfig });
   // console.log(data);
 };

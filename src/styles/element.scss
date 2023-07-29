@@ -295,6 +295,51 @@
     margin-top: 20px;
   }
 }
+.el-tabs.el-tabs--top.el-tabs--border-card {
+  // background-color: red;
+  .el-tabs__header.is-top {
+    // background-color: blue;
+    .el-tabs__new-tab {
+      margin-right: 10px;
+
+      // background-color: yellow;
+      // background-color: lightblue;
+      .el-icon.is-icon-plus {
+        // color: red;
+        // background-color: black;
+      }
+    }
+  }
+  .el-tabs__content {
+    box-sizing: border-box;
+    width: 100%;
+
+    // background-color: green;
+    .el-tab-pane {
+      // background-color: purple;
+    }
+  }
+}
+
+// .el-tabs__header.is-top {
+//   .el-tabs__new-tab {
+//     position: absolute;
+//     right: 10px;
+
+//     // margin: 10px;
+
+//     // margin: 0 10;
+
+//     // background-color: red;
+//     .el-icon.is-icon-plus {
+//       // position: absolute;
+
+//       // right: 20px;
+
+//       // background-color: red;
+//     }
+//   }
+// }
 
 /* el-table 组件大小 */
 .el-table--small {
