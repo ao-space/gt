@@ -12,3 +12,17 @@ export function checkPhoneNumber(rule: any, value: any, callback: any) {
     return callback();
   }
 }
+
+export const validatorTimeFormat = (rule: any, value: any, callback: any) => {
+  console.log("Calling validatorTimeFormat");
+  const regex = /^(\d+(ns|us|µs|ms|s|m|h))+$/;
+  if (!value || regex.test(value)) {
+    console.log("regex test passed");
+    console.log(value);
+    callback();
+  } else {
+    console.log("regex test failed");
+    console.log(value);
+    callback(new Error("Please enter a valid time format"));
+  }
+};

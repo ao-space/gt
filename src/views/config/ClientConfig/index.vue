@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div id="target" class="card">
     <el-tabs type="border-card" v-model="activeName" editable @edit="handleTabsEdit">
       <el-tab-pane v-for="(tab, index) in tabList" :key="index" :name="tab.name">
         <template #label>
@@ -10,7 +10,6 @@
             @blur="finishEditing(tab)"
             @keyup.enter="finishEditing(tab)"
             @keydown.delete.stop
-            @keydown.backspace.stop
           />
           <span v-else @dblclick="startEditing(tab)">{{ tab.title }}</span>
         </template>

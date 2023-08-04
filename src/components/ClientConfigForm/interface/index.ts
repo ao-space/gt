@@ -5,17 +5,7 @@ export namespace ClientConfig {
     Options: Options;
   }
 
-  export interface Service {
-    HostPrefix: string;
-    RemoteTCPPort: number;
-    RemoteTCPRandom: boolean; //NOTE: don't have null
-    LocalURL: string;
-    LocalTimeout: string;
-    UseLocalAsHTTPHost: boolean;
-  }
-
-  export interface Options {
-    Config: string;
+  export interface GeneralSetting {
     ID: string;
     Secret: string;
     ReconnectDelay: string;
@@ -27,12 +17,9 @@ export namespace ClientConfig {
     RemoteConnections: number;
     RemoteIdleConnections: number;
     RemoteTimeout: string;
-    HostPrefix: string[];
-    RemoteTCPPort: number[];
-    RemoteTCPRandom: (boolean | null)[];
-    Local: string[];
-    LocalTimeout: string[];
-    UseLocalAsHTTPHost: boolean[];
+    Version: boolean;
+  }
+  export interface SentrySetting {
     SentryDSN: string;
     SentryLevel: string[];
     SentrySampleRate: number;
@@ -40,19 +27,91 @@ export namespace ClientConfig {
     SentryEnvironment: string;
     SentryServerName: string;
     SentryDebug: boolean;
+  }
+  export interface WebRTCSetting {
     WebRTCConnectionIdleTimeout: string;
     WebRTCLogLevel: string;
     WebRTCMinPort: number;
     WebRTCMaxPort: number;
+  }
+  export interface TCPForwardSetting {
     TCPForwardAddr: string;
     TCPForwardHostPrefix: string;
     TCPForwardConnections: number;
+  }
+  export interface LogSetting {
     LogFile: string;
     LogFileMaxSize: number;
     LogFileMaxCount: number;
     LogLevel: string;
-    Version: boolean;
   }
+  export interface Service {
+    HostPrefix: string;
+    RemoteTCPPort: number;
+    RemoteTCPRandom: boolean; //NOTE: don't have null
+    LocalURL: string;
+    LocalTimeout: string;
+    UseLocalAsHTTPHost: boolean;
+  }
+  export interface Options extends GeneralSetting, SentrySetting, WebRTCSetting, TCPForwardSetting, LogSetting {
+    Config: string;
+    HostPrefix: string[];
+    RemoteTCPPort: number[];
+    RemoteTCPRandom: (boolean | null)[];
+    Local: string[];
+    LocalTimeout: string[];
+    UseLocalAsHTTPHost: boolean[];
+  }
+
+  export const defaultGeneralSetting: GeneralSetting = {
+    ID: "",
+    Secret: "",
+    ReconnectDelay: "",
+    RemoteTimeout: "",
+    Remote: "",
+    RemoteSTUN: "",
+    RemoteAPI: "",
+    RemoteCert: "",
+    RemoteCertInsecure: false,
+    RemoteConnections: 1,
+    RemoteIdleConnections: 0,
+    Version: false
+  };
+  export const defaultSentrySetting: SentrySetting = {
+    SentryDSN: "",
+    SentryLevel: ["error", "fatal", "panic"],
+    SentrySampleRate: 0,
+    SentryRelease: "",
+    SentryEnvironment: "",
+    SentryServerName: "",
+    SentryDebug: false
+  };
+  export const defaultWebRTCSetting: WebRTCSetting = {
+    WebRTCConnectionIdleTimeout: "",
+    WebRTCLogLevel: "",
+    WebRTCMinPort: 0,
+    WebRTCMaxPort: 0
+  };
+  export const defaultTCPForwardSetting: TCPForwardSetting = {
+    TCPForwardAddr: "",
+    TCPForwardHostPrefix: "",
+    TCPForwardConnections: 0
+  };
+  export const defaultLogSetting: LogSetting = {
+    LogFile: "",
+    LogFileMaxSize: 0,
+    LogFileMaxCount: 0,
+    LogLevel: ""
+  };
+  export const defaultServiceSetting: Service = {
+    HostPrefix: "",
+    RemoteTCPPort: 0,
+    RemoteTCPRandom: false,
+    LocalURL: "",
+    LocalTimeout: "",
+    UseLocalAsHTTPHost: false
+  };
+
   export const usage = {
     // General Setting
     Config: "The config file path to load",
@@ -67,6 +126,7 @@ export namespace ClientConfig {
     RemoteConnections: "The max number of server connections in the pool. Valid value is 1 to 10",
     RemoteIdleConnections: "The number of idle server connections kept in the pool",
     RemoteTimeout: "The timeout of remote connections. Supports values like '30s', '5m'",
+    Version: "Show the version of this program",
 
     // Service Setting
     HostPrefix: "The server will recognize this host prefix and forward data to local",
@@ -101,10 +161,12 @@ export namespace ClientConfig {
     LogFile: "Path to save the log file",
     LogFileMaxSize: "Max size of the log files",
     LogFileMaxCount: "Max count of the log files",
-    LogLevel: "Log level: trace, debug, info, warn, error, fatal, panic, disable",
-
-    Version: "Show the version of this program"
+    LogLevel: "Log level: trace, debug, info, warn, error, fatal, panic, disable"
   };
+
+  export interface FormRef {
+    validateForm: () => Promise<void>;
+  }
   export interface RuleForm {
     ReconnectDelay: string;
     RemoteTimeout: string;
