@@ -103,15 +103,20 @@ watchEffect(() => {
 
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    sentrySettingRef.value?.validate(valid => {
-      if (valid) {
-        resolve();
-      } else {
-        reject();
-      }
-    });
+    if (sentrySettingRef.value) {
+      sentrySettingRef.value.validate(valid => {
+        if (valid) {
+          resolve();
+        } else {
+          reject(new Error("SentrySetting validation failed, please check your input"));
+        }
+      });
+    } else {
+      reject(new Error("SentrySetting is not ready"));
+    }
   });
 };
+
 defineExpose({
   validateForm
 });

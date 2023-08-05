@@ -1,15 +1,11 @@
 <template>
   <el-affix :offset="120">
     <el-tabs tab-position="right" @tab-click="handleClick">
-      <!-- <el-tab-pane v-for="(tab, index) in tabList" :key="index" :label="tab.title" :name="tab.name"> </el-tab-pane> -->
       <el-tab-pane v-for="tab in tabList" :key="tab.uuid" :label="tab.title" :name="tab.uuid"> </el-tab-pane>
     </el-tabs>
   </el-affix>
   <div v-for="tab in tabList" :key="tab.uuid" :ref="el => (tabRefs[tab.uuid] = el as HTMLDivElement)">
-    <!-- <div v-for="(tab, index) in tabList" :key="index" :ref="el => (tabRefs[tab.name] = el as HTMLDivElement)"> -->
     <slot :name="tab.uuid"></slot>
-    <!-- <slot :name="tab.name"></slot> -->
-    <!-- <slot :name="tab.title"></slot> -->
   </div>
 </template>
 
@@ -43,7 +39,6 @@ $primary-color: #1890ff;
 .el-tabs--right {
   background-color: red;
   :deep(.el-tabs__header.is-right) {
-    // todo location
     position: fixed;
     top: 50%;
     right: 30px;

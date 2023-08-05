@@ -68,16 +68,19 @@ const emit = defineEmits(["update:setting"]);
 watchEffect(() => {
   emit("update:setting", localSetting);
 });
-// TODO: validateForm是否这样书写
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    WebRTCSettingRef.value?.validate(valid => {
-      if (valid) {
-        resolve();
-      } else {
-        reject();
-      }
-    });
+    if (WebRTCSettingRef.value) {
+      WebRTCSettingRef.value.validate(valid => {
+        if (valid) {
+          resolve();
+        } else {
+          reject(new Error("WebRTC Setting validation failed, please check your input"));
+        }
+      });
+    } else {
+      reject(new Error("WebRTC Setting is not ready"));
+    }
   });
 };
 defineExpose({

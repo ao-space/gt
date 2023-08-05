@@ -88,15 +88,20 @@ watchEffect(() => {
 });
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    serviceSettingRef.value?.validate(valid => {
-      if (valid) {
-        resolve();
-      } else {
-        reject();
-      }
-    });
+    if (serviceSettingRef.value) {
+      serviceSettingRef.value.validate(valid => {
+        if (valid) {
+          resolve();
+        } else {
+          reject(new Error("Service Setting validation failed, please check your input"));
+        }
+      });
+    } else {
+      reject(new Error("Service Setting is not ready"));
+    }
   });
 };
+
 defineExpose({
   validateForm
 });

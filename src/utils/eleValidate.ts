@@ -16,7 +16,9 @@ export function checkPhoneNumber(rule: any, value: any, callback: any) {
 export const validatorTimeFormat = (rule: any, value: any, callback: any) => {
   console.log("Calling validatorTimeFormat");
   const regex = /^(\d+(ns|us|µs|ms|s|m|h))+$/;
-  if (!value || regex.test(value)) {
+  if (!value) {
+    callback(new Error("Please enter a value"));
+  } else if (regex.test(value)) {
     console.log("regex test passed");
     console.log(value);
     callback();

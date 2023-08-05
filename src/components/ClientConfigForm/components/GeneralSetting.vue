@@ -140,15 +140,31 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
 
 const generalSettingRef = ref<FormInstance>();
-// TODO: blur trigger? and number set?
+const validatorRemoteIdleConnections = (rule: any, value: number, callback: any) => {
+  if (value < 0 || value > localSetting.RemoteConnections) {
+    callback(new Error("Please input RemoteIdleConnections between 0 and RemoteConnections"));
+  } else {
+    callback();
+  }
+};
 const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
-  ID: [{ required: true, message: "Please input ID", trigger: "blur" }],
+  ID: [
+    {
+      required: true,
+      message: "Please input ID",
+      transform(value) {
+        return value.trim();
+      },
+      trigger: "blur"
+    }
+  ],
   Secret: [{ required: true, message: "Please input Secret", trigger: "blur" }],
   ReconnectDelay: [{ validator: validatorTimeFormat, trigger: "blur" }],
   RemoteTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }],
   RemoteConnections: [
     { type: "number", message: "Please input RemoteConnections", trigger: "blur" },
     {
+      type: "number",
       min: 1,
       max: 10,
       message: "Please input RemoteConnections between 1 and 10",
@@ -158,10 +174,8 @@ const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
   RemoteIdleConnections: [
     { type: "number", message: "Please input RemoteIdleConnections", trigger: "blur" },
     {
-      min: 0,
-      max: localSetting.RemoteConnections,
-      message: "Please input RemoteIdleConnections between 0 and RemoteConnections",
-      trigger: "blur"
+      validator: validatorRemoteIdleConnections,
+      trigger: "change"
     }
   ]
 });
@@ -175,15 +189,15 @@ const emit = defineEmits(["update:setting"]);
 watchEffect(() => {
   localSetting.Remote = remote.value;
   emit("update:setting", localSetting);
-  rules.RemoteIdleConnections = [
-    { type: "number", message: "Please input RemoteIdleConnections", trigger: "blur" },
-    {
-      min: 0,
-      max: localSetting.RemoteConnections,
-      message: "Please input RemoteIdleConnections between 0 and RemoteConnections",
-      trigger: "blur"
-    }
-  ];
+  // rules.RemoteIdleConnections = [
+  //   { type: "number", message: "Please input RemoteIdleConnections", trigger: "blur" },
+  //   {
+  //     min: 0,
+  //     max: localSetting.RemoteConnections,
+  //     message: "Please input RemoteIdleConnections between 0 and RemoteConnections",
+  //     trigger: "blur"
+  //   }
+  // ];
 });
 
 const validateForm = (): Promise<void> => {
@@ -193,11 +207,11 @@ const validateForm = (): Promise<void> => {
         if (valid) {
           resolve();
         } else {
-          reject(new Error("General Setting Validate failed"));
+          reject(new Error("General Setting validation failed, please check your input"));
         }
       });
     } else {
-      reject(new Error("General Setting Validate failed"));
+      reject(new Error("General Setting is not ready"));
     }
   });
 };

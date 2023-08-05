@@ -49,13 +49,17 @@ const TCPForwardSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.TCPForwardSetting>>({});
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    TCPForwardSettingRef.value?.validate(valid => {
-      if (valid) {
-        resolve();
-      } else {
-        reject();
-      }
-    });
+    if (TCPForwardSettingRef.value) {
+      TCPForwardSettingRef.value.validate(valid => {
+        if (valid) {
+          resolve();
+        } else {
+          reject(new Error("TCPForward Setting validation failed, please check your input"));
+        }
+      });
+    } else {
+      reject(new Error("TCPForward Setting is not ready"));
+    }
   });
 };
 defineExpose({

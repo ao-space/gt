@@ -69,13 +69,17 @@ watchEffect(() => {
 });
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    LogSettingRef.value?.validate(valid => {
-      if (valid) {
-        resolve();
-      } else {
-        reject();
-      }
-    });
+    if (LogSettingRef.value) {
+      LogSettingRef.value.validate(valid => {
+        if (valid) {
+          resolve();
+        } else {
+          reject(new Error("Log Setting validation failed, please check your input"));
+        }
+      });
+    } else {
+      reject(new Error("Log Setting is not ready"));
+    }
   });
 };
 

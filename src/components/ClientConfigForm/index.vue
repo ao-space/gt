@@ -15,51 +15,13 @@
         @remove-service="removeService(index)"
         @update:setting="tab.updateSetting"
     /></template>
-
-    <!-- <template #GeneralSetting>
-      <GeneralSetting
-        ref="generalSettingRef"
-        v-if="$refs.anchorRef"
-        :setting="generalSetting"
-        @update:setting="updateGeneralSetting"
-      />
-    </template>
-    <template #SentrySetting>
-      <SentrySetting ref="sentrySettingRef" :setting="sentrySetting" @update:setting="updateSentrySetting" />
-    </template>
-    <template #WebRTCSetting>
-      <WebRTCSetting ref="webRTCSettingRef" :setting="webRTCSetting" @update:setting="updateWebRTCSetting" />
-    </template>
-    <template #TCPForwardSetting>
-      <TCPForwardSetting ref="tcpForwardSetting" :setting="tcpForwardSetting" @update:setting="updateTCPForwardSetting" />
-    </template>
-    <template #LogSetting>
-      <LogSetting ref="logSettingRef" :setting="logSetting" @update:setting="updateLogSetting" />
-    </template> -->
-
-    <!-- <template v-for="(service, index) in services" :key="index" #="service.HostPrefix"> -->
-    <!-- <template #Service1Setting> -->
-    <!-- <template v-for="(service, index) in services" :key="index" #[`Service${index+1}Setting`]> -->
-
-    <!-- 
-    <template v-for="(service, index) in services" :key="serviceKeys[index]" #[`Service${index+1}Setting`]>
-      <ServiceSetting
-        :ref="serviceSettingRefs[index]"
-        :index="index"
-        :is-last="index === services.length - 1"
-        :setting="services[index]"
-        @add-service="addService"
-        @remove-service="removeService(index)"
-        @update:setting="updateServiceSetting"
-      />
-    </template> -->
   </Anchor>
   <el-button type="primary" @click="onSubmit"> Submit</el-button>
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
 import { ElMessage, ElMessageBox } from "element-plus";
-import { markRaw, Ref, reactive, ref } from "vue";
+import { markRaw, Ref, reactive, ref, watchEffect } from "vue";
 import { ClientConfig } from "./interface";
 // import http from "@/api";
 import yaml from "js-yaml";
@@ -96,8 +58,15 @@ const options = reactive<ClientConfig.Options>({
   UseLocalAsHTTPHost: []
 });
 
-// TODO: 重构 + 删除 key + TabList title
-
+watchEffect(() => {
+  Object.assign(options, {
+    ...generalSetting,
+    ...sentrySetting,
+    ...webRTCSetting,
+    ...tcpForwardSetting,
+    ...logSetting
+  });
+});
 let services = reactive<ClientConfig.Service[]>([{ ...ClientConfig.defaultServiceSetting }]);
 const addService = () => {
   services.push({ ...ClientConfig.defaultServiceSetting });
@@ -109,18 +78,13 @@ const addService = () => {
     name: `Service${services.length}Setting`,
     uuid: uuid
   });
-  for (let i = 0; i < dynamicTabs.length; i++) {
-    // dynamicTabs[i].index = i;
-    dynamicTabs[i].name = `Service${i + 1}Setting`;
-    dynamicTabs[i].title = `Service ${i + 1} Setting`;
-  }
+
   dynamicTabs[dynamicTabs.length - 1].isLast = false;
   dynamicTabs.push({
     title: `Service ${services.length} Setting`,
     name: `Service${services.length}Setting`,
     uuid: uuid,
     component: markRaw(ServiceSetting),
-    // ref: `serviceSettingRef${services.length}`,
     setting: services[services.length - 1],
     updateSetting: updateServiceSetting,
     index: services.length - 1,
@@ -133,31 +97,17 @@ const removeService = (index: number) => {
     ElMessage.warning("至少需要一个服务");
     return;
   } else {
-    console.log("before remove");
-    // console.log(services);
-    console.log([...services]);
     services.splice(index, 1);
-    console.log("after remove");
-    // console.log(services);
-    console.log([...services]);
-    console.log("----");
     //delete the related tablist
-    // let tabListIndex = tabList.findIndex(tab => tab.name === `Service${index + 1}Setting`);
     let tabListIndex = tabList.findIndex(tab => tab.title === `Service ${index + 1} Setting`);
-    console.log("tabindex:" + tabListIndex);
+
     tabList.splice(tabListIndex, 1);
     //update the name of the remaining tablist
     for (let i = index; i < services.length; i++) {
       tabList[tabListIndex + i - index].name = `Service${i + 1}Setting`;
       tabList[tabListIndex + i - index].title = `Service ${i + 1} Setting`;
     }
-    //update the name of the remaining tablist
-    // for (let i = index; i < services.length; i++) {
-    //   console.log("-------------------------");
-    //   // tabList[tabListIndex + i - index].name = `Service${i + 1}Setting`;
-    //   tabList[tabListIndex + i - index].name = `Service${i + 1}Setting`;
-    //   tabList[tabListIndex + i - index].title = `Service ${i + 1} Setting`;
-    // }
+
     dynamicTabs.splice(index, 1);
     //update the index of the remaining dynamicTabs
     for (let i = index; i < dynamicTabs.length - 1; i++) {
@@ -168,58 +118,12 @@ const removeService = (index: number) => {
     dynamicTabs[dynamicTabs.length - 1].isLast = true;
   }
 };
-// const serviceKeys = [uuidv4()];
-
-// const addService = () => {
-//   services.push({ ...ClientConfig.defaultServiceSetting });
-//   const uuid = uuidv4();
-//   console.log(uuid);
-
-//   serviceKeys.push(uuid);
-//   serviceSettingRefs.push(ref<InstanceType<typeof ServiceSetting> | null>(null));
-//   tabList.push({
-//     title: `Service ${services.length} Setting`,
-//     name: `Service${services.length}Setting`,
-//     uuid: uuid
-//   });
-
-//   console.log(tabList);
-// };
-
-// const removeService = (index: number) => {
-//   console.log("index " + index);
-//   if (services.length === 1) {
-//     ElMessage.warning("至少需要一个服务");
-//     return;
-//   } else {
-//     services.splice(index, 1);
-//     serviceKeys.splice(index, 1);
-//     serviceSettingRefs.splice(index, 1);
-//     //delete the related tablist
-//     // let tabListIndex = tabList.findIndex(tab => tab.name === `Service${index + 1}Setting`);
-//     let tabListIndex = tabList.findIndex(tab => tab.title === `Service ${index + 1} Setting`);
-//     console.log("tabindex:" + tabListIndex);
-//     tabList.splice(tabListIndex, 1);
-//     //update the name of the remaining tablist
-//     for (let i = index; i < services.length; i++) {
-//       console.log("-------------------------");
-//       // tabList[tabListIndex + i - index].name = `Service${i + 1}Setting`;
-//       tabList[tabListIndex + i - index].name = `Service${i + 1}Setting`;
-//       tabList[tabListIndex + i - index].title = `Service ${i + 1} Setting`;
-//     }
-//     // services = [...services];
-//     // console.log(services);
-//     // console.log(serviceKeys);
-//   }
-// };
 
 const clientConfig = reactive<ClientConfig.Config>({
   Version: "1",
   Services: services,
   Options: options
 });
-
-// TODO: 响应式 assign 合理性
 
 const updateGeneralSetting = (newSetting: ClientConfig.GeneralSetting) => {
   console.log("updateGeneralSetting");
@@ -258,17 +162,6 @@ const updateServiceSetting = (index: number, newSetting: ClientConfig.Service) =
     //ignore the delete operation
   }
 };
-// const updateServiceSetting = (index: number, newSetting: ClientConfig.Service) => {
-//   //update the service setting of the corresponding index
-//   if (0 <= index && index < services.length) {
-//     console.log("updateServiceSetting");
-//     console.log(index);
-//     console.log(newSetting);
-//     Object.assign(services[index], newSetting);
-//   } else {
-//     //ignore the delete operation
-//   }
-// };
 
 const generalSettingRef = ref<InstanceType<typeof GeneralSetting> | null>(null);
 const sentrySettingRef = ref<InstanceType<typeof SentrySetting> | null>(null);
@@ -277,16 +170,7 @@ const tcpForwardSettingRef = ref<InstanceType<typeof TCPForwardSetting> | null>(
 const logSettingRef = ref<InstanceType<typeof LogSetting> | null>(null);
 const serviceSettingRef = ref<InstanceType<typeof ServiceSetting> | null>(null);
 const serviceSettingRefs = reactive<Ref<InstanceType<typeof ServiceSetting> | null>[]>([serviceSettingRef]);
-// const serviceSettingRefs = Array(services.length)
-//   .fill(null)
-//   .map(() => ref<InstanceType<typeof ServiceSetting> | null>(null));
 
-// type staticSettingType =
-//   | ClientConfig.GeneralSetting
-//   | ClientConfig.SentrySetting
-//   | ClientConfig.WebRTCSetting
-//   | ClientConfig.TCPForwardSetting
-//   | ClientConfig.LogSetting;
 interface staticTabType<T> {
   title: string;
   name: string;
@@ -349,7 +233,6 @@ interface dynamicTabType<T> {
   name: string;
   uuid: string;
   component: any; //Can't set Component type?
-  // ref: string; // Note that: the ref must be a string, not a ref object, but need to be the same name of the ref object
   setting: T;
   updateSetting: (index: number, newSetting: T) => void;
   index: number;
@@ -361,7 +244,6 @@ const dynamicTabs = reactive<dynamicTabType<ClientConfig.Service>[]>([
     name: "Service1Setting",
     uuid: uuidv4(),
     component: markRaw(ServiceSetting),
-    // ref: "serviceSettingRef" + this.index,
     setting: services[0],
     updateSetting: updateServiceSetting,
     index: 0,
@@ -373,47 +255,7 @@ const tabList = reactive<Tab[]>([
   ...dynamicTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
 ]);
 
-// const tabList = reactive<Tab[]>([
-//   {
-//     title: "General Setting",
-//     name: "GeneralSetting",
-//     uuid: uuidv4()
-//   },
-//   {
-//     title: "Sentry Setting",
-//     name: "SentrySetting",
-//     uuid: uuidv4()
-//   },
-//   {
-//     title: "WebRTC Setting",
-//     name: "WebRTCSetting",
-//     uuid: uuidv4()
-//   },
-//   {
-//     title: "TCPForward Setting",
-//     name: "TCPForwardSetting",
-//     uuid: uuidv4()
-//   },
-//   {
-//     title: "Log Setting",
-//     name: "LogSetting",
-//     uuid: uuidv4()
-//   },
-//   {
-//     title: "Service 1 Setting",
-//     name: "Service1Setting",
-//     uuid: uuidv4()
-//   }
-// ]);
-// const generalSettingRef = ref<ClientConfig.FormRef | null>(null);
-// const sentrySettingRef = ref<ClientConfig.FormRef | null>(null);
-// const webRTCSettingRef = ref<ClientConfig.FormRef | null>(null);
-// const tcpForwardSettingRef = ref<ClientConfig.FormRef | null>(null);
-// const logSettingRef = ref<ClientConfig.FormRef | null>(null);
-// const serviceSettingRef = ref<ClientConfig.FormRef | null>(null);
-// const serviceSettingRefs = ref<ClientConfig.FormRef[]>([]);
-// const serviceSettingRefs = reactive<ClientConfig.FormRef[]>([]);
-
+// TODO: must input and trim
 const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => {
   return Promise.all(formRefs.map(formRef => formRef.value?.validateForm()));
 };
@@ -425,8 +267,7 @@ const onSubmit = async () => {
   console.log(tabList);
   console.log(dynamicTabs);
   console.log(serviceSettingRefs);
-  // console.log(serviceKeys);
-  return;
+
   const json1 = JSON.stringify(clientConfig);
   console.log(json1);
   const yamlData = yaml.dump(clientConfig);
@@ -443,9 +284,8 @@ const onSubmit = async () => {
           sentrySettingRef,
           webRTCSettingRef,
           tcpForwardSettingRef,
-          logSettingRef
-          // serviceSettingRef
-          // ...serviceSettingRefs.map(ref => ref.validateForm())
+          logSettingRef,
+          ...serviceSettingRefs
         ]);
         const response = await axios.post("/api/config/client", yamlData, {
           headers: {
@@ -456,7 +296,11 @@ const onSubmit = async () => {
         ElMessage.success("发送成功");
       } catch (e) {
         console.log(e);
-        ElMessage.error("发送失败");
+        if (e instanceof Error) {
+          ElMessage.error(e.message);
+        } else {
+          ElMessage.error("发送失败");
+        }
       }
     })
     .catch(() => {
@@ -472,12 +316,4 @@ const onSubmit = async () => {
 .el-form-item {
   display: contents; // To reduce interference from the form style, only its validation function needs to be used.
 }
-
-// .input-with-prefix {
-//   // width: calc(100% - 25px);
-
-//   // position: relative;
-//   // display: inline-block;
-//   // background-color: black;
-// }
 </style>
