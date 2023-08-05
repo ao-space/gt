@@ -7,8 +7,8 @@
   </el-affix>
   <div v-for="tab in tabList" :key="tab.uuid" :ref="el => (tabRefs[tab.uuid] = el as HTMLDivElement)">
     <!-- <div v-for="(tab, index) in tabList" :key="index" :ref="el => (tabRefs[tab.name] = el as HTMLDivElement)"> -->
-    <!-- <slot :name="tab.uuid"></slot> -->
-    <slot :name="tab.name"></slot>
+    <slot :name="tab.uuid"></slot>
+    <!-- <slot :name="tab.name"></slot> -->
     <!-- <slot :name="tab.title"></slot> -->
   </div>
 </template>

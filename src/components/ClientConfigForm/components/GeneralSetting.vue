@@ -140,6 +140,7 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
 
 const generalSettingRef = ref<FormInstance>();
+// TODO: blur trigger? and number set?
 const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
   ID: [{ required: true, message: "Please input ID", trigger: "blur" }],
   Secret: [{ required: true, message: "Please input Secret", trigger: "blur" }],
