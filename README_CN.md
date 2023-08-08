@@ -33,9 +33,9 @@ GT 是一个支持点对点直连（P2P）和互联网中转的反向代理开�
   - [TLS 加密客户端服务端之间的 HTTP 通信](#tls-%E5%8A%A0%E5%AF%86%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%9C%8D%E5%8A%A1%E7%AB%AF%E4%B9%8B%E9%97%B4%E7%9A%84-http-%E9%80%9A%E4%BF%A1)
   - [TCP 内网穿透](#tcp-%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F)
   - [客户端同时开启多个服务](#%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%90%8C%E6%97%B6%E5%BC%80%E5%90%AF%E5%A4%9A%E4%B8%AA%E6%9C%8D%E5%8A%A1)
-- [参数](#%E5%8F%82%E6%95%B0)
-  - [客户端参数](#%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%8F%82%E6%95%B0)
-  - [服务端参数](#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%8F%82%E6%95%B0)
+- [用法](#用法)
+  - [客户端命令行参数](#客户端命令行参数)
+  - [服务端命令行参数](#服务端命令行参数)
   - [配置文件](#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)
   - [服务端配置 users](#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E9%85%8D%E7%BD%AE-users)
     - [通过命令行配置 users](#%E9%80%9A%E8%BF%87%E5%91%BD%E4%BB%A4%E8%A1%8C%E9%85%8D%E7%BD%AE-users)
@@ -656,53 +656,53 @@ $ ps aux
 
 你可以选择从镜像或者官方获取 WebRTC 并编译 GT：
 
-### 1. 从 ISCAS 镜像获取 WebRTC 并编译 GT：
+### 从 ISCAS 镜像获取 WebRTC 并编译 GT
 
-#### 获取代码
+1. 获取代码
 
-```shell
-git clone <url>
-cd <folder>
-```
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
 
-#### 编译
+2. 编译
 
-在 Linux 上编译：
+      在 Linux 上编译：
 
-```shell
-make release
-```
+      ```shell
+      make release
+      ```
 
-编译后的可执行文件在 release 目录下。
+      编译后的可执行文件在 release 目录下。
 
-### 2. 从官方获取 WebRTC 并编译 GT：
+### 从官方获取 WebRTC 并编译 GT
 
-#### 获取代码
+1. 获取代码
 
-```shell
-git clone <url>
-cd <folder>
-```
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
 
-#### 从官方获取 WebRTC
+2. 从官方获取 WebRTC
 
-```shell
-mkdir -p dep/_google-webrtc
-cd dep/_google-webrtc
-git clone https://webrtc.googlesource.com/src
-```
+      ```shell
+      mkdir -p dep/_google-webrtc
+      cd dep/_google-webrtc
+      git clone https://webrtc.googlesource.com/src
+      ```
 
-然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
+      然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
 
-#### 编译
+3. 编译
 
-在 Linux 上编译：
+      在 Linux 上编译：
 
-```shell
-WITH_OFFICIAL_WEBRTC=1 make release
-```
+      ```shell
+      WITH_OFFICIAL_WEBRTC=1 make release
+      ```
 
-编译后的可执行文件在 release 目录下。
+      编译后的可执行文件在 release 目录下。
 
 ## 演进计划
 

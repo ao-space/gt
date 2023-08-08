@@ -37,9 +37,9 @@ The main features that have been implemented so far:
   - [Client HTTP Convert to HTTPS](#client-http-convert-to-https)
   - [TCP](#tcp)
   - [Client Starts Multiple Services at The Same Time](#client-starts-multiple-services-at-the-same-time)
-- [Parameters](#parameters)
-  - [Client Parameters](#client-parameters)
-  - [Server Parameters](#server-parameters)
+- [Usage](#usage)
+  - [Client Command-line Arguments](#client-command-line-arguments)
+  - [Server Command-line Arguments](#server-command-line-arguments)
   - [Configuration](#configuration)
   - [Server User Configurations](#server-user-configurations)
     - [Configure Users Through Command Line](#configure-users-through-command-line)
@@ -680,55 +680,55 @@ $ ps aux
 
 You can either build GT with webrtc downloaded from mirror or from official:
 
-### 1. Build GT with webrtc downloaded from ISCAS mirror:
+### Build GT with webrtc downloaded from ISCAS mirror
 
-#### Get the code
+1. Get the code
 
-```shell
-git clone <url>
-cd <folder>
-```
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
 
-#### Build
+2. Build
 
-Build it on linux:
+      Build it on linux:
 
-```shell
-make release
-```
+      ```shell
+      make release
+      ```
 
-The compiled executable file is in the release directory.
+      The compiled executable file is in the release directory.
 
-### 2. Build GT with webrtc downloaded from official repo:
+### Build GT with webrtc downloaded from official repo
 
-#### Get the code
+1. Get the code
 
-```shell
-git clone <url>
-cd <folder>
-```
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
 
-#### Download webrtc from official
+2. Download webrtc from official
 
-```shell
-mkdir -p dep/_google-webrtc
-cd dep/_google-webrtc
-git clone https://webrtc.googlesource.com/src
-```
+      ```shell
+      mkdir -p dep/_google-webrtc
+      cd dep/_google-webrtc
+      git clone https://webrtc.googlesource.com/src
+      ```
 
-And then follow [the steps in the link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
-check out the build toolchain and many
-dependencies.
+      And then follow [the steps in the link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
+      check out the build toolchain and many
+      dependencies.
 
-#### Build
+3. Build
 
-Build it on linux:
+      Build it on linux:
 
-```shell
-WITH_OFFICIAL_WEBRTC=1 make release
-```
+      ```shell
+      WITH_OFFICIAL_WEBRTC=1 make release
+      ```
 
-The compiled executable file is in the release directory.
+      The compiled executable file is in the release directory.
 
 ## TODO
 
@@ -821,4 +821,3 @@ Many thanks to the following people who have contributed to this project:
 
 - [zhiyi](https://github.com/vyloy)
 - [jianti](https://github.com/FH0)
-
