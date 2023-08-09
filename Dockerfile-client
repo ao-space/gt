@@ -24,7 +24,5 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive TZ=Asia/Shanghai apt-get -y ins
 
 COPY release/*-client /
 RUN cp /linux-`arch`-client /usr/bin/client && rm -rf /*-client
-COPY entrypoint-client.sh /opt/entrypoint.sh
-RUN chmod +x /opt/entrypoint.sh
 
 ENTRYPOINT ["/usr/bin/client", "-config", "/opt/config/aonetwork-client.yml"]
