@@ -6,51 +6,6 @@ export namespace ServerConfig {
     Host: Host;
     Options: Options;
   }
-
-  export interface Options {
-    Config: string;
-    Addr: string;
-    TLSAddr: string;
-    TLSMinVersion: string;
-    CertFile: string;
-    KeyFile: string;
-    IDs: string[];
-    Secrets: string[];
-    Users: string;
-    AuthAPI: string;
-    AllowAnyClient: boolean;
-    TCPRanges: string[];
-    TCPNumbers: string[];
-    Speed: number;
-    Connections: number;
-    ReconnectTimes: number;
-    ReconnectDuration: string; // assuming this is a string representation of a duration
-    HostNumber: number;
-    HostRegex: string[];
-    HostWithID: boolean;
-    HTTPMUXHeader: string;
-    Timeout: string; // assuming this is a string representation of a duration
-    TimeoutOnUnidirectionalTraffic: boolean;
-    APIAddr: string;
-    APICertFile: string;
-    APIKeyFile: string;
-    APITLSMinVersion: string;
-    STUNAddr: string;
-    SNIAddr: string;
-    SentryDSN: string;
-    SentryLevel: string[];
-    SentrySampleRate: number;
-    SentryRelease: string;
-    SentryEnvironment: string;
-    SentryServerName: string;
-    SentryDebug: boolean;
-    LogFile: string;
-    LogFileMaxSize: number;
-    LogFileMaxCount: number;
-    LogLevel: string;
-    Version: boolean;
-  }
-
   export interface TCP {
     Range: string;
     Number: number;
@@ -74,8 +29,137 @@ export namespace ServerConfig {
     WithID: boolean;
     usedHost: number;
   }
+  export interface GeneralSetting {
+    Users: string;
+    AuthAPI: string;
+  }
+  export interface NetworkSetting {
+    Addr: string;
+    TLSAddr: string;
+    TLSMinVersion: string;
+    STUNAddr: string;
+    SNIAddr: string;
+    HTTPMUXHeader: string;
+  }
+  export interface SecuritySetting {
+    CertFile: string;
+    KeyFile: string;
+    AllowAnyClient: boolean;
+  }
+  export interface ConnectionSetting {
+    Speed: number;
+    Connections: number;
+    ReconnectTimes: number;
+    ReconnectDuration: string;
+    Timeout: string;
+    TimeoutOnUnidirectionalTraffic: boolean;
+  }
+  export interface HostSetting {
+    HostNumber: number;
+    HostRegex: string[];
+    HostWithID: boolean;
+  }
+  export interface APISetting {
+    APIAddr: string;
+    APICertFile: string;
+    APIKeyFile: string;
+    APITLSMinVersion: string;
+  }
+  export interface SentrySetting {
+    SentryDSN: string;
+    SentryLevel: string[];
+    SentrySampleRate: number;
+    SentryRelease: string;
+    SentryEnvironment: string;
+    SentryServerName: string;
+    SentryDebug: boolean;
+  }
+  export interface LogSetting {
+    LogFile: string;
+    LogFileMaxSize: number;
+    LogFileMaxCount: number;
+    LogLevel: string;
+  }
+  export interface Options
+    extends GeneralSetting,
+      NetworkSetting,
+      SecuritySetting,
+      ConnectionSetting,
+      HostSetting,
+      APISetting,
+      SentrySetting,
+      LogSetting {
+    Config: string;
+    IDs: string[];
+    Secrets: string[];
+    Users: string;
+    AuthAPI: string;
+    TCPRanges: string[];
+    TCPNumbers: string[];
+    Version: boolean;
+  }
+
+  export const defaultGeneralSetting: GeneralSetting = {
+    Users: "",
+    AuthAPI: ""
+  };
+  export const defaultNetworkSetting: NetworkSetting = {
+    Addr: "",
+    TLSAddr: "",
+    TLSMinVersion: "",
+    STUNAddr: "",
+    SNIAddr: "",
+    HTTPMUXHeader: ""
+  };
+  export const defaultSecuritySetting: SecuritySetting = {
+    CertFile: "",
+    KeyFile: "",
+    AllowAnyClient: false
+  };
+  export const defaultConnectionSetting: ConnectionSetting = {
+    Speed: 0,
+    Connections: 0,
+    ReconnectTimes: 0,
+    ReconnectDuration: "",
+    Timeout: "",
+    TimeoutOnUnidirectionalTraffic: false
+  };
+  export const defaultHostSetting: HostSetting = {
+    HostNumber: 0,
+    HostRegex: [],
+    HostWithID: false
+  };
+  export const defaultAPISetting: APISetting = {
+    APIAddr: "",
+    APICertFile: "",
+    APIKeyFile: "",
+    APITLSMinVersion: ""
+  };
+  export const defaultSentrySetting: SentrySetting = {
+    SentryDSN: "",
+    SentryLevel: ["error", "fatal", "panic"],
+    SentrySampleRate: 0,
+    SentryRelease: "",
+    SentryEnvironment: "",
+    SentryServerName: "",
+    SentryDebug: false
+  };
+  export const defaultLogSetting: LogSetting = {
+    LogFile: "",
+    LogFileMaxSize: 0,
+    LogFileMaxCount: 0,
+    LogLevel: ""
+  };
+
+  export const defaultTCPSetting: TCP = {
+    Range: "",
+    Number: 0,
+    PortRange: [],
+    usedPort: 0
+  };
   export const usage = {
     // General Setting
+
     Config: "The config file path to load",
     Addr: "The address to listen on. Supports values like: '80', ':80' or '0.0.0.0:80'",
     TLSAddr: "The address for tls to listen on. Supports values like: '443', ':443' or '0.0.0.0:443'",
@@ -120,25 +204,27 @@ export namespace ServerConfig {
     LogLevel: "Log level: trace, debug, info, warn, error, fatal, panic, disable",
     Version: "Show the version of this program",
 
-    //tcp
-    Range: "The tcp port range",
-    Number: "The tcp port number",
-    PortRange: "The tcp port range",
-    usedPort: "The used tcp port",
-
-    //user
-    Secret: "The user secret",
-    TCPs: "The user tcp ports",
-    Speed: "The user speed limit in bytes",
-    Connections: "The user max connections",
-    Host: "The user host",
-    temp: "The user temp",
-
-    //host
-    Number: "The host number",
-    RegexStr: "The host regex string",
-    Regex: "The host regex",
-    WithID: "The host with id",
-    usedHost: "The used host"
+    tcp: {
+      Range: "The tcp port range",
+      Number: "The tcp port number",
+      PortRange: "The tcp port range",
+      usedPort: "The used tcp port"
+    },
+    user: {
+      ID: "The user id", //for the mapping key
+      Secret: "The user secret",
+      TCPs: "The user tcp ports",
+      Speed: "The user speed limit in bytes",
+      Connections: "The user max connections",
+      Host: "The user host",
+      temp: "The user temp"
+    },
+    host: {
+      Number: "The host number",
+      RegexStr: "The host regex string",
+      Regex: "The host regex",
+      WithID: "The host with id",
+      usedHost: "The used host"
+    }
   };
 }

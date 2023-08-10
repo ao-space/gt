@@ -72,6 +72,36 @@
           }
         }
       ]
+    },
+    {
+      "path": "/link",
+      "name": "link",
+      "redirect": "/link/pprof",
+      "meta": {
+        "icon": "Paperclip",
+        "title": "性能检测界面",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      },
+      "children": [
+        {
+          "path": "/link/pprof",
+          "name": "pprof",
+          "component": "/link/pprof/index",
+          "meta": {
+            "icon": "link",
+            "title": "pprof界面",
+            "isLink": "http://localhost:8080/debug/pprof",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        }
+      ]
     }
   ],
   "msg": "成功"

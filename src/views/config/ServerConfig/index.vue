@@ -1,11 +1,9 @@
 <template>
   <div class="card">
-    <!-- <ServerConfigForm /> -->
-    <Anchor />
+    <ServerConfigForm />
   </div>
 </template>
 
 <script setup lang="ts" name="server">
-// import ServerConfigForm from "@/components/ServerConfigForm/index.vue";
-import Anchor from "@/components/Anchor/index.vue";
+import ServerConfigForm from "@/components/ServerConfigForm/index.vue";
 </script>
