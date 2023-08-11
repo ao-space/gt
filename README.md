@@ -259,26 +259,20 @@ client.yaml file content：
 
 ```yaml
 services:
-  - id: id1
-    secret: secret1
-    local: http://127.0.0.1:80
+  - local: http://127.0.0.1:80
     useLocalAsHTTPHost: true
-  - id: id2
-    secret: secret2
-    local: http://127.0.0.1:8080
+    hostPrefix: 1
+  - local: http://127.0.0.1:8080
     useLocalAsHTTPHost: true
-  - id: id1
-    secret: secret1
-    local: tcp://127.0.0.1:2222
-    useLocalAsHTTPHost: true
+    hostPrefix: 2
+  - local: tcp://127.0.0.1:2222
     remoteTCPPort: 2222
-  - id: id1
-    secret: secret1
-    local: tcp://127.0.0.1:2223
-    useLocalAsHTTPHost: true
+  - local: tcp://127.0.0.1:2223
     remoteTCPPort: 2223
 options:
   remote: tcp://id1.example.com:8080
+  id: id1
+  secret: secret1
 ```
 
 ## Usage
