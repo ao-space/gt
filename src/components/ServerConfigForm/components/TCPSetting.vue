@@ -1,10 +1,10 @@
 <template>
   <el-card>
-    <el-form ref="tcpSettingRef" :model="localSetting" :rules="rules">
-      <el-divider content-position="left">TCP Setting </el-divider>
-      <el-table :data="tableData" table-layout="auto" style="width: 100%" show-overflow-tooltip highlight-current-row>
+    <el-form ref="tcpSettingRef" :model="form">
+      <el-divider content-position="left">TCP Setting</el-divider>
+      <el-table :data="form.tableData" table-layout="auto" style="width: 100%" show-overflow-tooltip highlight-current-row>
         <el-table-column type="index"></el-table-column>
-        <el-table-column prop="TCPRange">
+        <el-table-column prop="Range">
           <template #header>
             <div>
               TCPRanges
@@ -12,13 +12,13 @@
             </div>
           </template>
           <template #default="scope">
-            <el-form-item prop="Range">
-              <el-input v-if="scope.row.isEdit" v-model="scope.row.TCPRange" />
-              <span v-else>{{ scope.row.TCPRange }}</span>
+            <el-form-item :prop="`tableData[${scope.$index}].Range`" :rules="rules.Range">
+              <el-input v-if="scope.row.isEdit" v-model="scope.row.Range" />
+              <span v-else>{{ scope.row.Range }}</span>
             </el-form-item>
           </template>
         </el-table-column>
-        <el-table-column prop="TCPNumber">
+        <el-table-column prop="Number">
           <template #header>
             <div>
               TCPNumbers
@@ -26,9 +26,10 @@
             </div>
           </template>
           <template #default="scope">
-            <el-form-item prop="Number">
-              <el-input v-if="scope.row.isEdit" v-model="scope.row.TCPNumber" />
-              <span v-else>{{ scope.row.TCPNumber }}</span>
+            <el-form-item :prop="`tableData[${scope.$index}].Number`" :rules="rules.Number">
+              <!-- <el-input v-if="tableData[scope.$index].isEdit" v-model="tableData[scope.$index].Number" /> -->
+              <el-input v-if="scope.row.isEdit" v-model.number="scope.row.Number" />
+              <span v-else>{{ scope.row.Number }}</span>
             </el-form-item>
           </template>
         </el-table-column>
@@ -37,9 +38,11 @@
             <div>Operation</div>
           </template>
           <template #default="scope">
-            <el-button v-if="scope.row.isEdit" type="success" size="small" @click="finishEdit(scope.$index)">Done</el-button>
-            <el-button v-else type="primary" size="small" @click="editRow(scope.$index)">Edit</el-button>
-            <el-button type="danger" size="small" @click="deleteRow(scope.$index)">Remove</el-button>
+            <el-button v-if="scope.row.isEdit" icon="Check" type="success" size="small" @click="finishEdit(scope.$index)">
+              Done
+            </el-button>
+            <el-button v-else type="primary" icon="Edit" size="small" @click="editRow(scope.$index)">Edit</el-button>
+            <el-button icon="Delete" type="danger" size="small" @click="deleteRow(scope.$index)" />
           </template>
         </el-table-column>
       </el-table>
@@ -50,64 +53,92 @@
 <script setup lang="ts" name="TCPSetting">
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { ServerConfig } from "../interface";
-import { reactive, ref, watchEffect } from "vue";
-import { FormInstance, FormRules } from "element-plus";
-import { validatorRange } from "@/utils/eleValidate";
+import { reactive, ref, watch } from "vue";
+import { ElMessage, FormInstance, FormRules } from "element-plus";
+import { validatorPositiveInteger, validatorRange } from "@/utils/eleValidate";
 
 interface TCPSettingProps {
-  setting: ServerConfig.TCP;
+  setting: ServerConfig.TCP[];
 }
-const props = withDefaults(defineProps<TCPSettingProps>(), {
-  setting: () => ServerConfig.defaultTCPSetting
-});
-
-const localSetting = reactive<ServerConfig.TCP>({ ...props.setting });
+const props = defineProps<TCPSettingProps>();
+const localSetting = reactive<ServerConfig.TCP[]>([...props.setting]);
 
 const tcpSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.TCP>>({
   Range: [{ required: true, validator: validatorRange, message: "Please input a valid TCPRange", trigger: "blur" }],
-  Number: [{ required: true, type: "number", message: "Please input a valid TCPNumber", trigger: "blur" }]
+  Number: [
+    {
+      required: true,
+      type: "number",
+      validator: validatorPositiveInteger,
+      message: "Please input a valid TCPNumber",
+      trigger: "blur"
+    }
+  ]
+});
+
+interface tableDataType {
+  Range: string;
+  Number: number;
+  isEdit: boolean;
+}
+const form = reactive<{ tableData: tableDataType[] }>({
+  tableData: localSetting.map(item => {
+    return {
+      Range: item.Range,
+      Number: item.Number,
+      isEdit: false
+    };
+  })
 });
 
 const emit = defineEmits(["update:setting"]);
-watchEffect(() => {
-  emit("update:setting", localSetting);
-});
-
-const tableData = reactive([
-  {
-    TCPRange: "1-100",
-    TCPNumber: "100",
-    isEdit: false
+watch(
+  () => props.setting,
+  newSetting => {
+    localSetting.splice(0, localSetting.length, ...newSetting);
+    form.tableData = localSetting.map(item => {
+      return {
+        Range: item.Range,
+        Number: item.Number,
+        isEdit: false
+      };
+    });
   },
-  {
-    TCPRange: "101-200",
-    TCPNumber: "100",
-    isEdit: false
-  }
-]);
+  { deep: true }
+);
+watch(
+  () => form.tableData,
+  newTableData => {
+    localSetting.splice(0, localSetting.length, ...newTableData.map(item => ({ Range: item.Range, Number: item.Number })));
+    emit("update:setting", localSetting);
+  },
+  { deep: true }
+);
+
 const addRow = () => {
-  console.log("localSetting", localSetting);
-  tableData.push({
-    TCPRange: "",
-    TCPNumber: "",
+  form.tableData.push({
+    Range: "",
+    Number: 0,
     isEdit: true
   });
 };
 const editRow = (index: number) => {
-  tableData[index].isEdit = true;
-  console.log(index);
-  console.log(tableData[index]);
+  form.tableData[index].isEdit = true;
 };
-const finishEdit = (index: number) => {
-  tableData[index].isEdit = false;
-  console.log(index);
-  console.log(tableData[index]);
+const finishEdit = async (index: number) => {
+  if (tcpSettingRef.value) {
+    try {
+      await tcpSettingRef.value.validateField(`tableData[${index}].Range`);
+      await tcpSettingRef.value.validateField(`tableData[${index}].Number`);
+      form.tableData[index].isEdit = false;
+    } catch (error) {
+      ElMessage.error("Please check your input");
+    }
+  }
 };
 const deleteRow = (index: number) => {
-  console.log(index);
-  console.log(tableData[index]);
-  tableData.splice(index, 1);
+  form.tableData.splice(index, 1);
 };
 
 const validateForm = (): Promise<void> => {

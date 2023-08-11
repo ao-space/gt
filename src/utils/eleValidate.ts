@@ -36,11 +36,23 @@ export const validatorRange = (rule: any, value: any, callback: any) => {
     callback(new Error("Please enter a value"));
   } else if (regex.test(value)) {
     console.log("regex test passed");
-    console.log(value);
     callback();
   } else {
     console.log("regex test failed");
-    console.log(value);
     callback(new Error("Please enter a valid range format"));
+  }
+};
+
+export const validatorPositiveInteger = (rule: any, value: any, callback: any) => {
+  console.log("Calling validatorPositiveInteger");
+  const regex = /^\d+$/;
+  if (!value) {
+    callback(new Error("Please enter a value"));
+  } else if (regex.test(value) && value > 0) {
+    console.log("regex test passed");
+    callback();
+  } else {
+    console.log("regex test failed");
+    callback(new Error("Please enter a valid positive integer"));
   }
 };

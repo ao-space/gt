@@ -9,8 +9,8 @@ export namespace ServerConfig {
   export interface TCP {
     Range: string;
     Number: number;
-    PortRange: any; // assuming this is a custom type, replace with actual type if available
-    usedPort: number;
+    // PortRange: any; // assuming this is a custom type, replace with actual type if available
+    // usedPort: number;
   }
 
   export interface User {
@@ -153,9 +153,9 @@ export namespace ServerConfig {
 
   export const defaultTCPSetting: TCP = {
     Range: "",
-    Number: 0,
-    PortRange: [],
-    usedPort: 0
+    Number: 0
+    // PortRange: [],
+    // usedPort: 0
   };
   export const usage = {
     // General Setting

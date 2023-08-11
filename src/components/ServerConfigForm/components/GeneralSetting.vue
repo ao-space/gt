@@ -25,7 +25,7 @@
           </el-form-item>
         </el-descriptions-item>
       </el-descriptions>
-      <TCPSetting :setting="undefined" />
+      <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
     </div>
   </el-form>
 </template>
@@ -51,9 +51,30 @@ const emit = defineEmits(["update:setting"]);
 watchEffect(() => {
   emit("update:setting", localSetting);
 });
+let tcpSetting = reactive<ServerConfig.TCP[]>([
+  {
+    Range: "1-100",
+    Number: 100
+  },
+  {
+    Range: "101-200",
+    Number: 100
+  }
+]);
+const tcpSettingRef = ref<InstanceType<typeof TCPSetting> | null>(null);
+// TODO: assign的局限性不能覆盖
+const updateTCPSetting = (setting: ServerConfig.TCP[]) => {
+  console.log("updateTCPSetting");
+  console.log(setting);
+  tcpSetting = setting; //in case of recursive of updateTCPSetting
+};
 
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
+    //TODO: 子组件校验
+    tcpSettingRef.value?.validateForm().then(() => {
+      console.log("tcpSettingRef.value?.validateForm() success");
+    });
     if (generalSettingRef.value) {
       generalSettingRef.value.validate(valid => {
         if (valid) {

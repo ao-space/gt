@@ -1,5 +1,5 @@
 <template>
-  <GeneralSetting />
+  <GeneralSetting :setting="undefined" />
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">

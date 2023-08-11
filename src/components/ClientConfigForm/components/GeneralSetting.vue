@@ -189,15 +189,6 @@ const emit = defineEmits(["update:setting"]);
 watchEffect(() => {
   localSetting.Remote = remote.value;
   emit("update:setting", localSetting);
-  // rules.RemoteIdleConnections = [
-  //   { type: "number", message: "Please input RemoteIdleConnections", trigger: "blur" },
-  //   {
-  //     min: 0,
-  //     max: localSetting.RemoteConnections,
-  //     message: "Please input RemoteIdleConnections between 0 and RemoteConnections",
-  //     trigger: "blur"
-  //   }
-  // ];
 });
 
 const validateForm = (): Promise<void> => {
