@@ -25,7 +25,14 @@
           </el-form-item>
         </el-descriptions-item>
       </el-descriptions>
-      <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
+      <el-row style="width: 100%">
+        <el-col :span="12">
+          <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
+        </el-col>
+        <el-col :span="12">
+          <HostSetting ref="hostSettingRef" :setting="hostSetting" @update:setting="updateHostSetting" />
+        </el-col>
+      </el-row>
     </div>
   </el-form>
 </template>
@@ -36,6 +43,7 @@ import { ServerConfig } from "../interface";
 import { reactive, ref, watchEffect } from "vue";
 import { FormInstance, FormRules } from "element-plus";
 import TCPSetting from "./TCPSetting.vue";
+import HostSetting from "./HostSetting.vue";
 
 interface GeneralSettingProps {
   setting: ServerConfig.GeneralSetting;
@@ -51,6 +59,7 @@ const emit = defineEmits(["update:setting"]);
 watchEffect(() => {
   emit("update:setting", localSetting);
 });
+// TODO: initialize
 let tcpSetting = reactive<ServerConfig.TCP[]>([
   {
     Range: "1-100",
@@ -61,12 +70,24 @@ let tcpSetting = reactive<ServerConfig.TCP[]>([
     Number: 100
   }
 ]);
+let hostSetting = reactive<ServerConfig.HostSetting>({
+  // ...ServerConfig.defaultHostSetting
+  Regex: [".*", "http.*"],
+  Number: 2,
+  WithID: false
+});
 const tcpSettingRef = ref<InstanceType<typeof TCPSetting> | null>(null);
 // TODO: assign的局限性不能覆盖
 const updateTCPSetting = (setting: ServerConfig.TCP[]) => {
   console.log("updateTCPSetting");
   console.log(setting);
   tcpSetting = setting; //in case of recursive of updateTCPSetting
+};
+const hostSettingRef = ref<InstanceType<typeof HostSetting> | null>(null);
+const updateHostSetting = (setting: ServerConfig.HostSetting) => {
+  console.log("updateHostSetting");
+  console.log(setting);
+  hostSetting = setting; //in case of recursive of updateHostSetting
 };
 
 const validateForm = (): Promise<void> => {
@@ -95,4 +116,13 @@ defineExpose({
 </script>
 <style scoped lang="scss">
 @import "../index.scss";
+.el-row {
+  margin-bottom: 20px;
+}
+.el-row:last-child {
+  margin-bottom: 0;
+}
+.el-col {
+  border-radius: 4px;
+}
 </style>

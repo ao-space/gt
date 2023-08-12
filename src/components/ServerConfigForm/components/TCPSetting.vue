@@ -2,7 +2,8 @@
   <el-card>
     <el-form ref="tcpSettingRef" :model="form">
       <el-divider content-position="left">TCP Setting</el-divider>
-      <el-table :data="form.tableData" table-layout="auto" style="width: 100%" show-overflow-tooltip highlight-current-row>
+      <el-table :data="form.tableData" table-layout="auto" show-overflow-tooltip highlight-current-row>
+        <template #empty> Please Add TCP Ranges and Numbers </template>
         <el-table-column type="index"></el-table-column>
         <el-table-column prop="Range">
           <template #header>
@@ -152,7 +153,7 @@ const validateForm = (): Promise<void> => {
         }
       });
     } else {
-      reject(new Error("TCP Setting is not ready, please check your input"));
+      reject(new Error("TCP Setting is not ready"));
     }
   });
 };
@@ -163,7 +164,6 @@ defineExpose({
 <style scoped lang="scss">
 @import "../index.scss";
 .el-card {
-  width: 45%;
   margin: 20px 0;
 }
 .el-form {

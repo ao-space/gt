@@ -55,9 +55,9 @@ export namespace ServerConfig {
     TimeoutOnUnidirectionalTraffic: boolean;
   }
   export interface HostSetting {
-    HostNumber: number;
-    HostRegex: string[];
-    HostWithID: boolean;
+    Number: number;
+    Regex: string[];
+    WithID: boolean;
   }
   export interface APISetting {
     APIAddr: string;
@@ -125,9 +125,9 @@ export namespace ServerConfig {
     TimeoutOnUnidirectionalTraffic: false
   };
   export const defaultHostSetting: HostSetting = {
-    HostNumber: 0,
-    HostRegex: [],
-    HostWithID: false
+    Number: 0,
+    Regex: [],
+    WithID: false
   };
   export const defaultAPISetting: APISetting = {
     APIAddr: "",
