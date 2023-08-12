@@ -9,27 +9,32 @@ export namespace ServerConfig {
   export interface TCP {
     Range: string;
     Number: number;
-    // PortRange: any; // assuming this is a custom type, replace with actual type if available
-    // usedPort: number;
   }
-
+  export interface TCPInOptions {
+    TCPRanges: string[];
+    TCPNumbers: string[];
+  }
   export interface User {
     Secret: string;
     TCPs: TCP[];
     Speed: number;
     Connections: number;
     Host: Host;
-    temp: boolean;
+    // temp: boolean;
   }
 
   export interface Host {
     Number: number;
     RegexStr: string[];
-    Regex: any[]; // assuming this is a custom type, replace with actual type if available
     WithID: boolean;
-    usedHost: number;
   }
-  export interface GeneralSetting {
+  export interface HostInOptions {
+    HostNumber: number;
+    HostRegex: string[];
+    HostWithID: boolean;
+  }
+
+  export interface GeneralSetting extends HostInOptions, TCPInOptions {
     Users: string;
     AuthAPI: string;
   }
@@ -54,11 +59,7 @@ export namespace ServerConfig {
     Timeout: string;
     TimeoutOnUnidirectionalTraffic: boolean;
   }
-  export interface HostSetting {
-    Number: number;
-    Regex: string[];
-    WithID: boolean;
-  }
+
   export interface APISetting {
     APIAddr: string;
     APICertFile: string;
@@ -85,23 +86,37 @@ export namespace ServerConfig {
       NetworkSetting,
       SecuritySetting,
       ConnectionSetting,
-      HostSetting,
       APISetting,
       SentrySetting,
       LogSetting {
-    Config: string;
-    IDs: string[];
-    Secrets: string[];
-    Users: string;
-    AuthAPI: string;
-    TCPRanges: string[];
-    TCPNumbers: string[];
-    Version: boolean;
+    // Config: string;
+    // IDs: string[];
+    // Secrets: string[];
+    // Users: string;
+    // AuthAPI: string;
+    // TCPRanges: string[];
+    // TCPNumbers: string[];
+    // Version: boolean;
   }
-
+  export const defaultHostSetting: Host = {
+    Number: 0,
+    RegexStr: [],
+    WithID: false
+  };
+  export const defaultTCPSetting: TCP = {
+    Range: "",
+    Number: 0
+    // PortRange: [],
+    // usedPort: 0
+  };
   export const defaultGeneralSetting: GeneralSetting = {
     Users: "",
-    AuthAPI: ""
+    AuthAPI: "",
+    TCPRanges: ["12-123", "123-11"],
+    TCPNumbers: ["12", "1223"],
+    HostNumber: 23,
+    HostRegex: [".*", "http"],
+    HostWithID: false
   };
   export const defaultNetworkSetting: NetworkSetting = {
     Addr: "",
@@ -124,11 +139,7 @@ export namespace ServerConfig {
     Timeout: "",
     TimeoutOnUnidirectionalTraffic: false
   };
-  export const defaultHostSetting: HostSetting = {
-    Number: 0,
-    Regex: [],
-    WithID: false
-  };
+
   export const defaultAPISetting: APISetting = {
     APIAddr: "",
     APICertFile: "",
@@ -151,12 +162,6 @@ export namespace ServerConfig {
     LogLevel: ""
   };
 
-  export const defaultTCPSetting: TCP = {
-    Range: "",
-    Number: 0
-    // PortRange: [],
-    // usedPort: 0
-  };
   export const usage = {
     // General Setting
 

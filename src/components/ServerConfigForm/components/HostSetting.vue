@@ -17,7 +17,7 @@
             WithID
             <UsageTooltip :usage-text="ServerConfig.usage['HostWithID']" />
           </template>
-          <el-switch v-model="localSetting.WithID" />
+          <el-switch v-model="form.WithID" />
         </el-descriptions-item>
       </el-descriptions>
       <el-table :data="form.tableData" table-layout="auto" show-overflow-tooltip highlight-current-row>
@@ -31,9 +31,9 @@
             </div>
           </template>
           <template #default="scope">
-            <el-form-item :prop="`tableData[${scope.$index}].Regex`" :rules="rules.Regex">
-              <el-input v-if="scope.row.isEdit" v-model="scope.row.Regex" />
-              <span v-else>{{ scope.row.Regex }}</span>
+            <el-form-item :prop="`tableData[${scope.$index}].RegexStr`" :rules="rules.RegexStr">
+              <el-input v-if="scope.row.isEdit" v-model="scope.row.RegexStr" />
+              <span v-else>{{ scope.row.RegexStr }}</span>
             </el-form-item>
           </template>
         </el-table-column>
@@ -59,29 +59,29 @@ import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { ServerConfig } from "../interface";
 import { reactive, ref, watch } from "vue";
 import { ElMessage, FormInstance, FormRules } from "element-plus";
-
+// Note: the generalSetting use type HostSetting, need to convert !!
 interface HostSettingProps {
-  setting: ServerConfig.HostSetting;
+  setting: ServerConfig.Host;
 }
 const props = withDefaults(defineProps<HostSettingProps>(), {
   setting: () => ServerConfig.defaultHostSetting
 });
-let localSetting = reactive<ServerConfig.HostSetting>({ ...props.setting });
+let localSetting = reactive<ServerConfig.Host>({ ...props.setting });
 
 const hostSettingRef = ref<FormInstance>();
-const rules = reactive<FormRules<ServerConfig.HostSetting>>({
+const rules = reactive<FormRules<ServerConfig.Host>>({
   Number: [
     { required: true, message: "Please input host number", trigger: "blur" },
     { type: "number", message: "Please input a number", trigger: "blur" }
   ],
-  Regex: [
+  RegexStr: [
     { required: true, message: "Please input host regex", trigger: "blur" },
     { type: "regexp", message: "Please input a valid regex", trigger: "blur" }
   ]
 });
 
 interface tableDataType {
-  Regex: string;
+  RegexStr: string;
   isEdit: boolean;
 }
 interface formType {
@@ -91,28 +91,17 @@ interface formType {
 }
 const form = reactive<formType>({
   Number: localSetting.Number,
-  tableData: localSetting.Regex.map(item => ({ Regex: item, isEdit: false })),
+  tableData: localSetting.RegexStr.map(item => ({ RegexStr: item, isEdit: false })),
   WithID: localSetting.WithID
 });
 
 const emit = defineEmits(["update:setting"]);
-watch(
-  () => props.setting,
-  newSetting => {
-    localSetting = { ...newSetting };
-
-    form.Number = localSetting.Number;
-    form.tableData = localSetting.Regex.map(item => ({ Regex: item, isEdit: false }));
-    form.WithID = localSetting.WithID;
-  },
-  { deep: true }
-);
 
 watch(
   () => form,
   (newForm: formType) => {
     localSetting.Number = newForm.Number;
-    localSetting.Regex = newForm.tableData.map(item => item.Regex);
+    localSetting.RegexStr = newForm.tableData.map(item => item.RegexStr);
     localSetting.WithID = newForm.WithID;
     emit("update:setting", localSetting);
   },
@@ -121,7 +110,7 @@ watch(
 
 const addRow = () => {
   form.tableData.push({
-    Regex: "",
+    RegexStr: "",
     isEdit: true
   });
 };
@@ -131,7 +120,7 @@ const editRow = (index: number) => {
 const finishEdit = async (index: number) => {
   if (hostSettingRef.value) {
     try {
-      await hostSettingRef.value.validateField(`tableData[${index}].Regex`);
+      await hostSettingRef.value.validateField(`tableData[${index}].RegexStr`);
       form.tableData[index].isEdit = false;
     } catch (e) {
       ElMessage.error("Please check your host regex input");

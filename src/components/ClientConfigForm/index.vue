@@ -23,7 +23,6 @@
 import { ElMessage, ElMessageBox } from "element-plus";
 import { markRaw, Ref, reactive, ref, watchEffect } from "vue";
 import { ClientConfig } from "./interface";
-// import http from "@/api";
 import yaml from "js-yaml";
 import axios from "axios";
 import Anchor, { Tab } from "@/components/Anchor/index.vue";

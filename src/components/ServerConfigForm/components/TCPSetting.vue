@@ -94,20 +94,7 @@ const form = reactive<{ tableData: tableDataType[] }>({
 });
 
 const emit = defineEmits(["update:setting"]);
-watch(
-  () => props.setting,
-  newSetting => {
-    localSetting.splice(0, localSetting.length, ...newSetting);
-    form.tableData = localSetting.map(item => {
-      return {
-        Range: item.Range,
-        Number: item.Number,
-        isEdit: false
-      };
-    });
-  },
-  { deep: true }
-);
+
 watch(
   () => form.tableData,
   newTableData => {

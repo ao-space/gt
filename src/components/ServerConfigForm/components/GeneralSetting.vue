@@ -40,7 +40,7 @@
 <script setup lang="ts" name="GeneralSetting">
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { ServerConfig } from "../interface";
-import { reactive, ref, watchEffect } from "vue";
+import { reactive, ref, watch } from "vue";
 import { FormInstance, FormRules } from "element-plus";
 import TCPSetting from "./TCPSetting.vue";
 import HostSetting from "./HostSetting.vue";
@@ -52,61 +52,92 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
   setting: () => ServerConfig.defaultGeneralSetting
 });
 const localSetting = reactive<ServerConfig.GeneralSetting>({ ...props.setting });
+const emit = defineEmits(["update:setting"]);
+// Note: the component TCPSetting and HostSetting
+// need the type of TCP and Host respectively
+// instead of TCPInOptions and HostInOptions
+
+//switch TCPInOptions and HostInOptions to TCP and Host
+const tcpSetting = reactive<ServerConfig.TCP[]>(
+  localSetting.TCPRanges.map((range, index) => ({
+    Range: range,
+    Number: parseInt(localSetting.TCPNumbers[index])
+  }))
+);
+const hostSetting = reactive<ServerConfig.Host>({
+  Number: localSetting.HostNumber,
+  RegexStr: localSetting.HostRegex,
+  WithID: localSetting.HostWithID
+});
+
+//make sure the consistency
+watch(
+  () => tcpSetting,
+  newSetting => {
+    console.log("tcpSetting change");
+    localSetting.TCPRanges = newSetting.map(tcp => tcp.Range);
+    localSetting.TCPNumbers = newSetting.map(tcp => tcp.Number.toString());
+  },
+  { deep: true }
+);
+watch(
+  () => hostSetting,
+  newSetting => {
+    console.log("hostSetting change");
+    localSetting.HostNumber = newSetting.Number;
+    localSetting.HostRegex = newSetting.RegexStr;
+    localSetting.HostWithID = newSetting.WithID;
+  },
+  { deep: true }
+);
+
+//inform parent component to update setting
+watch(
+  () => localSetting,
+  () => {
+    emit("update:setting", localSetting);
+    console.log("update:setting");
+  },
+  { deep: true }
+);
 
 const generalSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules>({});
-const emit = defineEmits(["update:setting"]);
-watchEffect(() => {
-  emit("update:setting", localSetting);
-});
-// TODO: initialize
-let tcpSetting = reactive<ServerConfig.TCP[]>([
-  {
-    Range: "1-100",
-    Number: 100
-  },
-  {
-    Range: "101-200",
-    Number: 100
-  }
-]);
-let hostSetting = reactive<ServerConfig.HostSetting>({
-  // ...ServerConfig.defaultHostSetting
-  Regex: [".*", "http.*"],
-  Number: 2,
-  WithID: false
-});
+
 const tcpSettingRef = ref<InstanceType<typeof TCPSetting> | null>(null);
-// TODO: assign的局限性不能覆盖
+const hostSettingRef = ref<InstanceType<typeof HostSetting> | null>(null);
+
 const updateTCPSetting = (setting: ServerConfig.TCP[]) => {
   console.log("updateTCPSetting");
-  console.log(setting);
-  tcpSetting = setting; //in case of recursive of updateTCPSetting
+  tcpSetting.splice(0, tcpSetting.length, ...setting);
 };
-const hostSettingRef = ref<InstanceType<typeof HostSetting> | null>(null);
-const updateHostSetting = (setting: ServerConfig.HostSetting) => {
+const updateHostSetting = (setting: ServerConfig.Host) => {
   console.log("updateHostSetting");
-  console.log(setting);
-  hostSetting = setting; //in case of recursive of updateHostSetting
+  hostSetting.Number = setting.Number;
+  hostSetting.RegexStr = setting.RegexStr;
+  hostSetting.WithID = setting.WithID;
 };
 
 const validateForm = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    //TODO: 子组件校验
-    tcpSettingRef.value?.validateForm().then(() => {
-      console.log("tcpSettingRef.value?.validateForm() success");
-    });
-    if (generalSettingRef.value) {
-      generalSettingRef.value.validate(valid => {
-        if (valid) {
-          resolve();
-        } else {
-          reject(new Error("General Setting validation failed, please check your input"));
-        }
-      });
-    } else {
-      reject(new Error("General Setting is not ready"));
-    }
+  const validations = [
+    tcpSettingRef.value?.validateForm(),
+    hostSettingRef.value?.validateForm(),
+    new Promise<void>((resolve, reject) => {
+      if (generalSettingRef.value) {
+        generalSettingRef.value.validate(valid => {
+          if (valid) {
+            resolve();
+          } else {
+            reject(new Error("General Setting validation failed, please check your input!"));
+          }
+        });
+      } else {
+        reject(new Error("General Setting is not ready!"));
+      }
+    })
+  ];
+  return Promise.all(validations).then(() => {
+    console.log("General Setting validation passed!");
   });
 };
 
