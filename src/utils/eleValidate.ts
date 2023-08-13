@@ -56,3 +56,24 @@ export const validatorPositiveInteger = (rule: any, value: any, callback: any) =
     callback(new Error("Please enter a valid positive integer"));
   }
 };
+
+export const validatorAddr = (rule: any, value: any, callback: any) => {
+  console.log("Calling validatorAddr");
+  const portPattern = "\\d{1,5}";
+  const ipPattern = "(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|0\\.0\\.0\\.0)";
+  const regex = new RegExp(`^(?:${ipPattern}:)?${portPattern}$|^${portPattern}$`);
+  if (!value) {
+    callback(new Error("Please enter a value"));
+  }
+  if (regex.test(value)) {
+    const parts = value.split(":");
+    const port = parseInt(parts[parts.length - 1]);
+    const MIN_PORT = 1;
+    const MAX_PORT = 65535;
+    if (MIN_PORT <= port && port <= MAX_PORT) {
+      console.log("regex test passed");
+      callback();
+    }
+  }
+  return callback(new Error("Please enter a valid address"));
+};
