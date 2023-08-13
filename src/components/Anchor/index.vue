@@ -42,7 +42,7 @@ $primary-color: #1890ff;
     position: fixed;
     top: 50%;
     right: 30px;
-    z-index: 1;
+    z-index: 100;
     width: auto;
     height: auto;
     background-color: rgb(170 170 170 / 20%);

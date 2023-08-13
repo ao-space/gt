@@ -97,6 +97,7 @@ const removeService = (index: number) => {
     return;
   } else {
     services.splice(index, 1);
+    serviceSettingRefs.splice(index, 1);
     //delete the related tablist
     let tabListIndex = tabList.findIndex(tab => tab.title === `Service ${index + 1} Setting`);
 

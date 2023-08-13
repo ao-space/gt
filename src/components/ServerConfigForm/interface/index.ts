@@ -172,7 +172,9 @@ export namespace ServerConfig {
     Connections: 0,
     Host: defaultHostSetting
   };
-
+  export interface FormRef {
+    validateForm: () => Promise<void>;
+  }
   export const usage = {
     // General Setting
 
