@@ -1,6 +1,7 @@
 <template>
   <GeneralSetting :setting="generalSetting" />
   <NetworkSetting :setting="netWorkSetting" />
+  <SecuritySetting :setting="securitySetting" />
   <el-button type="primary" @click="submit">Submit</el-button>
 </template>
 
@@ -9,6 +10,7 @@ import { reactive } from "vue";
 import yaml from "js-yaml";
 import GeneralSetting from "./components/GeneralSetting.vue";
 import NetworkSetting from "./components/NetworkSetting.vue";
+import SecuritySetting from "./components/SecuritySetting.vue";
 import { ServerConfig } from "./interface";
 const tcps = reactive<ServerConfig.TCP[]>([
   {

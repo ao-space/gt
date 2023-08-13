@@ -65,7 +65,6 @@
       </el-descriptions>
     </div>
   </el-form>
-  <el-button type="primary" @click="validateForm">Validate</el-button>
 </template>
 <script setup name="NetworkSetting" lang="ts">
 import { FormInstance, FormRules } from "element-plus";
