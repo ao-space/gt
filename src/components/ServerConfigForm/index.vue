@@ -3,6 +3,9 @@
   <NetworkSetting :setting="netWorkSetting" />
   <SecuritySetting :setting="securitySetting" />
   <ConnectionSetting :setting="connectionsSetting" />
+  <APISetting :setting="apiSetting" />
+  <SentrySetting :setting="sentrySetting" />
+  <LogSetting :setting="logSetting" />
   <el-button type="primary" @click="submit">Submit</el-button>
 </template>
 
@@ -13,7 +16,13 @@ import GeneralSetting from "./components/GeneralSetting.vue";
 import NetworkSetting from "./components/NetworkSetting.vue";
 import SecuritySetting from "./components/SecuritySetting.vue";
 import ConnectionSetting from "./components/ConnectionSetting.vue";
+import APISetting from "./components/APISetting.vue";
 import { ServerConfig } from "./interface";
+
+//TODO: move location
+import SentrySetting from "@/components/ClientConfigForm/components/SentrySetting.vue";
+import LogSetting from "../ClientConfigForm/components/LogSetting.vue";
+
 const tcps = reactive<ServerConfig.TCP[]>([
   {
     Range: "1-100",
