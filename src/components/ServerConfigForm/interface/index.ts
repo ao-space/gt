@@ -22,6 +22,9 @@ export namespace ServerConfig {
     Host: Host;
     // temp: boolean;
   }
+  export interface UserSetting extends User {
+    ID: string;
+  }
 
   export interface Host {
     Number: number;
@@ -160,6 +163,14 @@ export namespace ServerConfig {
     LogFileMaxSize: 0,
     LogFileMaxCount: 0,
     LogLevel: ""
+  };
+  export const defaultUserSetting: UserSetting = {
+    ID: "",
+    Secret: "",
+    TCPs: [],
+    Speed: 0,
+    Connections: 0,
+    Host: defaultHostSetting
   };
 
   export const usage = {

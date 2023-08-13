@@ -6,6 +6,7 @@
   <APISetting :setting="apiSetting" />
   <SentrySetting :setting="sentrySetting" />
   <LogSetting :setting="logSetting" />
+  <UserSetting :index="0" :is-last="true" :setting="userSetting" />
   <el-button type="primary" @click="submit">Submit</el-button>
 </template>
 
@@ -17,6 +18,7 @@ import NetworkSetting from "./components/NetworkSetting.vue";
 import SecuritySetting from "./components/SecuritySetting.vue";
 import ConnectionSetting from "./components/ConnectionSetting.vue";
 import APISetting from "./components/APISetting.vue";
+import UserSetting from "./components/UserSetting.vue";
 import { ServerConfig } from "./interface";
 
 //TODO: move location
@@ -58,6 +60,14 @@ const users = reactive<Record<string, ServerConfig.User>>({
     Speed: 100,
     Connections: 100
   }
+});
+const userSetting = reactive<ServerConfig.UserSetting>({
+  ID: Object.keys(users)[0],
+  Secret: users[Object.keys(users)[0]].Secret,
+  TCPs: users[Object.keys(users)[0]].TCPs,
+  Host: users[Object.keys(users)[0]].Host,
+  Speed: users[Object.keys(users)[0]].Speed,
+  Connections: users[Object.keys(users)[0]].Connections
 });
 const generalSetting = reactive<ServerConfig.GeneralSetting>({
   // ...ServerConfig.defaultGeneralSetting

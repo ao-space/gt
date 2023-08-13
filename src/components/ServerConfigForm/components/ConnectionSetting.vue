@@ -1,6 +1,6 @@
 <template>
   <el-form ref="ConnectionRef" :model="localSetting" :rules="rules">
-    <diV class="card content-box">
+    <div class="card content-box">
       <el-descriptions :column="2" :border="true">
         <template #title> Connection Setting </template>
         <el-descriptions-item>
@@ -58,7 +58,7 @@
           </el-form-item>
         </el-descriptions-item>
       </el-descriptions>
-    </diV>
+    </div>
   </el-form>
 </template>
 <script setup name="ConnectionSetting" lang="ts">
