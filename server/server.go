@@ -322,7 +322,7 @@ func (s *Server) startSTUNServer() (err error) {
 	factory := logging.NewDefaultLoggerFactory()
 	factory.Writer = stunLogger
 	var lv logging.LogLevel
-	switch strings.ToUpper(s.config.LogLevel) {
+	switch strings.ToUpper(s.config.STUNLogLevel) {
 	default:
 		fallthrough
 	case "DISABLE":
