@@ -255,13 +255,17 @@ func (c *conn) handleHTTP() (handled bool) {
 func (c *conn) handleTunnelLoop(remoteIP string) (handled bool) {
 	var reload bool
 	var cli *client
+	clients := make(map[*client]struct{})
 	defer func() {
-		if cli != nil {
+		for cli := range clients {
 			cli.removeTunnel(c)
 		}
 	}()
 	for {
 		handled, reload, cli = c.handleTunnel(remoteIP, reload)
+		if cli != nil {
+			clients[cli] = struct{}{}
+		}
 		if !reload {
 			break
 		}
@@ -725,6 +729,13 @@ func (c *conn) readLoop(cli *client) (reload bool) {
 		case connection.PingSignal:
 			if predef.Debug {
 				c.Logger.Trace().Msg("readLoop read ping signal")
+			}
+			cli.tunnelsRWMtx.RLock()
+			_, ok := cli.tunnels[c]
+			cli.tunnelsRWMtx.RUnlock()
+			if !ok {
+				c.SendCloseSignal()
+				return
 			}
 			err = c.SendPingSignal()
 			if err != nil {

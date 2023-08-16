@@ -787,6 +787,11 @@ func (c *Client) ReloadServices() (err error) {
 		t.Logger.Info().Msg("sent reload info")
 		c.reloadWaitGroup.Add(1)
 	}
+	timer := time.AfterFunc(15*time.Second, func() {
+		c.Logger.Warn().Msg("reload timeout")
+		os.Exit(1)
+	})
 	c.reloadWaitGroup.Wait()
+	timer.Stop()
 	return
 }

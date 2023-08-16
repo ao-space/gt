@@ -251,6 +251,9 @@ func (c *conn) readLoop(connID uint) {
 			}
 			errCode := uint16(peekBytes[1]) | uint16(peekBytes[0])<<8
 			c.Logger.Error().Err(connection.Error(errCode)).Msg("read error signal")
+			if c.client.reloading.Load() {
+				c.client.reloadWaitGroup.Done()
+			}
 			return
 		case connection.InfoSignal:
 			peekBytes, err = c.Reader.Peek(2)
