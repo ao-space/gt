@@ -111,11 +111,30 @@ func (c *client) addTunnel(t *conn, reload bool, o options) (ok bool, err error)
 	}
 
 	if c.checksumBlacklist.Contains(o.configChecksum) {
-		err = connection.ErrDifferentConfigClientConnected
-		if e := t.SendErrorSignalDifferentConfigClientConnected(); e != nil {
-			t.Logger.Error().Err(e).Msg("failed to SendErrorSignalDifferentConfigClientConnected")
+		t.Logger.Info().
+			Hex("checksum", o.configChecksum[:]).
+			Msg("old config connecting")
+		conflict := false
+		for tunnel := range c.tunnels {
+			tunnel.Logger.Info().
+				Hex("newChecksum", o.configChecksum[:]).
+				Hex("oldChecksum", tunnel.configChecksum[:]).
+				Msg("connection in pool")
+			if o.configChecksum != tunnel.configChecksum {
+				tunnel.Logger.Info().
+					Hex("newChecksum", o.configChecksum[:]).
+					Hex("oldChecksum", tunnel.configChecksum[:]).
+					Msg("connection in pool is different")
+				conflict = true
+			}
 		}
-		return
+		if conflict {
+			err = connection.ErrDifferentConfigClientConnected
+			if e := t.SendErrorSignalDifferentConfigClientConnected(); e != nil {
+				t.Logger.Error().Err(e).Msg("failed to SendErrorSignalDifferentConfigClientConnected")
+			}
+			return
+		}
 	}
 
 	if c.lastProcessedChecksum == o.configChecksum {
