@@ -3,14 +3,6 @@
     <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
       <component :is="tab.component" :ref="tab.ref" :setting="tab.setting" @update:setting="tab.updateSetting" />
     </template>
-    <!-- <GeneralSetting :setting="generalSetting" />
-    <NetworkSetting :setting="netWorkSetting" />
-    <SecuritySetting :setting="securitySetting" />
-    <ConnectionSetting :setting="connectionsSetting" />
-    <APISetting :setting="apiSetting" />
-    <SentrySetting :setting="sentrySetting" />
-    <LogSetting :setting="logSetting" /> -->
-    <!-- <UserSetting :index="0" :is-last="true" :setting="userSetting" /> -->
     <template v-for="(tab, index) in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
         :is="tab.component"
@@ -152,7 +144,6 @@ const serverConfig = reactive<ServerConfig.Config>({
   Options: options
 });
 
-// can ?
 const updateGeneralSetting = (newSetting: ServerConfig.GeneralSetting) => {
   console.log("updateGeneralSetting", newSetting);
   Object.assign(generalSetting, newSetting);
@@ -238,7 +229,7 @@ const removeUser = (index: number) => {
     tabList[tabListIndex + i - index].name = `User${i + 1}Setting`;
   }
 };
-//TODO : IDchange 先创建 多个id 有问题key值一样
+//TODO : IDchange 先创建 多个id 有问题key值一样  fix: 最后在同步
 const updateUserSetting = (index: number, newSetting: ServerConfig.UserSetting) => {
   if (0 <= index && index < userList.length) {
     const oldId = Object.keys(users)[index];

@@ -25,7 +25,7 @@
           </el-form-item>
         </el-descriptions-item>
       </el-descriptions>
-      <el-row style="width: 100%">
+      <el-row :gutter="10" style="width: 100%">
         <el-col :span="12">
           <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
         </el-col>
