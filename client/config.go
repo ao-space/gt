@@ -15,7 +15,10 @@
 package client
 
 import (
+	"fmt"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/isrc-cas/gt/config"
@@ -27,7 +30,7 @@ import (
 // Config is a client config.
 type Config struct {
 	Version  string // 目前未使用
-	Services []service
+	Services services
 	Options
 }
 
@@ -75,6 +78,8 @@ type Options struct {
 	LogFileMaxCount uint   `yaml:"logFileMaxCount" usage:"Max count of the log files"`
 	LogLevel        string `yaml:"logLevel" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
 	Version         bool   `arg:"version" yaml:"-" usage:"Show the version of this program"`
+
+	Signal string `arg:"s" yaml:"-" usage:"Send signal to client processes. Supports values: reload, restart, stop, kill"`
 }
 
 func defaultConfig() Config {
@@ -104,6 +109,11 @@ type clientURL struct {
 	*url.URL
 }
 
+func (c *clientURL) UnmarshalYAML(value *yaml.Node) (err error) {
+	c.URL, err = url.Parse(value.Value)
+	return
+}
+
 type service struct {
 	HostPrefix         string        `yaml:"hostPrefix"`
 	RemoteTCPPort      uint16        `yaml:"remoteTCPPort"`
@@ -113,7 +123,34 @@ type service struct {
 	UseLocalAsHTTPHost bool          `yaml:"useLocalAsHTTPHost"`
 }
 
-func (c *clientURL) UnmarshalYAML(value *yaml.Node) (err error) {
-	c.URL, err = url.Parse(value.Value)
-	return
+func (s *service) String() string {
+	sb := &strings.Builder{}
+	sb.WriteString("service {")
+	sb.WriteString("hostPrefix: ")
+	sb.WriteString(s.HostPrefix)
+	sb.WriteString(", local: ")
+	sb.WriteString(s.LocalURL.String())
+	sb.WriteString(", remoteTCPPort: ")
+	sb.WriteString(strconv.Itoa(int(s.RemoteTCPPort)))
+	if s.RemoteTCPRandom != nil {
+		sb.WriteString(", remoteTCPRandom: ")
+		sb.WriteString(fmt.Sprintf("%t", *s.RemoteTCPRandom))
+	}
+	sb.WriteString("}")
+	return sb.String()
+}
+
+type services []service
+
+func (ss services) String() string {
+	sb := &strings.Builder{}
+	sb.WriteByte('[')
+	for i, s := range ss {
+		sb.WriteString(s.String())
+		if i != len(ss)-1 {
+			sb.WriteByte(',')
+		}
+	}
+	sb.WriteByte(']')
+	return sb.String()
 }

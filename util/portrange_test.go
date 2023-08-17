@@ -22,25 +22,25 @@ import (
 func TestPortRange(t *testing.T) {
 	tests := []struct {
 		args           string
-		expectedResult *PortRange
+		expectedResult PortRange
 	}{
 		{
 			args: "22-80",
-			expectedResult: &PortRange{
+			expectedResult: PortRange{
 				Min: 22,
 				Max: 80,
 			},
 		},
 		{
 			args: "80",
-			expectedResult: &PortRange{
+			expectedResult: PortRange{
 				Min: 80,
 				Max: 80,
 			},
 		},
 		{
 			args: "0",
-			expectedResult: &PortRange{
+			expectedResult: PortRange{
 				Min: 1,
 				Max: 65535,
 			},

@@ -33,9 +33,9 @@ GT 是一个支持点对点直连（P2P）和互联网中转的反向代理开�
   - [TLS 加密客户端服务端之间的 HTTP 通信](#tls-%E5%8A%A0%E5%AF%86%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%9C%8D%E5%8A%A1%E7%AB%AF%E4%B9%8B%E9%97%B4%E7%9A%84-http-%E9%80%9A%E4%BF%A1)
   - [TCP 内网穿透](#tcp-%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F)
   - [客户端同时开启多个服务](#%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%90%8C%E6%97%B6%E5%BC%80%E5%90%AF%E5%A4%9A%E4%B8%AA%E6%9C%8D%E5%8A%A1)
-- [参数](#%E5%8F%82%E6%95%B0)
-  - [客户端参数](#%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%8F%82%E6%95%B0)
-  - [服务端参数](#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%8F%82%E6%95%B0)
+- [用法](#用法)
+  - [客户端命令行参数](#客户端命令行参数)
+  - [服务端命令行参数](#服务端命令行参数)
   - [配置文件](#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)
   - [服务端配置 users](#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E9%85%8D%E7%BD%AE-users)
     - [通过命令行配置 users](#%E9%80%9A%E8%BF%87%E5%91%BD%E4%BB%A4%E8%A1%8C%E9%85%8D%E7%BD%AE-users)
@@ -264,33 +264,33 @@ options:
   secret: secret1
 ```
 
-## 参数
+## 用法
 
-### 客户端参数
+### 客户端命令行参数
 
 ```shell
 # ./release/linux-amd64-client -h
 Usage of ./release/linux-amd64-client:
   -config string
-        配置文件路径。
+        要加载的配置文件路径
   -hostPrefix value
         服务端将识别此 host 前缀并转发到 local
   -id string
         唯一的用户标识符。目前为域名的前缀。
   -local value
-        需要转发的本地服务地址
+        本地服务 URL
   -localTimeout value
-        本地服务超时时间。支持像‘30s’，‘5m’这样的值
+        本地连接的超时时间。支持值如“30s”、“5m”
   -logFile string
         保存日志文件的路径
   -logFileMaxCount uint
-        日志文件数量限制（默认 7）
+        日志文件的最大个数（默认为7）
   -logFileMaxSize int
-        日志文件大小（默认 536870912）
+        日志文件的最大大小（默认为536870912）
   -logLevel string
-        日志级别: trace, debug, info, warn, error, fatal, panic, disable (默认 "info")。
+        日志级别：trace、debug、info、warn、error、fatal、panic、disable（默认为“info”）
   -reconnectDelay duration
-        重连等待时间 (默认 5s)
+        重新连接之前的延迟。支持值如“30s”、“5m”（默认为5s）
   -remote string
         服务端地址。支持 tcp:// 和 tls://, 默认 tcp://。
   -remoteAPI string
@@ -300,27 +300,29 @@ Usage of ./release/linux-amd64-client:
   -remoteCertInsecure
         允许自签名的服务器证书
   -remoteConnections uint
-        服务器的连接数。有效值为 1 到 10（默认 3）
+        池中最大服务器连接数。有效值为 1 到 10（默认为 3）
   -remoteIdleConnections uint
-        在池中保留的空闲服务器连接数（默认为1）
+        池中保留的空闲服务器连接数（默认为 1）
   -remoteSTUN string
-        STUN 服务端地址
+        远程 STUN 服务器地址
   -remoteTCPPort value
-        服务端将开启的 TCP 端口
+        远程服务器将打开的 TCP 端口
   -remoteTCPRandom
-        是否由服务端选择一个随机的 TCP 端口
+        是否由远程服务器选择随机 tcp 端口
   -remoteTimeout duration
-        服务器连接超时。支持像‘30s’，‘5m’这样的值（默认 5s）
-  -secret value
-        用于校验 ID 的机密
+        远程连接的超时时间。支持值如“30s”、“5m”（默认为 45s）
+  -s string
+        发送信号给客户端进程。支持的值：reload、restart、stop、kill
+  -secret string
+        用于验证 ID 的 secret
   -sentryDSN string
-        开启上报日志到 Sentry  DSN 的功能。
+        要使用的 Sentry DSN
   -sentryDebug
-        开启 Sentry debug 模式
+        Sentry 调试模式，会打印调试信息，以帮助你理解 Sentry 在做什么
   -sentryEnvironment string
-        发送到 Sentry 的 environment
+        要与事件一起发送的 Sentry 环境
   -sentryLevel value
-        发送到 Sentry 的日志级别: trace, debug, info, warn, error, fatal, panic (默认 ["error", "fatal", "panic"])
+        Sentry 级别：trace、debug、info、warn、error、fatal、panic（默认为“error”、“fatal”、“panic”）
   -sentryRelease string
         发送到 Sentry 的 release
   -sentrySampleRate float
@@ -336,18 +338,18 @@ Usage of ./release/linux-amd64-client:
   -useLocalAsHTTPHost
         转发请求到 local 参数指定的地址时将 local 参数作为 HTTP Host
   -version
-        打印此程序的版本
+        显示此程序的版本
   -webrtcConnectionIdleTimeout duration
-        WebRTC 连接的超时时间。支持像‘30s’，‘5m’这样的值（默认 5m0s）
+        WebRTC 连接的超时时间。支持值如“30s”、“5m”（默认为 5m0s）
   -webrtcLogLevel string
-        WebRTC 日志级别：verbose, info, warning, error (默认 "warning")
+        WebRTC 日志级别：verbose、info、warning、error（默认为“warning”）
   -webrtcMaxPort uint
         WebRTC peer connection 的最大端口
   -webrtcMinPort uint
         WebRTC peer connection 的最小端口
 ```
 
-### 服务端参数
+### 服务端命令行参数
 
 ```shell
 # ./release/linux-amd64-server -h
@@ -654,53 +656,53 @@ $ ps aux
 
 你可以选择从镜像或者官方获取 WebRTC 并编译 GT：
 
-### 1. 从 ISCAS 镜像获取 WebRTC 并编译 GT：
+### 从 ISCAS 镜像获取 WebRTC 并编译 GT
 
-#### 获取代码
+1. 获取代码
 
-```shell
-git clone <url>
-cd <folder>
-```
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
 
-#### 编译
+2. 编译
 
-在 Linux 上编译：
+      在 Linux 上编译：
 
-```shell
-make release
-```
+      ```shell
+      make release
+      ```
 
-编译后的可执行文件在 release 目录下。
+      编译后的可执行文件在 release 目录下。
 
-### 2. 从官方获取 WebRTC 并编译 GT：
+### 从官方获取 WebRTC 并编译 GT
 
-#### 获取代码
+1. 获取代码
 
-```shell
-git clone <url>
-cd <folder>
-```
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
 
-#### 从官方获取 WebRTC
+2. 从官方获取 WebRTC
 
-```shell
-mkdir -p dep/_google-webrtc
-cd dep/_google-webrtc
-git clone https://webrtc.googlesource.com/src
-```
+      ```shell
+      mkdir -p dep/_google-webrtc
+      cd dep/_google-webrtc
+      git clone https://webrtc.googlesource.com/src
+      ```
 
-然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
+      然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
 
-#### 编译
+3. 编译
 
-在 Linux 上编译：
+      在 Linux 上编译：
 
-```shell
-WITH_OFFICIAL_WEBRTC=1 make release
-```
+      ```shell
+      WITH_OFFICIAL_WEBRTC=1 make release
+      ```
 
-编译后的可执行文件在 release 目录下。
+      编译后的可执行文件在 release 目录下。
 
 ## 演进计划
 

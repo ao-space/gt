@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"sync/atomic"
 	"time"
 )
 
@@ -45,9 +44,8 @@ func (b *Position[T]) Set(value string) error {
 	default:
 		fmt.Sscanf(value, "%v", &b.Value)
 	}
-	b.Position = atomic.LoadUint32(&position)
-	atomic.AddUint32(&position, 1)
-	if atomic.LoadUint32(&position) == 0 {
+	b.Position = position.Add(1)
+	if b.Position == 0 {
 		return errors.New("position out of uint32 range")
 	}
 	return nil

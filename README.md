@@ -37,9 +37,9 @@ The main features that have been implemented so far:
   - [Client HTTP Convert to HTTPS](#client-http-convert-to-https)
   - [TCP](#tcp)
   - [Client Starts Multiple Services at The Same Time](#client-starts-multiple-services-at-the-same-time)
-- [Parameters](#parameters)
-  - [Client Parameters](#client-parameters)
-  - [Server Parameters](#server-parameters)
+- [Usage](#usage)
+  - [Client Command-line Arguments](#client-command-line-arguments)
+  - [Server Command-line Arguments](#server-command-line-arguments)
   - [Configuration](#configuration)
   - [Server User Configurations](#server-user-configurations)
     - [Configure Users Through Command Line](#configure-users-through-command-line)
@@ -259,44 +259,38 @@ client.yaml file content：
 
 ```yaml
 services:
-  - id: id1
-    secret: secret1
-    local: http://127.0.0.1:80
+  - local: http://127.0.0.1:80
     useLocalAsHTTPHost: true
-  - id: id2
-    secret: secret2
-    local: http://127.0.0.1:8080
+    hostPrefix: 1
+  - local: http://127.0.0.1:8080
     useLocalAsHTTPHost: true
-  - id: id1
-    secret: secret1
-    local: tcp://127.0.0.1:2222
-    useLocalAsHTTPHost: true
+    hostPrefix: 2
+  - local: tcp://127.0.0.1:2222
     remoteTCPPort: 2222
-  - id: id1
-    secret: secret1
-    local: tcp://127.0.0.1:2223
-    useLocalAsHTTPHost: true
+  - local: tcp://127.0.0.1:2223
     remoteTCPPort: 2223
 options:
   remote: tcp://id1.example.com:8080
+  id: id1
+  secret: secret1
 ```
 
-## Parameters
+## Usage
 
-### Client Parameters
+### Client Command-line Arguments
 
 ```shell
 # ./release/linux-amd64-client -h
 Usage of ./release/linux-amd64-client:
   -config string
         The config file path to load
-  -hostPrefix
+  -hostPrefix value
         The server will recognize this host prefix and forward data to local
   -id string
         The unique id used to connect to server. Now it's the prefix of the domain.
-  -local
+  -local value
         The local service url
-  -localTimeout
+  -localTimeout value
         The timeout of local connections. Supports values like '30s', '5m'
   -logFile string
         Path to save the log file
@@ -322,12 +316,14 @@ Usage of ./release/linux-amd64-client:
         The number of idle server connections kept in the pool (default 1)
   -remoteSTUN string
         The remote STUN server address
-  -remoteTCPPort
+  -remoteTCPPort value
         The TCP port that the remote server will open
   -remoteTCPRandom
         Whether to choose a random tcp port by the remote server
   -remoteTimeout duration
         The timeout of remote connections. Supports values like '30s', '5m' (default 45s)
+  -s string
+        Send signal to client processes. Supports values: reload, restart, stop, kill
   -secret string
         The secret used to verify the id
   -sentryDSN string
@@ -336,7 +332,7 @@ Usage of ./release/linux-amd64-client:
         Sentry debug mode, the debug information is printed to help you understand what sentry is doing
   -sentryEnvironment string
         Sentry environment to be sent with events
-  -sentryLevel
+  -sentryLevel value
         Sentry levels: trace, debug, info, warn, error, fatal, panic (default ["error", "fatal", "panic"])
   -sentryRelease string
         Sentry release to be sent with events
@@ -364,7 +360,7 @@ Usage of ./release/linux-amd64-client:
         The min port of WebRTC peer connection
 ```
 
-### Server Parameters
+### Server Command-line Arguments
 
 ```shell
 # ./release/linux-amd64-server -h
@@ -678,55 +674,55 @@ $ ps aux
 
 You can either build GT with webrtc downloaded from mirror or from official:
 
-### 1. Build GT with webrtc downloaded from ISCAS mirror:
+### Build GT with webrtc downloaded from ISCAS mirror
 
-#### Get the code
+1. Get the code
 
-```shell
-git clone <url>
-cd <folder>
-```
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
 
-#### Build
+2. Build
 
-Build it on linux:
+      Build it on linux:
 
-```shell
-make release
-```
+      ```shell
+      make release
+      ```
 
-The compiled executable file is in the release directory.
+      The compiled executable file is in the release directory.
 
-### 2. Build GT with webrtc downloaded from official repo:
+### Build GT with webrtc downloaded from official repo
 
-#### Get the code
+1. Get the code
 
-```shell
-git clone <url>
-cd <folder>
-```
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
 
-#### Download webrtc from official
+2. Download webrtc from official
 
-```shell
-mkdir -p dep/_google-webrtc
-cd dep/_google-webrtc
-git clone https://webrtc.googlesource.com/src
-```
+      ```shell
+      mkdir -p dep/_google-webrtc
+      cd dep/_google-webrtc
+      git clone https://webrtc.googlesource.com/src
+      ```
 
-And then follow [the steps in the link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
-check out the build toolchain and many
-dependencies.
+      And then follow [the steps in the link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
+      check out the build toolchain and many
+      dependencies.
 
-#### Build
+3. Build
 
-Build it on linux:
+      Build it on linux:
 
-```shell
-WITH_OFFICIAL_WEBRTC=1 make release
-```
+      ```shell
+      WITH_OFFICIAL_WEBRTC=1 make release
+      ```
 
-The compiled executable file is in the release directory.
+      The compiled executable file is in the release directory.
 
 ## TODO
 
@@ -819,4 +815,3 @@ Many thanks to the following people who have contributed to this project:
 
 - [zhiyi](https://github.com/vyloy)
 - [jianti](https://github.com/FH0)
-

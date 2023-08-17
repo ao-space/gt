@@ -2,13 +2,14 @@ name: container build and push
 
 on:
   push:
-    branches: [ "dev" ]
-    tags: [ 'v*.*.*' ]
+    branches: [ "*" ]
+    tags: [ '*.*.*' ]
   pull_request:
-    branches: [ "dev" ]
+    branches: [ "*" ]
 
 env:
   REGISTRY: ghcr.io
+  EULIX_REGISTRY: hub.eulix.xyz
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -80,11 +81,21 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Log into registry ${{ env.EULIX_REGISTRY }}
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.EULIX_REGISTRY }}
+        username: ${{ secrets.EULIX_REGISTRY_USERNAME }}
+        password: ${{ secrets.EULIX_REGISTRY_PASSWORD }}
+
     - name: Extract Docker metadata for Server
       id: meta-server
       uses: docker/metadata-action@v2
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        images: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          ${{ env.EULIX_REGISTRY }}/${{ env.IMAGE_NAME }}
         flavor: |
           prefix=server-
 
@@ -106,7 +117,9 @@ jobs:
       id: meta-client
       uses: docker/metadata-action@v2
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        images: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          ${{ env.EULIX_REGISTRY }}/${{ env.IMAGE_NAME }}
         flavor: |
           prefix=client-
 
@@ -118,6 +131,52 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta-client.outputs.tags }}
         labels: ${{ steps.meta-client.outputs.labels }}
+        builder: ${{ steps.buildx.outputs.name }}
+        platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        file: Dockerfile-client
+
+    - name: Extract Docker metadata for Server
+      id: meta-opensource-server
+      uses: docker/metadata-action@v2
+      with:
+        images: |
+          ${{ env.EULIX_REGISTRY }}/cicada-private/aonetwork-server
+        flavor: |
+          prefix=opensource-server-
+
+    - name: Build and push Docker image for Server
+      id: build-and-push-opensource-server 
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta-opensource-server.outputs.tags }}
+        labels: ${{ steps.meta-opensource-server.outputs.labels }}
+        builder: ${{ steps.buildx.outputs.name }}
+        platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        file: Dockerfile-server
+
+    - name: Extract Docker metadata for Client
+      id: meta-opensource-client
+      uses: docker/metadata-action@v2
+      with:
+        images: |
+          ${{ env.EULIX_REGISTRY }}/cicada-private/aonetwork-client
+        flavor: |
+          prefix=opensource-client-
+
+    - name: Build and push Docker image for Client
+      id: build-and-push-opensource-client 
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta-opensource-client.outputs.tags }}
+        labels: ${{ steps.meta-opensource-client.outputs.labels }}
         builder: ${{ steps.buildx.outputs.name }}
         platforms: linux/amd64,linux/arm64
         cache-from: type=gha

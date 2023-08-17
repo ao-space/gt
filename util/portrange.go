@@ -30,15 +30,16 @@ type PortRange struct {
 // 22-80 -> 22-80
 // 80 -> 80-80
 // 0 -> 1-65535
-func NewPortRangeFromString(portRangeStr string) (_ *PortRange, err error) {
+func NewPortRangeFromString(portRangeStr string) (pr PortRange, err error) {
 	var min uint64
 	var max uint64
 
 	i := strings.IndexByte(portRangeStr, '-')
 	if i == -1 {
-		port, err := strconv.ParseUint(portRangeStr, 10, 16)
+		var port uint64
+		port, err = strconv.ParseUint(portRangeStr, 10, 16)
 		if err != nil {
-			return nil, err
+			return
 		}
 		if port == 0 {
 			min = 1
@@ -52,28 +53,27 @@ func NewPortRangeFromString(portRangeStr string) (_ *PortRange, err error) {
 
 	min, err = strconv.ParseUint(portRangeStr[:i], 10, 16)
 	if err != nil {
-		return nil, err
+		return
 	}
 	max, err = strconv.ParseUint(portRangeStr[i+1:], 10, 16)
 	if err != nil {
-		return nil, err
+		return
 	}
 	return NewPortRangeFromNumber(uint16(min), uint16(max))
 }
 
 // NewPortRangeFromNumber 新建 PortRange
-func NewPortRangeFromNumber(min, max uint16) (*PortRange, error) {
-	pr := &PortRange{}
-
+func NewPortRangeFromNumber(min, max uint16) (pr PortRange, err error) {
+	if min > max {
+		err = errors.New("the minimum value is greater than the maximum value")
+		return
+	}
 	if min == 0 {
 		min = 1
 	}
 
 	pr.Min = min
 	pr.Max = max
-	if pr.Min > pr.Max {
-		return nil, errors.New("the minimum value is greater than the maximum value")
-	}
 	return pr, nil
 }
 
