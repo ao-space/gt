@@ -15,14 +15,13 @@
 package config
 
 import (
-	"sync/atomic"
 	"testing"
 	"time"
 )
 
 func TestPosition(t *testing.T) {
 	// 重置 position，不能使用 t.Parallel()
-	atomic.StoreUint32(&position, 0)
+	position.Store(0)
 
 	// time.Duration 这是一个特殊的类型
 	var durationPosition Position[time.Duration]
@@ -30,7 +29,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if durationPosition.String() != "Value: 1s Position: 0" {
+	if durationPosition.String() != "Value: 1s Position: 1" {
 		t.Fatal("durationPosition.String() != \"Value: 1s Position: 0\"")
 	}
 
@@ -40,7 +39,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stringPosition.String() != "Value: hello Position: 1" {
+	if stringPosition.String() != "Value: hello Position: 2" {
 		t.Fatal("stringPosition.String() != \"Value: hello Position: 1\"")
 	}
 
@@ -50,7 +49,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if boolPosition.String() != "Value: true Position: 2" {
+	if boolPosition.String() != "Value: true Position: 3" {
 		t.Fatal("boolPosition.String() != \"Value: true Position: 2\"")
 	}
 
@@ -60,7 +59,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if float32Position.String() != "Value: 1.1 Position: 3" {
+	if float32Position.String() != "Value: 1.1 Position: 4" {
 		t.Fatal("float32Position.String() != \"Value: 1.1 Position: 3\"")
 	}
 
@@ -70,7 +69,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if float64Position.String() != "Value: 1.1 Position: 4" {
+	if float64Position.String() != "Value: 1.1 Position: 5" {
 		t.Fatal("float64Position.String() != \"Value: 1.1 Position: 4\"")
 	}
 
@@ -80,7 +79,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if intPosition.String() != "Value: 1 Position: 5" {
+	if intPosition.String() != "Value: 1 Position: 6" {
 		t.Fatal("intPosition.String() != \"Value: 1 Position: 5\"")
 	}
 
@@ -90,7 +89,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if int8Position.String() != "Value: 1 Position: 6" {
+	if int8Position.String() != "Value: 1 Position: 7" {
 		t.Fatal("int8Position.String() != \"Value: 1 Position: 6\"")
 	}
 
@@ -100,7 +99,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if int16Position.String() != "Value: 1 Position: 7" {
+	if int16Position.String() != "Value: 1 Position: 8" {
 		t.Fatal("int16Position.String() != \"Value: 1 Position: 7\"")
 	}
 
@@ -110,7 +109,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if int32Position.String() != "Value: 1 Position: 8" {
+	if int32Position.String() != "Value: 1 Position: 9" {
 		t.Fatal("int32Position.String() != \"Value: 1 Position: 8\"")
 	}
 
@@ -120,7 +119,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if int64Position.String() != "Value: 1 Position: 9" {
+	if int64Position.String() != "Value: 1 Position: 10" {
 		t.Fatal("int64Position.String() != \"Value: 1 Position: 9\"")
 	}
 
@@ -130,7 +129,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if uintptrPosition.String() != "Value: 1 Position: 10" {
+	if uintptrPosition.String() != "Value: 1 Position: 11" {
 		t.Fatal("uintptrPosition.String() != \"Value: 1 Position: 10\"")
 	}
 
@@ -140,7 +139,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if uintPosition.String() != "Value: 1 Position: 11" {
+	if uintPosition.String() != "Value: 1 Position: 12" {
 		t.Fatal("uintPosition.String() != \"Value: 1 Position: 11\"")
 	}
 
@@ -150,7 +149,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if uint8Position.String() != "Value: 1 Position: 12" {
+	if uint8Position.String() != "Value: 1 Position: 13" {
 		t.Fatal("uint8Position.String() != \"Value: 1 Position: 12\"")
 	}
 
@@ -160,7 +159,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if uint16Position.String() != "Value: 1 Position: 13" {
+	if uint16Position.String() != "Value: 1 Position: 14" {
 		t.Fatal("uint16Position.String() != \"Value: 1 Position: 13\"")
 	}
 
@@ -170,7 +169,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if uint32Position.String() != "Value: 1 Position: 14" {
+	if uint32Position.String() != "Value: 1 Position: 15" {
 		t.Fatal("uint32Position.String() != \"Value: 1 Position: 14\"")
 	}
 
@@ -180,7 +179,7 @@ func TestPosition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if uint64Position.String() != "Value: 1 Position: 15" {
+	if uint64Position.String() != "Value: 1 Position: 16" {
 		t.Fatal("uint64Position.String() != \"Value: 1 Position: 15\"")
 	}
 }

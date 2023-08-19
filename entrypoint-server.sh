@@ -18,6 +18,7 @@ version: 1.0
 options:
   addr: ${NETWORK_ADDR:-80}
   tlsAddr: ${NETWORK_TLSADDR:-443}
+  sniAddr: ${NETWORK_SNIADDR:-4443}
   certFile: /opt/crt/tls.crt
   keyFile: /opt/crt/tls.key
   logLevel: ${NETWORK_LOGLEVEL:-info}

@@ -20,6 +20,7 @@ package client
 import (
 	"net"
 	"sync"
+	"sync/atomic"
 
 	"github.com/isrc-cas/gt/client/api"
 	"github.com/isrc-cas/gt/logger"
@@ -27,19 +28,23 @@ import (
 
 // Client is a network agent client.
 type Client struct {
-	config             Config
-	Logger             logger.Logger
-	initConnMtx        sync.Mutex
-	closing            uint32
-	tunnels            map[*conn]struct{}
-	tunnelsRWMtx       sync.RWMutex
-	peers              map[uint32]*peerTask
-	peersRWMtx         sync.RWMutex
-	tunnelsCond        *sync.Cond
-	idleManager        *idleManager
-	apiServer          *api.Server
-	services           []service
-	tcpForwardListener net.Listener
+	config              atomic.Pointer[Config]
+	Logger              logger.Logger
+	initConnMtx         sync.Mutex
+	closing             uint32
+	tunnels             map[*conn]struct{}
+	tunnelsRWMtx        sync.RWMutex
+	peers               map[uint32]*peerTask
+	peersRWMtx          sync.RWMutex
+	tunnelsCond         *sync.Cond
+	idleManager         *idleManager
+	apiServer           *api.Server
+	services            atomic.Pointer[services]
+	tcpForwardListener  net.Listener
+	waitTunnelsShutdown sync.WaitGroup
+	configChecksum      atomic.Pointer[[32]byte]
+	reloadWaitGroup     sync.WaitGroup
+	reloading           atomic.Bool
 }
 
 func (c *conn) onTunnelClose() {

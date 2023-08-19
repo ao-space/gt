@@ -117,10 +117,11 @@ func (pt *peerTask) OnICECandidateError(address string, port int, url string, er
 }
 
 func (pt *peerTask) init(c *conn) (err error) {
+	config := c.client.Config()
 	peerConnectionConfig := webrtc.PeerConnectionConfig{
 		ICEServers:                        c.stuns,
-		MinPort:                           &c.client.config.WebRTCMinPort,
-		MaxPort:                           &c.client.config.WebRTCMaxPort,
+		MinPort:                           &config.WebRTCMinPort,
+		MaxPort:                           &config.WebRTCMaxPort,
 		OnSignalingChange:                 pt.OnSignalingChange,
 		OnDataChannel:                     pt.OnDataChannel,
 		OnRenegotiationNeeded:             pt.OnRenegotiationNeeded,
@@ -212,8 +213,9 @@ func respAndClose(id uint32, c *conn, data [][]byte) {
 		if wErr != nil {
 			return
 		}
-		if c.client.config.RemoteTimeout > 0 {
-			dl := time.Now().Add(c.client.config.RemoteTimeout)
+		remoteTimeout := c.client.Config().RemoteTimeout
+		if remoteTimeout > 0 {
+			dl := time.Now().Add(remoteTimeout)
 			wErr = c.Conn.SetReadDeadline(dl)
 			if wErr != nil {
 				return
@@ -516,7 +518,7 @@ func (dco *dataChannelObserver) OnOpen() {
 	defer func() {
 		count := dco.peerTask.channelCount.Add(^uint32(0))
 		if count == 0 {
-			dco.peerTask.timer.Reset(dco.peerTask.tunnel.client.config.WebRTCConnectionIdleTimeout)
+			dco.peerTask.timer.Reset(dco.peerTask.tunnel.client.Config().WebRTCConnectionIdleTimeout)
 		}
 		logger.Info().Err(err).Uint32("channelCount", count).
 			Str("state", dco.dataChannel.State().String()).
@@ -530,7 +532,9 @@ func (dco *dataChannelObserver) OnOpen() {
 		dco.dataChannel.Close()
 	}()
 
-	task, err := dco.peerTask.tunnel.dial()
+	tunnel := dco.peerTask.tunnel
+	service := (*tunnel.services.Load())[0]
+	task, err := dco.peerTask.tunnel.dial(&service)
 	if err != nil {
 		return
 	}
@@ -538,7 +542,6 @@ func (dco *dataChannelObserver) OnOpen() {
 	dco.httpTask.Set(task)
 	task.Logger.Info().Msg("p2p http task started")
 
-	tunnel := dco.peerTask.tunnel
 	var rErr error
 	var wErr error
 	defer func() {
@@ -550,8 +553,8 @@ func (dco *dataChannelObserver) OnOpen() {
 	defer pool.BytesPool.Put(buf)
 
 	for {
-		if tunnel.service.LocalTimeout > 0 {
-			dl := time.Now().Add(tunnel.service.LocalTimeout)
+		if service.LocalTimeout > 0 {
+			dl := time.Now().Add(service.LocalTimeout)
 			rErr = task.conn.SetReadDeadline(dl)
 			if rErr != nil {
 				return

@@ -47,7 +47,7 @@ type Server struct {
 	config       Config
 	users        users
 	Logger       logger.Logger
-	id2Agent     sync.Map
+	id2Client    sync.Map
 	closing      uint32
 	tlsListener  net.Listener
 	listener     net.Listener
@@ -58,7 +58,7 @@ type Server struct {
 	tunneling    uint64
 	apiServer    *api.Server
 	apiListener  net.Listener
-	authUser     func(id string, secret string) error
+	authUser     func(id string, secret string) (user, error)
 	removeClient func(id string)
 	turnServer   *turn.Server
 	turnListener net.PacketConn
@@ -67,7 +67,8 @@ type Server struct {
 	reconnect        map[string]uint32
 	reconnectRWMutex gosync.RWMutex
 
-	hostPrefix2Agent sync.Map // key: hostPrefix(string) value: *client
+	hostPrefix2Client    sync.Map // key: hostPrefix(string) value: *client
+	tlsHostPrefix2Client sync.Map // key: hostPrefix(string) value: *client
 }
 
 // New parses the command line args and creates a Server. out 用于测试
@@ -321,7 +322,7 @@ func (s *Server) startSTUNServer() (err error) {
 	factory := logging.NewDefaultLoggerFactory()
 	factory.Writer = stunLogger
 	var lv logging.LogLevel
-	switch strings.ToUpper(s.config.LogLevel) {
+	switch strings.ToUpper(s.config.STUNLogLevel) {
 	default:
 		fallthrough
 	case "DISABLE":
@@ -428,7 +429,7 @@ func (s *Server) startAPIServer() (err error) {
 	return nil
 }
 
-func (s *Server) authWithAPI(id string, secret string) (ok bool, err error) {
+func (s *Server) authWithAPI(id string, secret string) (hostPrefixes map[string]struct{}, ok bool, err error) {
 	var bs bytes.Buffer
 	_, _ = bs.WriteString(`{"networkClientId": "`)
 	_, _ = bs.WriteString(id)
@@ -458,6 +459,16 @@ func (s *Server) authWithAPI(id string, secret string) (ok bool, err error) {
 		return
 	}
 	ok, err = jsonparser.GetBoolean(r, "result")
+	if ok {
+		hostPrefixes = make(map[string]struct{})
+		hostPrefixes[id] = struct{}{}
+		_, err = jsonparser.ArrayEach(r, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			hostPrefixes[string(value)] = struct{}{}
+		}, "appletTokens")
+		if err == jsonparser.KeyPathNotFoundError {
+			err = nil
+		}
+	}
 	return
 }
 
@@ -483,7 +494,7 @@ func (s *Server) Close() {
 	if s.sniListener != nil {
 		event.AnErr("sniListener", s.sniListener.Close())
 	}
-	s.id2Agent.Range(func(key, value interface{}) bool {
+	s.id2Client.Range(func(key, value interface{}) bool {
 		if c, ok := value.(*client); ok && c != nil {
 			c.close()
 		}
@@ -529,7 +540,7 @@ func (s *Server) Shutdown() {
 		}
 
 		i := 0
-		s.id2Agent.Range(func(key, value interface{}) bool {
+		s.id2Client.Range(func(key, value interface{}) bool {
 			i++
 			if c, ok := value.(*client); ok && c != nil {
 				c.shutdown()
@@ -548,7 +559,7 @@ func (s *Server) Shutdown() {
 			Msg("server shutting down")
 		time.Sleep(3 * time.Second)
 	}
-	s.id2Agent.Range(func(key, value interface{}) bool {
+	s.id2Client.Range(func(key, value interface{}) bool {
 		if c, ok := value.(*client); ok && c != nil {
 			c.close()
 		}
@@ -558,28 +569,51 @@ func (s *Server) Shutdown() {
 }
 
 func (s *Server) getOrCreateClient(id string, fn func() interface{}) (result *client, exists bool) {
-	value, exists := s.id2Agent.LoadOrCreate(id, fn)
+	value, exists := s.id2Client.LoadOrCreate(id, fn)
 	result = value.(*client)
 	return
 }
 
-func (s *Server) getHostPrefix(hostPrefix string) (c *client, ok bool) {
-	value, ok := s.hostPrefix2Agent.Load(hostPrefix)
+func (s *Server) getHostPrefix(hostPrefix string) (c clientWithServiceIndex, ok bool) {
+	value, ok := s.hostPrefix2Client.Load(hostPrefix)
 	if ok {
-		if c, ok = value.(*client); ok {
-			ok = c != nil
-			return
-		}
+		c = value.(clientWithServiceIndex)
 	}
 	return
 }
 
-func (s *Server) addHostPrefix(hostPrefix string, client *client) {
-	s.hostPrefix2Agent.Store(hostPrefix, client)
+func (s *Server) getOrCreateHostPrefix(hostPrefix string, tls bool, fn func() interface{}) (c clientWithServiceIndex, ok bool) {
+	if !tls {
+		actual, loaded := s.hostPrefix2Client.LoadOrCreate(hostPrefix, fn)
+		return actual.(clientWithServiceIndex), loaded
+	} else {
+		actual, loaded := s.tlsHostPrefix2Client.LoadOrCreate(hostPrefix, fn)
+		return actual.(clientWithServiceIndex), loaded
+	}
 }
 
-func (s *Server) removeHostPrefix(hostPrefix string) {
-	s.hostPrefix2Agent.Delete(hostPrefix)
+func (s *Server) storeHostPrefix(hostPrefix string, tls bool, c clientWithServiceIndex) {
+	if !tls {
+		s.hostPrefix2Client.Store(hostPrefix, c)
+	} else {
+		s.tlsHostPrefix2Client.Store(hostPrefix, c)
+	}
+}
+
+func (s *Server) removeHostPrefix(hostPrefix string, tls bool) {
+	if !tls {
+		s.hostPrefix2Client.Delete(hostPrefix)
+	} else {
+		s.tlsHostPrefix2Client.Delete(hostPrefix)
+	}
+}
+
+func (s *Server) getTLSHostPrefix(hostPrefix string) (c clientWithServiceIndex, ok bool) {
+	value, ok := s.tlsHostPrefix2Client.Load(hostPrefix)
+	if ok {
+		c = value.(clientWithServiceIndex)
+	}
+	return
 }
 
 // GetAccepted returns value of accepted
@@ -605,43 +639,73 @@ func (s *Server) GetTunneling() uint64 {
 // ErrInvalidUser is returned if id and secret are invalid
 var ErrInvalidUser = errors.New("invalid user")
 
-func (s *Server) authUserWithConfig(id string, secret string) (err error) {
+func (s *Server) authUserWithConfig(id string, secret string) (u user, err error) {
 	if len(id) < 1 || len(secret) < 1 {
 		err = ErrInvalidUser
 		return
 	}
-	ok := s.users.auth(id, secret)
-	if !ok {
-		if s.apiServer == nil || !s.apiServer.Auth(id, secret) {
-			err = ErrInvalidUser
+	u, err = s.users.auth(id, secret)
+	if err != nil {
+		if s.apiServer != nil && s.apiServer.Auth(id, secret) {
+			u = user{
+				TCPs:        s.config.TCPs,
+				Speed:       s.config.Speed,
+				Connections: s.config.Connections,
+				Host:        s.config.Host,
+			}
+			err = nil
+			return
 		}
 	}
 	return
 }
 
-func (s *Server) authUserWithAPI(id string, secret string) (err error) {
+func (s *Server) authUserWithAPI(id string, secret string) (u user, err error) {
 	if len(id) < 1 || len(secret) < 1 {
 		err = ErrInvalidUser
 		return
 	}
-	ok, err := s.authWithAPI(id, secret)
+	hostPrefixes, ok, err := s.authWithAPI(id, secret)
 	if err != nil {
 		return
 	}
 	if !ok {
-		if s.apiServer == nil || !s.apiServer.Auth(id, secret) {
-			err = ErrInvalidUser
+		if s.apiServer != nil && s.apiServer.Auth(id, secret) {
+			u = user{
+				TCPs:        s.config.TCPs,
+				Speed:       s.config.Speed,
+				Connections: s.config.Connections,
+				Host:        s.config.Host,
+			}
+			err = nil
+			return
 		}
+		err = ErrInvalidUser
+		return
 	}
+	u = user{
+		TCPs:        s.config.TCPs,
+		Speed:       s.config.Speed,
+		Connections: s.config.Connections,
+		Host:        s.config.Host,
+	}
+	u.Host.Prefixes = hostPrefixes
 	return
 }
 
-func (s *Server) authUserOrCreateUser(id, secret string) (err error) {
+func (s *Server) authUserOrCreateUser(id, secret string) (u user, err error) {
 	if s.apiServer != nil && s.apiServer.Auth(id, secret) {
+		u = user{
+			TCPs:        s.config.TCPs,
+			Speed:       s.config.Speed,
+			Connections: s.config.Connections,
+			Host:        s.config.Host,
+		}
+		err = nil
 		return
 	}
 
-	value, loaded := s.users.LoadOrCreate(id, func() interface{} {
+	value, _ := s.users.LoadOrCreate(id, func() interface{} {
 		return user{
 			Secret:      secret,
 			TCPs:        append([]tcp(nil), s.config.TCPs...),
@@ -651,23 +715,29 @@ func (s *Server) authUserOrCreateUser(id, secret string) (err error) {
 			temp:        true,
 		}
 	})
-	if loaded && secret != value.(user).Secret {
+	var ok bool
+	u, ok = value.(user)
+	if !ok {
+		err = ErrInvalidUser
+		return
+	}
+	if u.Secret != secret {
 		err = ErrInvalidUser
 	}
 	return
 }
 
 func (s *Server) removeClientOnly(id string) {
-	s.id2Agent.Delete(id)
+	s.id2Client.Delete(id)
 }
 
 func (s *Server) removeClientAndUser(id string) {
-	s.id2Agent.Delete(id)
+	s.id2Client.Delete(id)
 	s.users.Delete(id)
 }
 
 func (s *Server) removeClientAndTempUser(id string) {
-	s.id2Agent.Delete(id)
+	s.id2Client.Delete(id)
 
 	value, loaded := s.users.Load(id)
 	if loaded && value.(user).temp {
@@ -679,7 +749,8 @@ func (s *Server) removeClientAndTempUser(id string) {
 func (s *Server) parseTCPs() (err error) {
 	// 合并 tcp
 	tcpMap := make(map[string]uint16)
-	for _, tcp := range s.config.TCPs {
+	for i := 0; i < len(s.config.TCPs); i++ {
+		tcp := &s.config.TCPs[i]
 		tcpMap[tcp.Range] = tcp.Number
 	}
 	if len(s.config.TCPNumbers) != len(s.config.TCPRanges) {
@@ -702,7 +773,7 @@ func (s *Server) parseTCPs() (err error) {
 	}
 
 	// 处理全局 tcp
-	for i := range s.config.TCPs {
+	for i := 0; i < len(s.config.TCPs); i++ {
 		err = s.config.TCPs[i].parseRange()
 		if err != nil {
 			return err

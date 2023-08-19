@@ -186,9 +186,9 @@ func (d *DataChannel) State() DataState {
 
 func (d *DataChannel) Error() string {
 	errorC := C.GetDataChannelError(d.dataChannel)
-	error := C.GoString(errorC)
+	err := C.GoString(errorC)
 	C.free(unsafe.Pointer(errorC))
-	return error
+	return err
 }
 
 func (d *DataChannel) MessageSent() uint32 {
