@@ -320,43 +320,101 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 		return
 	}
 
-	// 验证 id secret
-	u, err := c.server.authUser(idStr, secretStr)
-	if err != nil {
-		// 使用局部锁而不是全局锁可以明显提高并发性能，但少数情况下会降低限制效果
-		c.server.reconnectRWMutex.Lock()
-		reconnectTimes := c.server.reconnect[remoteIP]
-		reconnectTimes++
-		c.server.reconnect[remoteIP] = reconnectTimes
-		c.server.reconnectRWMutex.Unlock()
+	var options options
+	var u user
+	if c.server.authUser != nil {
+		// 验证 id secret
+		u, err = c.server.authUser(idStr, secretStr)
+		if err != nil {
+			// 使用局部锁而不是全局锁可以明显提高并发性能，但少数情况下会降低限制效果
+			c.server.reconnectRWMutex.Lock()
+			reconnectTimes := c.server.reconnect[remoteIP]
+			reconnectTimes++
+			c.server.reconnect[remoteIP] = reconnectTimes
+			c.server.reconnectRWMutex.Unlock()
 
-		// ReconnectDuration 为 0 表示不进行限制解除
-		if c.server.config.ReconnectDuration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
-			time.AfterFunc(c.server.config.ReconnectDuration, func() {
-				c.server.reconnectRWMutex.Lock()
-				c.server.reconnect[remoteIP] = 0
-				c.server.reconnectRWMutex.Unlock()
-				c.Logger.Debug().Msgf("release blocked IP: '%v'", remoteIP)
-			})
+			// ReconnectDuration 为 0 表示不进行限制解除
+			if c.server.config.ReconnectDuration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
+				time.AfterFunc(c.server.config.ReconnectDuration, func() {
+					c.server.reconnectRWMutex.Lock()
+					c.server.reconnect[remoteIP] = 0
+					c.server.reconnectRWMutex.Unlock()
+					c.Logger.Debug().Msgf("release blocked IP: '%v'", remoteIP)
+				})
+			}
+
+			e := c.SendErrorSignalInvalidIDAndSecret()
+			c.Logger.Info().Err(err).AnErr("respErr", e).Msg("invalid id and secret")
+			return
 		}
 
-		e := c.SendErrorSignalInvalidIDAndSecret()
-		c.Logger.Info().Err(err).AnErr("respErr", e).Msg("invalid id and secret")
-		return
-	}
+		options, err = c.parseOptions(reader, idStr, u)
+		if err != nil {
+			c.Logger.Info().Err(err).Msg("failed to parse options")
+			return
+		}
+		if len(u.Host.Prefixes) > 0 {
+			for id := range options.ids {
+				if _, ok := u.Host.Prefixes[id]; !ok {
+					c.Logger.Info().Err(err).
+						AnErr("sendSignalError", c.SendErrorSignalHostRegexMismatch()).
+						Msg("invalid host prefixes")
+					return
+				}
+			}
+		}
+	} else {
+		u = user{
+			TCPs:        c.server.config.TCPs,
+			Speed:       c.server.config.Speed,
+			Connections: c.server.config.Connections,
+			Host:        c.server.config.Host,
+		}
+		options, err = c.parseOptions(reader, idStr, u)
+		if err != nil {
+			c.Logger.Info().Err(err).Msg("failed to parse options")
+			return
+		}
+		prefixes := make([]string, 0, len(options.ids))
+		for s := range options.ids {
+			prefixes = append(prefixes, s)
+		}
+		u, err = c.server.authUserWithAPI(idStr, secretStr, prefixes)
+		if err != nil {
+			// 使用局部锁而不是全局锁可以明显提高并发性能，但少数情况下会降低限制效果
+			c.server.reconnectRWMutex.Lock()
+			reconnectTimes := c.server.reconnect[remoteIP]
+			reconnectTimes++
+			c.server.reconnect[remoteIP] = reconnectTimes
+			c.server.reconnectRWMutex.Unlock()
 
-	options, err := c.parseOptions(reader, idStr, u)
-	if err != nil {
-		c.Logger.Info().Err(err).Msg("failed to parse options")
-		return
-	}
-	if len(u.Host.Prefixes) > 0 {
-		for id := range options.ids {
-			if _, ok := u.Host.Prefixes[id]; !ok {
-				c.Logger.Info().Err(err).
-					AnErr("sendSignalError", c.SendErrorSignalHostRegexMismatch()).
-					Msg("invalid host prefixes")
-				return
+			// ReconnectDuration 为 0 表示不进行限制解除
+			if c.server.config.ReconnectDuration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
+				time.AfterFunc(c.server.config.ReconnectDuration, func() {
+					c.server.reconnectRWMutex.Lock()
+					c.server.reconnect[remoteIP] = 0
+					c.server.reconnectRWMutex.Unlock()
+					c.Logger.Debug().Msgf("release blocked IP: '%v'", remoteIP)
+				})
+			}
+
+			e := c.SendErrorSignalInvalidIDAndSecret()
+			c.Logger.Info().Err(err).AnErr("respErr", e).Msg("invalid id and secret")
+			return
+		}
+		if len(u.Host.Prefixes) > 0 {
+			for id := range options.ids {
+				if _, ok := u.Host.Prefixes[id]; !ok {
+					c.Logger.Info().Str("id", idStr).Str("prefix", id).Msg("prefix not exists on platform")
+					delete(options.ids, id)
+				}
+			}
+		} else {
+			for id := range options.ids {
+				if id != idStr {
+					c.Logger.Info().Str("id", idStr).Str("prefix", id).Msg("prefix not exists on platform")
+					delete(options.ids, id)
+				}
 			}
 		}
 	}
