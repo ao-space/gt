@@ -17,6 +17,7 @@ package server
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -231,7 +232,7 @@ func (s *Server) Start() (err error) {
 	}
 
 	if len(s.config.AuthAPI) > 0 {
-		s.authUser = s.authUserWithAPI
+		s.authUser = nil
 		s.removeClient = s.removeClientOnly
 	} else if s.users.empty() {
 		s.Logger.Warn().Msg("working on -allowAnyClient mode, because no user is configured")
@@ -429,13 +430,24 @@ func (s *Server) startAPIServer() (err error) {
 	return nil
 }
 
-func (s *Server) authWithAPI(id string, secret string) (hostPrefixes map[string]struct{}, ok bool, err error) {
+type authParam struct {
+	NetworkClientId  string   `json:"networkClientId"`
+	NetworkSecretKey string   `json:"networkSecretKey"`
+	AppletTokens     []string `json:"appletTokens"`
+}
+
+func (s *Server) authWithAPI(id string, secret string, prefixes []string) (hostPrefixes map[string]struct{}, ok bool, err error) {
 	var bs bytes.Buffer
-	_, _ = bs.WriteString(`{"networkClientId": "`)
-	_, _ = bs.WriteString(id)
-	_, _ = bs.WriteString(`", "networkSecretKey": "`)
-	_, _ = bs.WriteString(secret)
-	_, _ = bs.WriteString(`"}`)
+	encoder := json.NewEncoder(&bs)
+	p := &authParam{
+		NetworkClientId:  id,
+		NetworkSecretKey: secret,
+		AppletTokens:     prefixes,
+	}
+	err = encoder.Encode(p)
+	if err != nil {
+		return
+	}
 	req, err := http.NewRequest("POST", s.config.AuthAPI, &bs)
 	if err != nil {
 		return
@@ -660,12 +672,12 @@ func (s *Server) authUserWithConfig(id string, secret string) (u user, err error
 	return
 }
 
-func (s *Server) authUserWithAPI(id string, secret string) (u user, err error) {
+func (s *Server) authUserWithAPI(id string, secret string, prefixes []string) (u user, err error) {
 	if len(id) < 1 || len(secret) < 1 {
 		err = ErrInvalidUser
 		return
 	}
-	hostPrefixes, ok, err := s.authWithAPI(id, secret)
+	hostPrefixes, ok, err := s.authWithAPI(id, secret, prefixes)
 	if err != nil {
 		return
 	}
