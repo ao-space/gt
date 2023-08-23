@@ -4,7 +4,7 @@
     <el-header>
       <div class="header-lf mask-image">
         <div class="logo flx-center">
-          <img class="logo-img" src="@/assets/images/logo_pc.png" alt="logo" />
+          <img style="width: 85%" class="logo-img" src="@/assets/images/logo_pc_en.png" alt="logo" />
         </div>
         <ToolBarLeft />
       </div>
