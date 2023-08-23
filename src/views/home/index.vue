@@ -132,76 +132,20 @@
 
 <script setup lang="ts" name="home">
 import { ref, onUnmounted } from "vue";
+import { getServerInfoApi } from "@/api/modules/serverInfo";
+import { Server } from "@/api/interface";
 
-//TODO: separate the axios request to a service
-interface SystemState {
-  os: {
-    goos: string;
-    numCpu: number;
-    compiler: string;
-    goVersion: string;
-    numGoroutine: number;
-  };
-  disk: {
-    totalMb: number;
-    usedMb: number;
-    totalGb: number;
-    usedGb: number;
-    usedPercent: number;
-  };
-  cpu: {
-    cores: number;
-    cpus: number[];
-  };
-  ram: {
-    totalMb: number;
-    usedMb: number;
-    usedPercent: number;
-  };
-}
-const state = ref<SystemState | null>();
+const state = ref<Server.SystemState | null>();
 const colors = ref([
   { color: "#5cb87a", percentage: 40 },
   { color: "#e6a23c", percentage: 70 },
   { color: "#f56c6c", percentage: 100 }
 ]);
 
-const getSystemState = async () => {
-  // return null;
-  return {
-    data: {
-      server: {
-        os: {
-          goos: "windows",
-          numCpu: 4,
-          compiler: "gc",
-          goVersion: "go1.16.5",
-          numGoroutine: 1
-        },
-        disk: {
-          totalMb: 1000,
-          usedMb: 500,
-          totalGb: 1,
-          usedGb: 0.5,
-          usedPercent: 90
-        },
-        cpu: {
-          cores: 4,
-          cpus: [10, 40, 50, 90]
-        },
-        ram: {
-          totalMb: 1000,
-          usedMb: 500,
-          usedPercent: 80
-        }
-      }
-    }
-  };
-};
-
 const reload = async () => {
-  const { data } = await getSystemState();
-  state.value = data.server;
+  const { data } = await getServerInfoApi();
+  console.log(data);
+  state.value = data.serverInfo;
 };
 
 reload();

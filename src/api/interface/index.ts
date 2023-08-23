@@ -37,7 +37,7 @@ export namespace Login {
     password: string;
   }
   export interface ResLogin {
-    access_token: string;
+    token: string;
   }
   export interface ResAuthButtons {
     [key: string]: string[];
@@ -86,5 +86,36 @@ export namespace User {
     id: string;
     name: string;
     children?: ResDepartment[];
+  }
+}
+
+export namespace Server {
+  export interface ResServerInfo {
+    serverInfo: SystemState;
+  }
+  export interface SystemState {
+    os: {
+      goos: string;
+      numCpu: number;
+      compiler: string;
+      goVersion: string;
+      numGoroutine: number;
+    };
+    disk: {
+      totalMb: number;
+      usedMb: number;
+      totalGb: number;
+      usedGb: number;
+      usedPercent: number;
+    };
+    cpu: {
+      cores: number;
+      cpus: number[];
+    };
+    ram: {
+      totalMb: number;
+      usedMb: number;
+      usedPercent: number;
+    };
   }
 }

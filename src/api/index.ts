@@ -37,9 +37,12 @@ class RequestHttp {
         const userStore = useUserStore();
         // 当前请求不需要显示 loading，在 api 服务中通过指定的第三个参数: { noLoading: true } 来控制
         config.noLoading || showFullScreenLoading();
-        if (config.headers && typeof config.headers.set === "function") {
-          config.headers.set("x-token", userStore.token);
-        }
+        // if (config.headers && typeof config.headers.set === "function") {
+        //   console.log(userStore.token);
+        //   config.headers.set("x-token", userStore.token);
+        // }
+        console.log(userStore.token);
+        config.headers["x-token"] = userStore.token;
         return config;
       },
       (error: AxiosError) => {
