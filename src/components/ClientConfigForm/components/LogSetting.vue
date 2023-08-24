@@ -59,6 +59,9 @@ const props = withDefaults(defineProps<LogSettingProps>(), {
 });
 
 const localSetting = reactive<ClientConfig.LogSetting>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const LogSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.LogSetting>>({});

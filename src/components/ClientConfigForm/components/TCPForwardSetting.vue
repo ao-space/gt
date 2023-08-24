@@ -31,7 +31,7 @@
   </el-form>
 </template>
 <script setup name="TCPForwardSetting" lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, watchEffect } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { FormInstance, FormRules } from "element-plus";
@@ -44,6 +44,9 @@ const props = withDefaults(defineProps<TCPForwardSettingProps>(), {
   setting: () => ClientConfig.defaultTCPForwardSetting
 });
 const localSetting = reactive<ClientConfig.TCPForwardSetting>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const TCPForwardSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.TCPForwardSetting>>({});

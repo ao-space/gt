@@ -58,6 +58,9 @@ const props = withDefaults(defineProps<WebRTCSettingProps>(), {
 });
 
 const localSetting = reactive<ClientConfig.WebRTCSetting>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const WebRTCSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.WebRTCSetting>>({

@@ -78,6 +78,9 @@ const emit = defineEmits<{
   (e: "addService"): void;
 }>();
 const localSetting = reactive<ClientConfig.Service>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const serviceSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.Service>>({

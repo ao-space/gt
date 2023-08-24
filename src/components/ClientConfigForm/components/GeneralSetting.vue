@@ -138,6 +138,9 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
   setting: () => ClientConfig.defaultGeneralSetting
 });
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const generalSettingRef = ref<FormInstance>();
 const validatorRemoteIdleConnections = (rule: any, value: number, callback: any) => {

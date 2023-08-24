@@ -45,6 +45,7 @@ import {
   mapClientTCPForwardSetting,
   mapClientWebRTCSetting
 } from "@/utils/map";
+
 const generalSetting = reactive<ClientConfig.GeneralSetting>({ ...ClientConfig.defaultGeneralSetting });
 const sentrySetting = reactive<ClientConfig.SentrySetting>({ ...ClientConfig.defaultSentrySetting });
 const webRTCSetting = reactive<ClientConfig.WebRTCSetting>({ ...ClientConfig.defaultWebRTCSetting });
@@ -59,13 +60,6 @@ const options = reactive<ClientConfig.Options>({
   ...webRTCSetting,
   ...tcpForwardSetting,
   ...logSetting
-
-  // HostPrefix: [],
-  // RemoteTCPPort: [],
-  // RemoteTCPRandom: [],
-  // Local: [],
-  // LocalTimeout: [],
-  // UseLocalAsHTTPHost: []
 });
 
 watchEffect(() => {

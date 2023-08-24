@@ -93,6 +93,9 @@ const props = withDefaults(defineProps<SentrySettingProps>(), {
   setting: () => ClientConfig.defaultSentrySetting
 });
 const localSetting = reactive<ClientConfig.SentrySetting>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const sentrySettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.SentrySetting>>({});
