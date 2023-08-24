@@ -1,8 +1,8 @@
 export namespace ClientConfig {
-  export interface Config {
+  export interface Config extends Options {
     Version: string;
     Services: Service[];
-    Options: Options;
+    // Options: Options;
   }
 
   export interface GeneralSetting {
@@ -17,7 +17,6 @@ export namespace ClientConfig {
     RemoteConnections: number;
     RemoteIdleConnections: number;
     RemoteTimeout: string;
-    Version: boolean;
   }
   export interface SentrySetting {
     SentryDSN: string;
@@ -55,12 +54,12 @@ export namespace ClientConfig {
   }
   export interface Options extends GeneralSetting, SentrySetting, WebRTCSetting, TCPForwardSetting, LogSetting {
     Config: string;
-    HostPrefix: string[];
-    RemoteTCPPort: number[];
-    RemoteTCPRandom: (boolean | null)[];
-    Local: string[];
-    LocalTimeout: string[];
-    UseLocalAsHTTPHost: boolean[];
+    // HostPrefix: string[];
+    // RemoteTCPPort: number[];
+    // RemoteTCPRandom: (boolean | null)[];
+    // Local: string[];
+    // LocalTimeout: string[];
+    // UseLocalAsHTTPHost: boolean[];
   }
 
   export const defaultGeneralSetting: GeneralSetting = {
@@ -74,8 +73,7 @@ export namespace ClientConfig {
     RemoteCert: "",
     RemoteCertInsecure: false,
     RemoteConnections: 1,
-    RemoteIdleConnections: 0,
-    Version: false
+    RemoteIdleConnections: 0
   };
   export const defaultSentrySetting: SentrySetting = {
     SentryDSN: "",

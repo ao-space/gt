@@ -1,3 +1,4 @@
+import { ClientConfig } from "@/components/ClientConfigForm/interface";
 // 请求响应参数（不包含data）
 export interface Result {
   code: string;
@@ -117,5 +118,13 @@ export namespace Server {
       usedMb: number;
       usedPercent: number;
     };
+  }
+}
+
+export namespace Config {
+  export namespace Client {
+    export interface ResConfig {
+      config: ClientConfig.Config;
+    }
   }
 }

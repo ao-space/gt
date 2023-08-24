@@ -1,27 +1,30 @@
 <template>
-  <Anchor :tab-list="tabList">
-    <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
-      <component :is="tab.component" :ref="tab.ref" :setting="tab.setting" @update:setting="tab.updateSetting" />
-    </template>
+  <div :is-loaded="dataLoaded">
+    <Anchor :tab-list="tabList">
+      <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
+        <component :is="tab.component" :ref="tab.ref" :setting="tab.setting" @update:setting="tab.updateSetting" />
+      </template>
 
-    <template v-for="(tab, index) in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
-      <component
-        :is="tab.component"
-        :ref="serviceSettingRefs[index]"
-        :index="index"
-        :is-last="tab.isLast"
-        :setting="tab.setting"
-        @add-service="addService"
-        @remove-service="removeService(index)"
-        @update:setting="tab.updateSetting"
-    /></template>
-  </Anchor>
-  <el-button type="primary" @click="onSubmit"> Submit</el-button>
+      <template v-for="(tab, index) in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
+        <component
+          :is="tab.component"
+          :ref="serviceSettingRefs[index]"
+          :index="index"
+          :is-last="tab.isLast"
+          :setting="tab.setting"
+          @add-service="addService"
+          @remove-service="removeService(index)"
+          @update:setting="tab.updateSetting"
+        />
+      </template>
+    </Anchor>
+    <el-button type="primary" @click="onSubmit"> Submit</el-button>
+  </div>
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
 import { ElMessage, ElMessageBox } from "element-plus";
-import { markRaw, Ref, reactive, ref, watchEffect } from "vue";
+import { markRaw, Ref, reactive, ref, watchEffect, onBeforeMount } from "vue";
 import { ClientConfig } from "./interface";
 import yaml from "js-yaml";
 import axios from "axios";
@@ -32,8 +35,16 @@ import WebRTCSetting from "./components/WebRTCSetting.vue";
 import TCPForwardSetting from "./components/TCPForwardSetting.vue";
 import LogSetting from "./components/LogSetting.vue";
 import ServiceSetting from "./components/ServiceSetting.vue";
+import { getRunningClientConfigApi } from "@/api/modules/clientConfig";
 import { v4 as uuidv4 } from "uuid";
-
+import { Config } from "@/api/interface";
+import {
+  mapClientGeneralSetting,
+  mapClientSentrySetting,
+  mapClientLogSetting,
+  mapClientTCPForwardSetting,
+  mapClientWebRTCSetting
+} from "@/utils/map";
 const generalSetting = reactive<ClientConfig.GeneralSetting>({ ...ClientConfig.defaultGeneralSetting });
 const sentrySetting = reactive<ClientConfig.SentrySetting>({ ...ClientConfig.defaultSentrySetting });
 const webRTCSetting = reactive<ClientConfig.WebRTCSetting>({ ...ClientConfig.defaultWebRTCSetting });
@@ -47,14 +58,14 @@ const options = reactive<ClientConfig.Options>({
   ...sentrySetting,
   ...webRTCSetting,
   ...tcpForwardSetting,
-  ...logSetting,
+  ...logSetting
 
-  HostPrefix: [],
-  RemoteTCPPort: [],
-  RemoteTCPRandom: [],
-  Local: [],
-  LocalTimeout: [],
-  UseLocalAsHTTPHost: []
+  // HostPrefix: [],
+  // RemoteTCPPort: [],
+  // RemoteTCPRandom: [],
+  // Local: [],
+  // LocalTimeout: [],
+  // UseLocalAsHTTPHost: []
 });
 
 watchEffect(() => {
@@ -66,6 +77,7 @@ watchEffect(() => {
     ...logSetting
   });
 });
+
 let services = reactive<ClientConfig.Service[]>([{ ...ClientConfig.defaultServiceSetting }]);
 const addService = () => {
   services.push({ ...ClientConfig.defaultServiceSetting });
@@ -122,7 +134,14 @@ const removeService = (index: number) => {
 const clientConfig = reactive<ClientConfig.Config>({
   Version: "1",
   Services: services,
-  Options: options
+  ...options
+  // Options: options
+});
+watchEffect(() => {
+  Object.assign(clientConfig, {
+    ...options,
+    Services: services
+  });
 });
 
 const updateGeneralSetting = (newSetting: ClientConfig.GeneralSetting) => {
@@ -254,7 +273,16 @@ const tabList = reactive<Tab[]>([
   ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
   ...dynamicTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
 ]);
-
+watchEffect(() => {
+  tabList.splice(staticTabs.length);
+  dynamicTabs.forEach(tab => {
+    tabList.push({
+      title: tab.title,
+      name: tab.name,
+      uuid: tab.uuid
+    });
+  });
+});
 // TODO: must input and trim
 const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => {
   return Promise.all(formRefs.map(formRef => formRef.value?.validateForm()));
@@ -309,6 +337,57 @@ const onSubmit = async () => {
   // const { data } = await clientConfigApi({ ...clientConfig });
   // console.log(data);
 };
+const updateData = (data: Config.Client.ResConfig) => {
+  console.log(mapClientGeneralSetting(data));
+  console.log(generalSetting);
+  Object.assign(generalSetting, mapClientGeneralSetting(data));
+  Object.assign(sentrySetting, mapClientSentrySetting(data));
+  Object.assign(webRTCSetting, mapClientWebRTCSetting(data));
+  Object.assign(tcpForwardSetting, mapClientTCPForwardSetting(data));
+  Object.assign(logSetting, mapClientLogSetting(data));
+  Object.assign(options, data.config.Config);
+  services.splice(0, services.length, ...data.config.Services);
+  serviceSettingRefs.splice(0, serviceSettingRefs.length);
+  dynamicTabs.splice(0, dynamicTabs.length);
+  services.forEach((service, index) => {
+    const uuid = uuidv4();
+    tabList.push({
+      title: `Service ${index + 1} Setting`,
+      name: `Service${index + 1}Setting`,
+      uuid: uuid
+    });
+    dynamicTabs.push({
+      title: `Service ${index + 1} Setting`,
+      name: `Service${index + 1}Setting`,
+      uuid: uuid,
+      component: markRaw(ServiceSetting),
+      setting: service,
+      updateSetting: updateServiceSetting,
+      index: index,
+      isLast: index == services.length - 1
+    });
+    serviceSettingRefs.push(ref<InstanceType<typeof ServiceSetting> | null>(null));
+  });
+};
+const dataLoaded = ref(false);
+
+const reload = async () => {
+  const { data } = await getRunningClientConfigApi();
+
+  console.log("--------------------------------------");
+  console.log(data);
+  // console.log(clientConfig);
+  // console.log(options);
+  // console.log(services);
+  // console.log(tabList);
+  updateData(data);
+  dataLoaded.value = true;
+  console.log("--------------------------------------");
+};
+
+onBeforeMount(() => {
+  reload();
+});
 </script>
 
 <style scoped lang="scss">
