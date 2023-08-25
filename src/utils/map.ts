@@ -39,3 +39,12 @@ export const mapClientLogSetting = (data: Config.Client.ResConfig): ClientConfig
   LogFileMaxCount: data.config.LogFileMaxCount,
   LogLevel: data.config.LogLevel
 });
+export const mapClientServices = (data: Config.Client.ResConfig) =>
+  data.config.Services.map(service => ({
+    HostPrefix: service.HostPrefix,
+    RemoteTCPPort: service.RemoteTCPPort,
+    RemoteTCPRandom: service.RemoteTCPRandom,
+    LocalURL: service.LocalURL.Host,
+    LocalTimeout: service.LocalTimeout,
+    UseLocalAsHTTPHost: service.UseLocalAsHTTPHost
+  }));

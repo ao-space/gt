@@ -79,7 +79,11 @@ const emit = defineEmits<{
 }>();
 const localSetting = reactive<ClientConfig.Service>({ ...props.setting });
 watchEffect(() => {
+  console.log("---------------------");
+  console.log("ServiceSetting:");
+  console.log(props.setting);
   Object.assign(localSetting, props.setting);
+  console.log("---------------------");
 });
 
 const serviceSettingRef = ref<FormInstance>();

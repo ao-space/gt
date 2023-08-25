@@ -1,30 +1,28 @@
 <template>
-  <div :is-loaded="dataLoaded">
-    <Anchor :tab-list="tabList">
-      <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
-        <component :is="tab.component" :ref="tab.ref" :setting="tab.setting" @update:setting="tab.updateSetting" />
-      </template>
+  <Anchor :tab-list="tabList">
+    <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
+      <component :is="tab.component" :ref="tab.ref" :setting="tab.setting" @update:setting="tab.updateSetting" />
+    </template>
 
-      <template v-for="(tab, index) in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
-        <component
-          :is="tab.component"
-          :ref="serviceSettingRefs[index]"
-          :index="index"
-          :is-last="tab.isLast"
-          :setting="tab.setting"
-          @add-service="addService"
-          @remove-service="removeService(index)"
-          @update:setting="tab.updateSetting"
-        />
-      </template>
-    </Anchor>
-    <el-button type="primary" @click="onSubmit"> Submit</el-button>
-  </div>
+    <template v-for="(tab, index) in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
+      <component
+        :is="tab.component"
+        :ref="serviceSettingRefs[index]"
+        :index="index"
+        :is-last="tab.isLast"
+        :setting="tab.setting"
+        @add-service="addService"
+        @remove-service="removeService(index)"
+        @update:setting="tab.updateSetting"
+      />
+    </template>
+  </Anchor>
+  <el-button type="primary" @click="onSubmit"> Submit</el-button>
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
 import { ElMessage, ElMessageBox } from "element-plus";
-import { markRaw, Ref, reactive, ref, watchEffect, onBeforeMount } from "vue";
+import { markRaw, Ref, reactive, ref, watchEffect, onMounted } from "vue";
 import { ClientConfig } from "./interface";
 import yaml from "js-yaml";
 import axios from "axios";
@@ -43,7 +41,8 @@ import {
   mapClientSentrySetting,
   mapClientLogSetting,
   mapClientTCPForwardSetting,
-  mapClientWebRTCSetting
+  mapClientWebRTCSetting,
+  mapClientServices
 } from "@/utils/map";
 
 const generalSetting = reactive<ClientConfig.GeneralSetting>({ ...ClientConfig.defaultGeneralSetting });
@@ -73,6 +72,7 @@ watchEffect(() => {
 });
 
 let services = reactive<ClientConfig.Service[]>([{ ...ClientConfig.defaultServiceSetting }]);
+
 const addService = () => {
   services.push({ ...ClientConfig.defaultServiceSetting });
   serviceSettingRefs.push(ref<InstanceType<typeof ServiceSetting> | null>(null));
@@ -133,47 +133,52 @@ const clientConfig = reactive<ClientConfig.Config>({
 });
 watchEffect(() => {
   Object.assign(clientConfig, {
-    ...options,
-    Services: services
+    ...options
   });
 });
 
 const updateGeneralSetting = (newSetting: ClientConfig.GeneralSetting) => {
-  console.log("updateGeneralSetting");
-  console.log(newSetting);
+  // console.log("updateGeneralSetting");
+  // console.log(newSetting);
   Object.assign(generalSetting, newSetting);
 };
 const updateSentrySetting = (newSetting: ClientConfig.SentrySetting) => {
-  console.log("updateSentrySetting");
-  console.log(newSetting);
+  // console.log("updateSentrySetting");
+  // console.log(newSetting);
   Object.assign(sentrySetting, newSetting);
 };
 const updateWebRTCSetting = (newSetting: ClientConfig.WebRTCSetting) => {
-  console.log("updateWebRTCSetting");
-  console.log(newSetting);
+  // console.log("updateWebRTCSetting");
+  // console.log(newSetting);
   Object.assign(webRTCSetting, newSetting);
 };
 const updateTCPForwardSetting = (newSetting: ClientConfig.TCPForwardSetting) => {
-  console.log("updateTCPForwardSetting");
-  console.log(newSetting);
+  // console.log("updateTCPForwardSetting");
+  // console.log(newSetting);
   Object.assign(tcpForwardSetting, newSetting);
 };
 const updateLogSetting = (newSetting: ClientConfig.LogSetting) => {
-  console.log("updateLogSetting");
-  console.log(newSetting);
+  // console.log("updateLogSetting");
+  // console.log(newSetting);
   Object.assign(logSetting, newSetting);
 };
 
 const updateServiceSetting = (index: number, newSetting: ClientConfig.Service) => {
   //update the service setting of the corresponding index
+  console.log("----------------------------");
+  console.log(JSON.stringify(services));
   if (0 <= index && index < services.length) {
     console.log("updateServiceSetting");
     console.log(index);
-    console.log(newSetting);
+    console.log(JSON.stringify(newSetting));
     Object.assign(services[index], newSetting);
   } else {
+    console.log("deleteServiceSetting");
+    console.log(JSON.stringify(services));
     //ignore the delete operation
   }
+  console.log(JSON.stringify(services));
+  console.log("----------------------------");
 };
 
 const generalSettingRef = ref<InstanceType<typeof GeneralSetting> | null>(null);
@@ -268,6 +273,10 @@ const tabList = reactive<Tab[]>([
   ...dynamicTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
 ]);
 watchEffect(() => {
+  console.log("watchEffect");
+  // console.log(JSON.stringify(tabList));
+  // console.log(JSON.stringify(tabList));
+  // console.log(JSON.stringify(dynamicTabs));
   tabList.splice(staticTabs.length);
   dynamicTabs.forEach(tab => {
     tabList.push({
@@ -276,6 +285,7 @@ watchEffect(() => {
       uuid: tab.uuid
     });
   });
+  // console.log(JSON.stringify(dynamicTabs));
 });
 // TODO: must input and trim
 const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => {
@@ -332,16 +342,23 @@ const onSubmit = async () => {
   // console.log(data);
 };
 const updateData = (data: Config.Client.ResConfig) => {
-  console.log(mapClientGeneralSetting(data));
-  console.log(generalSetting);
   Object.assign(generalSetting, mapClientGeneralSetting(data));
   Object.assign(sentrySetting, mapClientSentrySetting(data));
   Object.assign(webRTCSetting, mapClientWebRTCSetting(data));
   Object.assign(tcpForwardSetting, mapClientTCPForwardSetting(data));
   Object.assign(logSetting, mapClientLogSetting(data));
-  Object.assign(options, data.config.Config);
-  services.splice(0, services.length, ...data.config.Services);
+  debugger;
+  options.Config = data.config.Config;
+  // console.log(JSON.stringify(services));
+  // console.log(mapClientServices(data));
+  services.splice(0, services.length, ...mapClientServices(data));
+  console.log("--------------------------------------");
+  // console.log(JSON.stringify(services));
+  // console.log([...services]);
+  // console.log(services);
+  console.log("--------------------------------------");
   serviceSettingRefs.splice(0, serviceSettingRefs.length);
+  tabList.splice(staticTabs.length);
   dynamicTabs.splice(0, dynamicTabs.length);
   services.forEach((service, index) => {
     const uuid = uuidv4();
@@ -362,24 +379,26 @@ const updateData = (data: Config.Client.ResConfig) => {
     });
     serviceSettingRefs.push(ref<InstanceType<typeof ServiceSetting> | null>(null));
   });
+  // console.log(JSON.stringify(services));
+  // console.log(JSON.stringify(dynamicTabs));
+  // console.log(JSON.stringify(serviceSettingRefs));
 };
-const dataLoaded = ref(false);
 
 const reload = async () => {
   const { data } = await getRunningClientConfigApi();
-
   console.log("--------------------------------------");
   console.log(data);
   // console.log(clientConfig);
   // console.log(options);
   // console.log(services);
   // console.log(tabList);
+  console.log(JSON.stringify(services));
   updateData(data);
-  dataLoaded.value = true;
+  console.log(JSON.stringify(services));
   console.log("--------------------------------------");
 };
 
-onBeforeMount(() => {
+onMounted(() => {
   reload();
 });
 </script>
