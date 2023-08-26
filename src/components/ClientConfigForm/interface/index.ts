@@ -106,7 +106,7 @@ export namespace ClientConfig {
     RemoteTCPPort: 0,
     RemoteTCPRandom: false,
     LocalURL: "",
-    LocalTimeout: "3s",
+    LocalTimeout: "",
     UseLocalAsHTTPHost: false
   };
 

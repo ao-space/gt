@@ -110,14 +110,6 @@
             <el-input-number v-model="localSetting.RemoteIdleConnections" :min="0" :max="localSetting.RemoteConnections" />
           </el-form-item>
         </el-descriptions-item>
-        <!-- Version -->
-        <!-- <el-descriptions-item>
-          <template #label>
-            Version
-            <UsageTooltip :usage-text="ClientConfig.usage['Version']" />
-          </template>
-          <el-switch v-model="localSetting.Version" active-text="true" inactive-text="false" />
-        </el-descriptions-item> -->
       </el-descriptions>
     </div>
   </el-form>

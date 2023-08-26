@@ -3,7 +3,7 @@ import { ClientConfig } from "@/components/ClientConfigForm/interface";
 export const mapClientGeneralSetting = (data: Config.Client.ResConfig): ClientConfig.GeneralSetting => ({
   ID: data.config.ID,
   Secret: data.config.Secret,
-  ReconnectDelay: data.config.ReconnectDelay,
+  ReconnectDelay: humanizeDuration(data.config.ReconnectDelay),
   Remote: data.config.Remote,
   RemoteSTUN: data.config.RemoteSTUN,
   RemoteAPI: data.config.RemoteAPI,
@@ -11,7 +11,7 @@ export const mapClientGeneralSetting = (data: Config.Client.ResConfig): ClientCo
   RemoteCertInsecure: data.config.RemoteCertInsecure,
   RemoteConnections: data.config.RemoteConnections,
   RemoteIdleConnections: data.config.RemoteIdleConnections,
-  RemoteTimeout: data.config.RemoteTimeout
+  RemoteTimeout: humanizeDuration(data.config.RemoteTimeout)
 });
 export const mapClientSentrySetting = (data: Config.Client.ResConfig): ClientConfig.SentrySetting => ({
   SentryDSN: data.config.SentryDSN,
@@ -23,7 +23,7 @@ export const mapClientSentrySetting = (data: Config.Client.ResConfig): ClientCon
   SentryDebug: data.config.SentryDebug
 });
 export const mapClientWebRTCSetting = (data: Config.Client.ResConfig): ClientConfig.WebRTCSetting => ({
-  WebRTCConnectionIdleTimeout: data.config.WebRTCConnectionIdleTimeout,
+  WebRTCConnectionIdleTimeout: humanizeDuration(data.config.WebRTCConnectionIdleTimeout),
   WebRTCLogLevel: data.config.WebRTCLogLevel,
   WebRTCMinPort: data.config.WebRTCMinPort,
   WebRTCMaxPort: data.config.WebRTCMaxPort
@@ -45,6 +45,30 @@ export const mapClientServices = (data: Config.Client.ResConfig) =>
     RemoteTCPPort: service.RemoteTCPPort,
     RemoteTCPRandom: service.RemoteTCPRandom,
     LocalURL: service.LocalURL.Host,
-    LocalTimeout: service.LocalTimeout,
+    LocalTimeout: humanizeDuration(service.LocalTimeout),
     UseLocalAsHTTPHost: service.UseLocalAsHTTPHost
   }));
+
+const humanizeDuration = (value: string): string => {
+  if (!value) return "";
+  const regex = /^(?:\d+(?:ns|µ?s|ms|[smh]))+$/;
+  if (regex.test(value)) return value;
+  const units = [
+    { label: "h", value: 60 * 60 * 1_000_000_000 },
+    { label: "m", value: 60 * 1_000_000_000 },
+    { label: "s", value: 1_000_000_000 },
+    { label: "ms", value: 1_000_000 },
+    { label: "µs", value: 1_000 },
+    { label: "ns", value: 1 }
+  ];
+  let remaining = parseInt(value, 10);
+  let result = "";
+  for (const uint of units) {
+    if (remaining >= uint.value) {
+      const count = Math.floor(remaining / uint.value);
+      result += `${count}${uint.label}`;
+      remaining -= count * uint.value;
+    }
+  }
+  return result;
+};
