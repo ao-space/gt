@@ -4,25 +4,26 @@
       <component :is="tab.component" :ref="tab.ref" :setting="tab.setting" @update:setting="tab.updateSetting" />
     </template>
 
-    <template v-for="(tab, index) in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
+    <template v-for="tab in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
         :is="tab.component"
-        :ref="serviceSettingRefs[index]"
-        :index="index"
+        :ref="serviceSettingRefs[tab.index]"
+        :index="tab.index"
         :is-last="tab.isLast"
         :setting="tab.setting"
         @add-service="addService"
-        @remove-service="removeService(index)"
+        @remove-service="removeService(tab.index)"
         @update:setting="tab.updateSetting"
       />
     </template>
   </Anchor>
   <el-button type="primary" @click="onSubmit"> Submit</el-button>
+  <el-button type="primary" @click="reload"> Reload</el-button>
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
 import { ElMessage, ElMessageBox } from "element-plus";
-import { markRaw, Ref, reactive, ref, watchEffect, onMounted } from "vue";
+import { markRaw, Ref, reactive, ref, watchEffect, onMounted, computed, nextTick } from "vue";
 import { ClientConfig } from "./interface";
 import yaml from "js-yaml";
 import axios from "axios";
@@ -73,55 +74,34 @@ watchEffect(() => {
 
 let services = reactive<ClientConfig.Service[]>([{ ...ClientConfig.defaultServiceSetting }]);
 
+const adjustView = () => {
+  //Need the el-main element to be set to overflow: auto
+  const elMain = document.querySelector(".el-main");
+  if (elMain) {
+    const currentScrollPosition = elMain.scrollTop;
+    nextTick(() => {
+      elMain.scrollTop = currentScrollPosition;
+    });
+  }
+};
+
 const addService = () => {
+  console.log("addService");
   services.push({ ...ClientConfig.defaultServiceSetting });
   serviceSettingRefs.push(ref<InstanceType<typeof ServiceSetting> | null>(null));
-  const uuid = uuidv4();
-  console.log(uuid);
-  tabList.push({
-    title: `Service ${services.length} Setting`,
-    name: `Service${services.length}Setting`,
-    uuid: uuid
-  });
-
-  dynamicTabs[dynamicTabs.length - 1].isLast = false;
-  dynamicTabs.push({
-    title: `Service ${services.length} Setting`,
-    name: `Service${services.length}Setting`,
-    uuid: uuid,
-    component: markRaw(ServiceSetting),
-    setting: services[services.length - 1],
-    updateSetting: updateServiceSetting,
-    index: services.length - 1,
-    isLast: true
-  });
+  adjustView();
 };
 const removeService = (index: number) => {
+  console.log("removeService");
   console.log("index " + index);
   if (services.length === 1) {
-    ElMessage.warning("至少需要一个服务");
+    ElMessage.warning("At least one service is required!");
     return;
   } else {
     services.splice(index, 1);
     serviceSettingRefs.splice(index, 1);
-    //delete the related tablist
-    let tabListIndex = tabList.findIndex(tab => tab.title === `Service ${index + 1} Setting`);
-
-    tabList.splice(tabListIndex, 1);
-    //update the name of the remaining tablist
-    for (let i = index; i < services.length; i++) {
-      tabList[tabListIndex + i - index].name = `Service${i + 1}Setting`;
-      tabList[tabListIndex + i - index].title = `Service ${i + 1} Setting`;
-    }
-
-    dynamicTabs.splice(index, 1);
-    //update the index of the remaining dynamicTabs
-    for (let i = index; i < dynamicTabs.length - 1; i++) {
-      dynamicTabs[i].index = i;
-      dynamicTabs[i].name = `Service${i + 1}Setting`;
-      dynamicTabs[i].title = `Service ${i + 1} Setting`;
-    }
-    dynamicTabs[dynamicTabs.length - 1].isLast = true;
+    console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    adjustView();
   }
 };
 
@@ -129,7 +109,6 @@ const clientConfig = reactive<ClientConfig.Config>({
   Version: "1",
   Services: services,
   ...options
-  // Options: options
 });
 watchEffect(() => {
   Object.assign(clientConfig, {
@@ -138,47 +117,24 @@ watchEffect(() => {
 });
 
 const updateGeneralSetting = (newSetting: ClientConfig.GeneralSetting) => {
-  // console.log("updateGeneralSetting");
-  // console.log(newSetting);
   Object.assign(generalSetting, newSetting);
 };
 const updateSentrySetting = (newSetting: ClientConfig.SentrySetting) => {
-  // console.log("updateSentrySetting");
-  // console.log(newSetting);
   Object.assign(sentrySetting, newSetting);
 };
 const updateWebRTCSetting = (newSetting: ClientConfig.WebRTCSetting) => {
-  // console.log("updateWebRTCSetting");
-  // console.log(newSetting);
   Object.assign(webRTCSetting, newSetting);
 };
 const updateTCPForwardSetting = (newSetting: ClientConfig.TCPForwardSetting) => {
-  // console.log("updateTCPForwardSetting");
-  // console.log(newSetting);
   Object.assign(tcpForwardSetting, newSetting);
 };
 const updateLogSetting = (newSetting: ClientConfig.LogSetting) => {
-  // console.log("updateLogSetting");
-  // console.log(newSetting);
   Object.assign(logSetting, newSetting);
 };
 
 const updateServiceSetting = (index: number, newSetting: ClientConfig.Service) => {
-  //update the service setting of the corresponding index
-  console.log("----------------------------");
-  console.log(JSON.stringify(services));
-  if (0 <= index && index < services.length) {
-    console.log("updateServiceSetting");
-    console.log(index);
-    console.log(JSON.stringify(newSetting));
-    Object.assign(services[index], newSetting);
-  } else {
-    console.log("deleteServiceSetting");
-    console.log(JSON.stringify(services));
-    //ignore the delete operation
-  }
-  console.log(JSON.stringify(services));
-  console.log("----------------------------");
+  //update the service setting with corresponding index
+  Object.assign(services[index], newSetting);
 };
 
 const generalSettingRef = ref<InstanceType<typeof GeneralSetting> | null>(null);
@@ -193,8 +149,10 @@ interface staticTabType<T> {
   title: string;
   name: string;
   uuid: string;
-  component: any; //Can't set Component type?
-  ref: string; // Note that: the ref must be a string, not a ref object, but need to be the same name of the ref object
+  component: any;
+  // Note that: the ref must be a string, not a ref object,
+  // but need to be the same name of the ref object.
+  ref: string;
   setting: T;
   updateSetting: (newSetting: T) => void;
 }
@@ -250,43 +208,28 @@ interface dynamicTabType<T> {
   title: string;
   name: string;
   uuid: string;
-  component: any; //Can't set Component type?
+  component: any;
   setting: T;
   updateSetting: (index: number, newSetting: T) => void;
   index: number;
   isLast: boolean;
 }
-const dynamicTabs = reactive<dynamicTabType<ClientConfig.Service>[]>([
-  {
-    title: "Service 1 Setting",
-    name: "Service1Setting",
+const dynamicTabs = computed<dynamicTabType<ClientConfig.Service>[]>(() => {
+  return services.map((service, index) => ({
+    title: `Service ${index + 1} Setting`,
+    name: `Service${index + 1}Setting`,
     uuid: uuidv4(),
     component: markRaw(ServiceSetting),
-    setting: services[0],
+    setting: service,
     updateSetting: updateServiceSetting,
-    index: 0,
-    isLast: true
-  }
-]);
-const tabList = reactive<Tab[]>([
-  ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
-  ...dynamicTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
-]);
-watchEffect(() => {
-  console.log("watchEffect");
-  // console.log(JSON.stringify(tabList));
-  // console.log(JSON.stringify(tabList));
-  // console.log(JSON.stringify(dynamicTabs));
-  tabList.splice(staticTabs.length);
-  dynamicTabs.forEach(tab => {
-    tabList.push({
-      title: tab.title,
-      name: tab.name,
-      uuid: tab.uuid
-    });
-  });
-  // console.log(JSON.stringify(dynamicTabs));
+    index: index,
+    isLast: index == services.length - 1
+  }));
 });
+const tabList = computed<Tab[]>(() => [
+  ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
+  ...dynamicTabs.value.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
+]);
 // TODO: must input and trim
 const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => {
   return Promise.all(formRefs.map(formRef => formRef.value?.validateForm()));
@@ -342,56 +285,23 @@ const onSubmit = async () => {
   // console.log(data);
 };
 const updateData = (data: Config.Client.ResConfig) => {
+  console.log("--------------------------------------");
+  console.log("updateData");
   Object.assign(generalSetting, mapClientGeneralSetting(data));
   Object.assign(sentrySetting, mapClientSentrySetting(data));
   Object.assign(webRTCSetting, mapClientWebRTCSetting(data));
   Object.assign(tcpForwardSetting, mapClientTCPForwardSetting(data));
   Object.assign(logSetting, mapClientLogSetting(data));
-  debugger;
   options.Config = data.config.Config;
-  // console.log(JSON.stringify(services));
-  // console.log(mapClientServices(data));
   services.splice(0, services.length, ...mapClientServices(data));
-  console.log("--------------------------------------");
-  // console.log(JSON.stringify(services));
-  // console.log([...services]);
-  // console.log(services);
-  console.log("--------------------------------------");
   serviceSettingRefs.splice(0, serviceSettingRefs.length);
-  tabList.splice(staticTabs.length);
-  dynamicTabs.splice(0, dynamicTabs.length);
-  services.forEach((service, index) => {
-    const uuid = uuidv4();
-    tabList.push({
-      title: `Service ${index + 1} Setting`,
-      name: `Service${index + 1}Setting`,
-      uuid: uuid
-    });
-    dynamicTabs.push({
-      title: `Service ${index + 1} Setting`,
-      name: `Service${index + 1}Setting`,
-      uuid: uuid,
-      component: markRaw(ServiceSetting),
-      setting: service,
-      updateSetting: updateServiceSetting,
-      index: index,
-      isLast: index == services.length - 1
-    });
-    serviceSettingRefs.push(ref<InstanceType<typeof ServiceSetting> | null>(null));
-  });
-  // console.log(JSON.stringify(services));
-  // console.log(JSON.stringify(dynamicTabs));
-  // console.log(JSON.stringify(serviceSettingRefs));
+  console.log("--------------------------------------");
 };
 
 const reload = async () => {
   const { data } = await getRunningClientConfigApi();
   console.log("--------------------------------------");
   console.log(data);
-  // console.log(clientConfig);
-  // console.log(options);
-  // console.log(services);
-  // console.log(tabList);
   console.log(JSON.stringify(services));
   updateData(data);
   console.log(JSON.stringify(services));
@@ -405,7 +315,4 @@ onMounted(() => {
 
 <style scoped lang="scss">
 @import "./index.scss";
-.el-form-item {
-  display: contents; // To reduce interference from the form style, only its validation function needs to be used.
-}
 </style>

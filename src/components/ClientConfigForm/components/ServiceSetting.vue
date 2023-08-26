@@ -7,7 +7,7 @@
         <template #extra>
           <!-- <el-button v-if="index === services.length - 1" type="primary" @click="addService">Add Service</el-button> -->
           <el-button v-if="isLast" type="primary" @click="emit('addService')">Add Service</el-button>
-          <el-button type="danger" @click="emit('removeService', index)">Delete</el-button>
+          <el-button type="danger" @click="emit('removeService', props.index)">Delete</el-button>
         </template>
         <el-descriptions-item>
           <template #label>
@@ -58,7 +58,7 @@
   </el-form>
 </template>
 <script setup name="ServiceSetting" lang="ts">
-import { reactive, ref, watchEffect } from "vue";
+import { reactive, ref, watch, watchEffect } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { FormInstance, FormRules } from "element-plus";
@@ -78,20 +78,21 @@ const emit = defineEmits<{
   (e: "addService"): void;
 }>();
 const localSetting = reactive<ClientConfig.Service>({ ...props.setting });
+
 watchEffect(() => {
-  console.log("---------------------");
-  console.log("ServiceSetting:");
-  console.log(props.setting);
   Object.assign(localSetting, props.setting);
-  console.log("---------------------");
 });
+watch(
+  () => localSetting,
+  () => {
+    emit("update:setting", props.index, localSetting);
+  },
+  { deep: true }
+);
 
 const serviceSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.Service>>({
   LocalTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }]
-});
-watchEffect(() => {
-  emit("update:setting", props.index, localSetting);
 });
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
