@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/isrc-cas/gt/client"
+	"github.com/isrc-cas/gt/client/web"
 	"github.com/rs/zerolog/log"
 )
 
@@ -48,6 +49,9 @@ func main() {
 	if err != nil {
 		c.Logger.Fatal().Err(err).Msg("failed to start")
 	}
+	if c.Config().EnableWebServer {
+		startWebServer(c)
+	}
 
 	osSig := make(chan os.Signal, 1)
 	signal.Notify(osSig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
@@ -65,6 +69,18 @@ func main() {
 				return
 			case syscall.SIGQUIT:
 				// restart, start a new process and then shutdown gracefully
+
+				if c.Config().EnableWebServer {
+					// stop web server
+					c.Logger.Info().Msg("try to stop web server")
+					err := web.ShutdownWebServer()
+					if err != nil {
+						c.Logger.Error().Err(err).Msg("failed to stop web server")
+						continue
+					}
+					c.Logger.Info().Msg("web server stopped")
+				}
+
 				err := runCmd(os.Args)
 				if err != nil {
 					c.Logger.Error().Err(err).Msg("failed to start new process")
@@ -80,9 +96,14 @@ func main() {
 				time.AfterFunc(30*time.Second, func() {
 					os.Exit(1)
 				})
-				c.Shutdown()
 				os.Exit(0)
 			}
 		}
+	}
+}
+
+func startWebServer(c *client.Client) {
+	if c.Config().EnableWebServer {
+		web.NewWebServer(c)
 	}
 }
