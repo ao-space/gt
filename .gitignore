@@ -14,5 +14,13 @@
 
 build
 release
-.vscode
 .dockerignore
+
+# IDE files
+.vscode
+.idea
+
+# Node modules
+front/node_modules
+
+web/front
