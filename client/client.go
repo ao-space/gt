@@ -246,7 +246,7 @@ func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
 	req.URL.RawQuery = query.Encode()
 	req.Header.Set("Request-Id", strconv.FormatInt(time.Now().Unix(), 10))
 	client := http.Client{
-		Timeout: time.Duration(c.Config().RemoteTimeout),
+		Timeout: c.Config().RemoteTimeout.Duration,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -357,7 +357,7 @@ func (c *Client) Start() (err error) {
 				break
 			}
 			c.Logger.Error().Err(err).Msg("failed to query server address")
-			time.Sleep(time.Duration(c.Config().ReconnectDelay))
+			time.Sleep(c.Config().ReconnectDelay.Duration)
 		}
 	}
 	if len(dialer.host) == 0 {
@@ -499,7 +499,7 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 	if atomic.LoadUint32(&c.closing) == 1 {
 		return true
 	}
-	time.Sleep(time.Duration(c.Config().ReconnectDelay))
+	time.Sleep(c.Config().ReconnectDelay.Duration)
 	c.idleManager.SetWait(connID)
 	c.idleManager.WaitIdle(connID)
 
@@ -512,7 +512,7 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 			break
 		}
 		c.Logger.Error().Err(err).Msg("failed to query server address")
-		time.Sleep(time.Duration(c.Config().ReconnectDelay))
+		time.Sleep(c.Config().ReconnectDelay.Duration)
 	}
 	return
 }
@@ -618,7 +618,7 @@ func parseServices(config *Config) (result services, err error) {
 			if configServicesLen == 1 ||
 				(x.Position > config.Local[i].Position &&
 					(i == configServicesLen-1 || x.Position < config.Local[i+1].Position)) {
-				configServices[i].LocalTimeout = x.Value
+				configServices[i].LocalTimeout.Duration = x.Value
 			}
 		}
 		for _, x := range config.UseLocalAsHTTPHost {
@@ -646,8 +646,8 @@ func parseServices(config *Config) (result services, err error) {
 		}
 
 		// 设置默认值
-		if result[i].LocalTimeout == 0 {
-			result[i].LocalTimeout = Duration(120 * time.Second)
+		if result[i].LocalTimeout.Duration == 0 {
+			result[i].LocalTimeout.Duration = 120 * time.Second
 		}
 		if result[i].RemoteTCPRandom == nil {
 			result[i].RemoteTCPRandom = new(bool)

@@ -50,12 +50,12 @@ type Options struct {
 	RemoteIdleConnections uint     `yaml:"remoteIdleConnections" json:",omitempty" usage:"The number of idle server connections kept in the pool"`
 	RemoteTimeout         Duration `yaml:"remoteTimeout" json:",omitempty" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
 
-	HostPrefix         config.PositionSlice[string]   `yaml:"hostPrefix" usage:"The server will recognize this host prefix and forward data to local"`
-	RemoteTCPPort      config.PositionSlice[uint16]   `yaml:"-" json:"-" arg:"remoteTCPPort" usage:"The TCP port that the remote server will open"`
-	RemoteTCPRandom    config.PositionSlice[bool]     `yaml:"-" json:"-" arg:"remoteTCPRandom" usage:"Whether to choose a random tcp port by the remote server"`
-	Local              config.PositionSlice[string]   `yaml:"-" json:"-" arg:"local" usage:"The local service url"`
-	LocalTimeout       config.PositionSlice[Duration] `yaml:"-" json:"-" arg:"localTimeout" usage:"The timeout of local connections. Supports values like '30s', '5m'"`
-	UseLocalAsHTTPHost config.PositionSlice[bool]     `yaml:"-" json:"-" arg:"useLocalAsHTTPHost" usage:"Use the local address as host"`
+	HostPrefix         config.PositionSlice[string]        `yaml:"hostPrefix" usage:"The server will recognize this host prefix and forward data to local"`
+	RemoteTCPPort      config.PositionSlice[uint16]        `yaml:"-" json:"-" arg:"remoteTCPPort" usage:"The TCP port that the remote server will open"`
+	RemoteTCPRandom    config.PositionSlice[bool]          `yaml:"-" json:"-" arg:"remoteTCPRandom" usage:"Whether to choose a random tcp port by the remote server"`
+	Local              config.PositionSlice[string]        `yaml:"-" json:"-" arg:"local" usage:"The local service url"`
+	LocalTimeout       config.PositionSlice[time.Duration] `yaml:"-" json:"-" arg:"localTimeout" usage:"The timeout of local connections. Supports values like '30s', '5m'"`
+	UseLocalAsHTTPHost config.PositionSlice[bool]          `yaml:"-" json:"-" arg:"useLocalAsHTTPHost" usage:"Use the local address as host"`
 
 	SentryDSN         string               `yaml:"sentryDSN" json:",omitempty" usage:"Sentry DSN to use"`
 	SentryLevel       config.Slice[string] `yaml:"sentryLevel" json:",omitempty" usage:"Sentry levels: trace, debug, info, warn, error, fatal, panic (default [\"error\", \"fatal\", \"panic\"])"`
@@ -95,15 +95,15 @@ type Options struct {
 func defaultConfig() Config {
 	return Config{
 		Options: Options{
-			ReconnectDelay:        Duration(5 * time.Second),
-			RemoteTimeout:         Duration(45 * time.Second),
+			ReconnectDelay:        Duration{5 * time.Second},
+			RemoteTimeout:         Duration{45 * time.Second},
 			RemoteConnections:     3,
 			RemoteIdleConnections: 1,
 
 			SentrySampleRate: 1.0,
 			SentryRelease:    predef.Version,
 
-			WebRTCConnectionIdleTimeout: Duration(5 * time.Minute),
+			WebRTCConnectionIdleTimeout: Duration{5 * time.Minute},
 			WebRTCLogLevel:              "warning",
 
 			TCPForwardConnections: 3,
@@ -128,8 +128,8 @@ func (c *clientURL) UnmarshalYAML(value *yaml.Node) (err error) {
 	c.URL, err = url.Parse(value.Value)
 	return
 }
-func (c *clientURL) MarshalYAML() (interface{}, error) {
-	return c.URL.String(),nil
+func (c clientURL) MarshalYAML() (interface{}, error) {
+	return c.URL.String(), nil
 }
 
 func (c *clientURL) UnmarshalJSON(data []byte) error {
@@ -145,49 +145,52 @@ func (c *clientURL) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *clientURL) MarshalJSON() ([]byte, error) {
+func (c clientURL) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.URL.String())
 }
 
-type Duration time.Duration
+type Duration struct {
+	time.Duration
+}
 
 func (d *Duration) UnmarshalYAML(value *yaml.Node) (err error) {
 	duration, err := time.ParseDuration(value.Value)
 	if err != nil {
 		return
 	}
-	*d = Duration(duration)
+	d.Duration = duration
 	return
 }
 
-func (d *Duration) MarshalYAML() (interface{}, error) {
-	return time.Duration(*d).String(), nil
+func (d Duration) MarshalYAML() (interface{}, error) {
+	return d.Duration.String(), nil
 }
 
 func (d *Duration) UnmarshalJSON(data []byte) (err error) {
-	var v interface{}
-	if err = json.Unmarshal(data, &v); err != nil {
+	var s string
+	if err = json.Unmarshal(data, &s); err != nil {
 		return err
 	}
-	switch value := v.(type) {
-	case float64:
-		*d = Duration(time.Duration(value))
-		return nil
-	case string:
-
-		duration, err := time.ParseDuration(value)
-		if err != nil {
-			return err
-		}
-		*d = Duration(duration)
-	default:
-		return fmt.Errorf("invalid duration: %v", v)
+	duration, err := time.ParseDuration(s)
+	if err != nil {
+		return err
 	}
+	d.Duration = duration
 	return nil
 }
 
-func (d *Duration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(time.Duration(*d).String())
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.Duration.String())
+}
+
+func (d *Duration) Set(s string) error {
+	var err error
+	d.Duration, err = time.ParseDuration(s)
+	return err
+}
+
+func (d *Duration) String() string {
+	return d.Duration.String()
 }
 
 type service struct {
