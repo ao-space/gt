@@ -44,7 +44,7 @@ export const mapClientServices = (data: Config.Client.ResConfig) =>
     HostPrefix: service.HostPrefix,
     RemoteTCPPort: service.RemoteTCPPort,
     RemoteTCPRandom: service.RemoteTCPRandom,
-    LocalURL: service.LocalURL.Host,
+    LocalURL: service.LocalURL,
     LocalTimeout: humanizeDuration(service.LocalTimeout),
     UseLocalAsHTTPHost: service.UseLocalAsHTTPHost
   }));

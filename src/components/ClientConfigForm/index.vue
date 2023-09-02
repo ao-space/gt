@@ -19,14 +19,13 @@
   </Anchor>
   <el-button type="primary" @click="onSubmit"> Submit</el-button>
   <el-button type="primary" @click="reload"> Reload</el-button>
+  <el-button type="primary" @click="test">Test</el-button>
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
 import { ElMessage, ElMessageBox } from "element-plus";
 import { markRaw, Ref, reactive, ref, watchEffect, onMounted, computed, nextTick } from "vue";
 import { ClientConfig } from "./interface";
-import yaml from "js-yaml";
-import axios from "axios";
 import Anchor, { Tab } from "@/components/Anchor/index.vue";
 import GeneralSetting from "./components/GeneralSetting.vue";
 import SentrySetting from "./components/SentrySetting.vue";
@@ -34,8 +33,10 @@ import WebRTCSetting from "./components/WebRTCSetting.vue";
 import TCPForwardSetting from "./components/TCPForwardSetting.vue";
 import LogSetting from "./components/LogSetting.vue";
 import ServiceSetting from "./components/ServiceSetting.vue";
-import { getRunningClientConfigApi } from "@/api/modules/clientConfig";
+import { getClientConfigFromFileApi, saveClientConfigApi } from "@/api/modules/clientConfig";
+import { getConnectionApi } from "@/api/modules/connection";
 import { v4 as uuidv4 } from "uuid";
+import yaml from "js-yaml";
 import { Config } from "@/api/interface";
 import {
   mapClientGeneralSetting,
@@ -237,19 +238,13 @@ const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => 
 // TODO: api update
 const onSubmit = async () => {
   console.log("onSubmit");
-  console.log([...services]);
-  console.log(services);
-  console.log(tabList);
-  console.log(dynamicTabs);
-  console.log(serviceSettingRefs);
-
   const json1 = JSON.stringify(clientConfig);
+  const yamlString = yaml.dump(clientConfig);
   console.log(json1);
-  const yamlData = yaml.dump(clientConfig);
-  console.log(yamlData);
-  ElMessageBox.confirm("确定要发送以下数据吗？\n" + json1, "确认发送", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
+  console.log(yamlString);
+  ElMessageBox.confirm("Make sure you want to save the config setting to file.", "Save The Config Setting", {
+    confirmButtonText: "Confirm",
+    cancelButtonText: "Cancel",
     type: "info"
   })
     .then(async () => {
@@ -262,27 +257,21 @@ const onSubmit = async () => {
           logSettingRef,
           ...serviceSettingRefs
         ]);
-        const response = await axios.post("/api/config/client", yamlData, {
-          headers: {
-            "Content-Type": "application/x-yaml;charset=utf-8"
-          }
-        });
+        const response = await saveClientConfigApi(clientConfig);
         console.log(response);
-        ElMessage.success("发送成功");
+        ElMessage.success("Save Success!");
       } catch (e) {
         console.log(e);
         if (e instanceof Error) {
           ElMessage.error(e.message);
         } else {
-          ElMessage.error("发送失败");
+          ElMessage.error("Failed to save!");
         }
       }
     })
     .catch(() => {
       ElMessage.info("已取消发送");
     });
-  // const { data } = await clientConfigApi({ ...clientConfig });
-  // console.log(data);
 };
 const updateData = (data: Config.Client.ResConfig) => {
   console.log("--------------------------------------");
@@ -299,7 +288,7 @@ const updateData = (data: Config.Client.ResConfig) => {
 };
 
 const reload = async () => {
-  const { data } = await getRunningClientConfigApi();
+  const { data } = await getClientConfigFromFileApi();
   console.log("--------------------------------------");
   console.log(data);
   console.log(JSON.stringify(services));
@@ -311,6 +300,11 @@ const reload = async () => {
 onMounted(() => {
   reload();
 });
+
+const test = async () => {
+  const { data } = await getConnectionApi();
+  console.log(data);
+};
 </script>
 
 <style scoped lang="scss">

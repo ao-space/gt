@@ -133,9 +133,7 @@ interface ResClientServices {
   HostPrefix: string;
   RemoteTCPPort: number;
   RemoteTCPRandom: boolean;
-  LocalURL: {
-    Host: string;
-  };
+  LocalURL: string;
   LocalTimeout: string;
   UseLocalAsHTTPHost: boolean;
 }

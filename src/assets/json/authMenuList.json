@@ -7,7 +7,7 @@
       "component": "/home/index",
       "meta": {
         "icon": "HomeFilled",
-        "title": "首页",
+        "title": "Home",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -21,7 +21,7 @@
       "component": "/about/index",
       "meta": {
         "icon": "InfoFilled",
-        "title": "关于项目",
+        "title": "About",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -35,7 +35,7 @@
       "redirect": "/config/children",
       "meta": {
         "icon": "Setting",
-        "title": "配置项目",
+        "title": "Config",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -49,7 +49,7 @@
           "component": "/config/ClientConfig/index",
           "meta": {
             "icon": "Connection",
-            "title": "配置客户端",
+            "title": "Client",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -63,7 +63,7 @@
           "component": "/config/ServerConfig/index",
           "meta": {
             "icon": "Connection",
-            "title": "配置服务端",
+            "title": "Server",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -79,7 +79,7 @@
       "redirect": "/link/pprof",
       "meta": {
         "icon": "Paperclip",
-        "title": "性能检测界面",
+        "title": "pprof",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -93,7 +93,7 @@
           "component": "/link/pprof/index",
           "meta": {
             "icon": "link",
-            "title": "pprof界面",
+            "title": "pprof",
             "isLink": "http://localhost:8080/debug/pprof",
             "isHide": false,
             "isFull": false,
@@ -102,6 +102,20 @@
           }
         }
       ]
+    },
+    {
+      "path": "/connection",
+      "name": "connection",
+      "component": "/connection/index",
+      "meta": {
+        "icon": "Connection",
+        "title": "Connection Status",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": false
+      }
     }
   ],
   "msg": "成功"
