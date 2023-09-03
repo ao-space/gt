@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <el-row>
+    <el-row v-if="pool">
       <el-card>
         <v-chart ref="pie" class="echarts" :option="chartOptions" />
       </el-card>
@@ -48,11 +48,12 @@ import type { PieSeriesOption } from "echarts/charts";
 import type { TitleComponentOption, TooltipComponentOption, LegendComponentOption } from "echarts/components";
 import type { ECharts } from "echarts";
 import { CanvasRenderer } from "echarts/renderers";
+import { getConnectionApi } from "@/api/modules/connection";
 
 use([CanvasRenderer, PolarComponent, TitleComponent, TooltipComponent, LegendComponent, PieChart]);
 
 type EChartsOption = ComposeOption<TitleComponentOption | TooltipComponentOption | LegendComponentOption | PieSeriesOption>;
-const chartOptions = ref<EChartsOption>({
+const chartOptions = reactive<EChartsOption>({
   textStyle: {
     fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif',
     fontWeight: 300
@@ -89,53 +90,8 @@ const chartOptions = ref<EChartsOption>({
 });
 const pie = shallowRef<ECharts | null>(null);
 
-let timer: NodeJS.Timeout | null = null;
-function startActions() {
-  stopActions();
-
-  let dataIndex = -1;
-  // const dataLen = chartOptions.value?.series?.[0]?.data?.length || 0;
-  let dataLen = 0;
-  const series = chartOptions.value?.series;
-  if (Array.isArray(series)) {
-    for (const item of series) {
-      if (item.type === "pie") {
-        dataLen = item.data?.length || 0;
-        break;
-      }
-    }
-  }
-  if (!pie.value || dataLen === 0) {
-    return;
-  }
-
-  timer = setInterval(() => {
-    if (!pie.value) {
-      stopActions();
-      return;
-    }
-    dispatchAction("downplay", dataIndex);
-    dataIndex = (dataIndex + 1) % dataLen;
-    dispatchAction("highlight", dataIndex);
-    dispatchAction("showTip", dataIndex);
-  }, 1000);
-}
-function dispatchAction(type: string, dataIndex: number) {
-  pie.value?.dispatchAction({
-    type,
-    seriesIndex: 0,
-    dataIndex
-  });
-}
-function stopActions() {
-  if (timer !== null) {
-    clearInterval(timer);
-    timer = null;
-  }
-}
-
 const connection = reactive<Connection.Connection[]>([]);
-const pool = ref<Connection.Pool>({});
+const pool = ref<Connection.Pool>();
 
 const tableRef = ref<TableInstance>();
 const remoteAddrFilterOptions = reactive<{ text: string; value: string }[]>([]);
@@ -143,7 +99,6 @@ watch(connection, newVal => {
   const uniqueRemoteAddrs = [...new Set(newVal.map(item => item.remoteaddr.ip))];
   remoteAddrFilterOptions.splice(0, remoteAddrFilterOptions.length, ...uniqueRemoteAddrs.map(ip => ({ text: ip, value: ip })));
 });
-
 const localAddrFilterOptions = reactive<{ text: string; value: string }[]>([]);
 watch(connection, newVal => {
   const uniqueLocalAddrs = [...new Set(newVal.map(item => item.localaddr.ip))];
@@ -157,7 +112,6 @@ const filterAddr = (value: string, row: Connection.Connection, column: TableColu
   }
   return false;
 };
-
 const formatFamily = (row: Connection.Connection) => {
   switch (row.family) {
     case 1:
@@ -197,72 +151,68 @@ function transformPoolToPieChartData(pool: Connection.Pool) {
   }
   return Object.keys(statusCount).map(status => ({ name: status, value: statusCount[status] }));
 }
+const isFirstDataLoaded = ref(false);
 
-onMounted(() => {
-  connection.splice(
-    0,
-    connection.length,
-    ...[
-      {
-        family: 2,
-        type: 1,
-        localaddr: {
-          ip: "127.0.0.1",
-          port: 8000
-        },
-        remoteaddr: {
-          ip: "0.0.0.0",
-          port: 0
-        },
-        status: "LISTEN"
-      },
-      {
-        family: 2,
-        type: 1,
-        localaddr: {
-          ip: "127.0.0.1",
-          port: 8000
-        },
-        remoteaddr: {
-          ip: "127.0.0.1",
-          port: 35950
-        },
-        status: "ESTABLISHED"
-      },
-      {
-        family: 2,
-        type: 1,
-        localaddr: {
-          ip: "172.17.60.128",
-          port: 57436
-        },
-        remoteaddr: {
-          ip: "34.120.195.249",
-          port: 443
-        },
-        status: "SYN_SENT"
-      }
-    ]
-  );
-  pool.value = {
-    1: 2,
-    10: 2,
-    2: 2,
-    3: 2,
-    4: 2,
-    5: 1,
-    6: 2,
-    7: 2,
-    8: 1,
-    9: 1
-  };
+const reload = async () => {
+  const { data } = await getConnectionApi();
+  connection.splice(0, connection.length, ...data.connection);
+  pool.value = data.pool;
   const pieChartData = transformPoolToPieChartData(pool.value);
-  // chartOptions.value?.series?[0].data = pieChartData;
-  (chartOptions.value?.series as PieSeriesOption[])[0].data = pieChartData;
-  startActions();
+  (chartOptions.series as PieSeriesOption[])[0].data = pieChartData;
+  if (!isFirstDataLoaded.value) {
+    isFirstDataLoaded.value = true;
+    startChartSwitchTimer();
+  }
+};
+const timers = new Set<NodeJS.Timeout>();
+function dispatchAction(type: string, dataIndex: number) {
+  pie.value?.dispatchAction({
+    type,
+    seriesIndex: 0,
+    dataIndex
+  });
+}
+function startDataFetchTimer() {
+  const dataFetchTimer = setInterval(async () => {
+    await reload();
+  }, 5000);
+  timers.add(dataFetchTimer);
+}
+function startChartSwitchTimer() {
+  let dataIndex = -1;
+  let dataLen = 0;
+  const series = chartOptions?.series;
+  if (Array.isArray(series)) {
+    for (const item of series) {
+      if (item.type === "pie") {
+        dataLen = item.data?.length || 0;
+        break;
+      }
+    }
+  }
+  const chartSwitchTimer = setInterval(() => {
+    if (!pie.value || dataLen === 0) {
+      return;
+    }
+    dispatchAction("downplay", dataIndex);
+    dataIndex = (dataIndex + 1) % dataLen;
+    dispatchAction("highlight", dataIndex);
+    dispatchAction("showTip", dataIndex);
+  }, 1000);
+  timers.add(chartSwitchTimer);
+}
+function clearAllTimers() {
+  for (const timer of timers) {
+    clearInterval(timer);
+  }
+  timers.clear();
+}
+onMounted(() => {
+  reload();
+  startDataFetchTimer();
 });
 onUnmounted(() => {
-  stopActions();
+  clearAllTimers();
 });
 </script>
 
