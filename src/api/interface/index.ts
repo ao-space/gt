@@ -145,3 +145,38 @@ export namespace Config {
     }
   }
 }
+
+export namespace Connection {
+  export enum Status {
+    Running = 0,
+    Idle = 1,
+    Wait = 2
+  }
+  export const StatusMap: { [key in Status]: string } = {
+    [Status.Running]: "Running",
+    [Status.Idle]: "Idle",
+    [Status.Wait]: "Wait"
+  };
+  export interface LocalAddr {
+    ip: string;
+    port: number;
+  }
+  export interface RemoteAddr {
+    ip: string;
+    port: number;
+  }
+  export interface Connection {
+    family: number;
+    type: number;
+    localaddr: LocalAddr;
+    remoteaddr: RemoteAddr;
+    status: string;
+  }
+  export interface Pool {
+    [key: string]: Status;
+  }
+  export interface ResConnection {
+    connection: Connection[];
+    pool: Pool;
+  }
+}

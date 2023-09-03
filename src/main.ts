@@ -30,6 +30,7 @@ import router from "@/routers";
 import pinia from "@/stores";
 // errorHandler
 import errorHandler from "@/utils/errorHandler";
+import ECharts from "vue-echarts";
 
 const app = createApp(App);
 
@@ -39,5 +40,8 @@ app.config.errorHandler = errorHandler;
 Object.keys(Icons).forEach(key => {
   app.component(key, Icons[key as keyof typeof Icons]);
 });
+
+// eslint-disable-next-line vue/component-definition-name-casing
+app.component("v-chart", ECharts);
 
 app.use(ElementPlus).use(directives).use(router).use(pinia).mount("#app");

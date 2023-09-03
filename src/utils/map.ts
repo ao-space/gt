@@ -1,4 +1,4 @@
-import { Config } from "@/api/interface";
+import { Config, Connection } from "@/api/interface";
 import { ClientConfig } from "@/components/ClientConfigForm/interface";
 export const mapClientGeneralSetting = (data: Config.Client.ResConfig): ClientConfig.GeneralSetting => ({
   ID: data.config.ID,
@@ -71,4 +71,8 @@ const humanizeDuration = (value: string): string => {
     }
   }
   return result;
+};
+
+export const convertToStatus = (statusCode: Connection.Status): string => {
+  return Connection.StatusMap[statusCode];
 };

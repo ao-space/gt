@@ -38,6 +38,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "cSpell.words": [
+    "Addrs",
     "AMAP",
     "APITLS",
     "apng",
@@ -59,6 +60,7 @@
     "iconfont",
     "juejin",
     "liquidfill",
+    "localaddr",
     "longpress",
     "monthrange",
     "nprogress",
@@ -71,6 +73,7 @@
     "pprof",
     "Prefixs",
     "reconnections",
+    "remoteaddr",
     "screenfull",
     "sortablejs",
     "sousuo",
