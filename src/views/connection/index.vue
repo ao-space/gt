@@ -151,7 +151,7 @@ function transformPoolToPieChartData(pool: Connection.Pool) {
   }
   return Object.keys(statusCount).map(status => ({ name: status, value: statusCount[status] }));
 }
-const isFirstDataLoaded = ref(false);
+const isFirstDataLoaded = ref(true);
 
 const reload = async () => {
   const { data } = await getConnectionApi();
@@ -159,8 +159,10 @@ const reload = async () => {
   pool.value = data.pool;
   const pieChartData = transformPoolToPieChartData(pool.value);
   (chartOptions.series as PieSeriesOption[])[0].data = pieChartData;
-  if (!isFirstDataLoaded.value) {
-    isFirstDataLoaded.value = true;
+  (chartOptions.legend as LegendComponentOption).data = pieChartData.map(item => item.name);
+
+  if (isFirstDataLoaded.value) {
+    isFirstDataLoaded.value = false;
     startChartSwitchTimer();
   }
 };
