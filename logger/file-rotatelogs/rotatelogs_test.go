@@ -433,7 +433,7 @@ func TestRotationGenerationalNames(t *testing.T) {
 		}
 
 		for i := 0; i < 10; i++ {
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Second)
 			rl.Write([]byte("Hello, World!"))
 			if !assert.NoError(t, rl.Rotate(), "rl.Rotate should succeed") {
 				return

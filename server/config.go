@@ -17,17 +17,12 @@ package server
 import (
 	"errors"
 	"fmt"
-	"net"
 	"regexp"
-	"strconv"
-	"sync/atomic"
 	"time"
 
 	"github.com/isrc-cas/gt/config"
-	connection "github.com/isrc-cas/gt/conn"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/server/sync"
-	"github.com/isrc-cas/gt/util"
 	"github.com/rs/zerolog"
 )
 
@@ -55,7 +50,7 @@ type Options struct {
 	AuthAPI           string               `yaml:"authAPI" usage:"The API to authenticate user with id and secret"`
 	AllowAnyClient    bool                 `yaml:"allowAnyClient" usage:"Allow any client to connect to the server"`
 	TCPRanges         config.Slice[string] `yaml:"tcpRange" usage:"The tcp port range, like 1024-65535"`
-	TCPNumbers        config.Slice[string] `yaml:"tcpNumber" usage:"The number of tcp ports allowed to be opened for each id"`
+	TCPNumber         uint16               `yaml:"tcpNumber" usage:"The number of tcp ports allowed to be opened for each id"`
 	Speed             uint32               `yaml:"speed" usage:"The max number of bytes the client can transfer per second"`
 	Connections       uint32               `yaml:"connections" usage:"The max number of tunnel connections for a client"`
 	ReconnectTimes    uint32               `yaml:"reconnectTimes" usage:"The max number of times the client fails to reconnect"`
@@ -126,46 +121,20 @@ func defaultConfig() Config {
 
 // tcp 管理
 type tcp struct {
-	Range  string
-	Number uint16
-
-	PortRange util.PortRange `yaml:"-"`
-
-	usedPort atomic.Int32
-}
-
-func (t *tcp) openTCPPort(tcpPort uint16) (listener net.Listener, err error) {
-	if t.usedPort.Load() >= int32(t.Number) {
-		return nil, connection.ErrFailedToOpenTCPPort
-	}
-
-	listener, err = net.Listen("tcp", ":"+strconv.Itoa(int(tcpPort)))
-	if err == nil {
-		t.usedPort.Add(1)
-	}
-	return
-}
-
-// 目前用不到这个函数，只是用 openTCPPort 来限制客户端开启的 tcp 端口数量
-// func (t *tcp) closeTCPPort(listener net.Listener) (err error) {
-// 	err = listener.Close()
-// 	t.usedPort--
-// 	return
-// }
-
-func (t *tcp) parseRange() (err error) {
-	t.PortRange, err = util.NewPortRangeFromString(t.Range)
-	return
+	Range string
 }
 
 // user 用户权限细节
 type user struct {
 	Secret      string
-	TCPs        []tcp  `yaml:"tcp"`
-	Speed       uint32 `yaml:"speed"`
-	Connections uint32 `yaml:"connections"`
+	TCPs        []tcp   `yaml:"tcp"`
+	TCPNumber   *uint16 `yaml:"tcpNumber"`
+	Speed       uint32  `yaml:"speed"`
+	Connections uint32  `yaml:"connections"`
 	Host        host
-	temp        bool
+
+	temp         bool
+	portsManager *portsManager
 }
 
 // users 客户端的权限管理
@@ -240,7 +209,7 @@ func (u *users) isIDConflict(id string) bool {
 
 // host 管理
 type host struct {
-	Number   *uint32
+	Number   *uint32               `yaml:"number"`
 	RegexStr *config.Slice[string] `yaml:"regex"`
 	Regex    *[]*regexp.Regexp     `yaml:"-"`
 	WithID   *bool                 `yaml:"withID"`

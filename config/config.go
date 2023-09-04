@@ -26,8 +26,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var position atomic.Uint32 // 用于需要存储位置的变量存储相对位置信息
-var positionMtx sync.Mutex
+var (
+	position    atomic.Uint32 // 用于需要存储位置的变量存储相对位置信息
+	positionMtx sync.Mutex
+)
 
 // ParseFlags parses args and sets the result to config and options.
 func ParseFlags(args []string, config, options interface{}) error {

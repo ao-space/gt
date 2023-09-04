@@ -18,10 +18,8 @@ users:
   id2:
     secret: secret2
     tcp: # 测试优先级是否高于全局 TCP 配置
-      - number: 3
-        range: 3-3
-      - number: 4
-        range: 4-4
+      - range: 3-3
+      - range: 4-4
     host:
       regex:
         - ^c$
@@ -29,19 +27,15 @@ users:
   id3:
     secret: secret3
     tcp:
-      - number: 3
-        range: 3-3
-      - number: 4
-        range: 4-4
+      - range: 3-3
+      - range: 4-4
     host:
       regex:
         - ^c$
         - ^d$
 tcp:
-  - number: 1
-    range: 1-1
-  - number: 2
-    range: 2-2
+  - range: 1-1
+  - range: 2-2
 host:
   regex:
     - ^a$
