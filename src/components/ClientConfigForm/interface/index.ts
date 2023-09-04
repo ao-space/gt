@@ -1,8 +1,7 @@
 export namespace ClientConfig {
   export interface Config extends Options {
-    Version: string;
-    Services: Service[];
-    // Options: Options;
+    // Version: string;
+    Services?: Service[];
   }
 
   export interface GeneralSetting {
@@ -47,7 +46,7 @@ export namespace ClientConfig {
   export interface Service {
     HostPrefix: string;
     RemoteTCPPort: number;
-    RemoteTCPRandom: boolean; //NOTE: don't have null
+    RemoteTCPRandom: boolean;
     LocalURL: string;
     LocalTimeout: string;
     UseLocalAsHTTPHost: boolean;

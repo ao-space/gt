@@ -120,28 +120,11 @@ export namespace Server {
     };
   }
 }
-interface ResClientConfig
-  extends ClientConfig.GeneralSetting,
-    ClientConfig.TCPForwardSetting,
-    ClientConfig.LogSetting,
-    ClientConfig.SentrySetting,
-    ClientConfig.WebRTCSetting {
-  Config: string;
-  Services: ResClientServices[];
-}
-interface ResClientServices {
-  HostPrefix: string;
-  RemoteTCPPort: number;
-  RemoteTCPRandom: boolean;
-  LocalURL: string;
-  LocalTimeout: string;
-  UseLocalAsHTTPHost: boolean;
-}
 
 export namespace Config {
   export namespace Client {
     export interface ResConfig {
-      config: ResClientConfig;
+      config: ClientConfig.Config;
     }
   }
 }

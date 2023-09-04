@@ -116,7 +116,7 @@
 </template>
 
 <script setup name="GeneralSetting" lang="ts">
-import { computed, reactive, ref, watchEffect } from "vue";
+import { computed, reactive, ref, watchEffect, watch } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import type { FormInstance, FormRules } from "element-plus";
@@ -131,7 +131,10 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
 });
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
 watchEffect(() => {
+  console.log("GeneralSetting: props.setting changed");
+  console.log(props.setting);
   Object.assign(localSetting, props.setting);
+  console.log(localSetting);
 });
 
 const generalSettingRef = ref<FormInstance>();
@@ -153,7 +156,7 @@ const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
       trigger: "blur"
     }
   ],
-  Secret: [{ required: true, message: "Please input Secret", trigger: "blur" }],
+  Secret: [{ message: "Please input Secret", trigger: "blur" }],
   ReconnectDelay: [{ validator: validatorTimeFormat, trigger: "blur" }],
   RemoteTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }],
   RemoteConnections: [
@@ -181,8 +184,30 @@ const remoteOptions = ["tcp://", "tls://"];
 const remote = computed(() => selectRemote.value + inputRemote.value);
 
 const emit = defineEmits(["update:setting"]);
+watch(
+  () => remote.value,
+  () => {
+    localSetting.Remote = remote.value;
+  }
+);
+watch(
+  () => localSetting.Remote,
+  () => {
+    console.log("GeneralSetting: localSetting.Remote changed");
+    const remote = localSetting.Remote;
+    if (remote.startsWith("tcp://")) {
+      selectRemote.value = "tcp://";
+      inputRemote.value = remote.slice(6);
+    } else if (remote.startsWith("tls://")) {
+      selectRemote.value = "tls://";
+      inputRemote.value = remote.slice(6);
+    }
+  }
+);
+
 watchEffect(() => {
-  localSetting.Remote = remote.value;
+  console.log("GeneralSetting: localSetting changed");
+  console.log(localSetting);
   emit("update:setting", localSetting);
 });
 

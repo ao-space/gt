@@ -17,9 +17,11 @@
       />
     </template>
   </Anchor>
-  <el-button type="primary" @click="onSubmit"> Submit</el-button>
-  <el-button type="primary" @click="reload"> Reload</el-button>
-  <el-button type="primary" @click="test">Test</el-button>
+  <el-button type="primary" @click="submit"> Submit</el-button>
+  <el-button type="primary" @click="getFromFile">GetFromFile</el-button>
+  <el-button type="primary" @click="getFromRunning">GetFromRunning</el-button>
+  <el-button type="primary" @click="reloadServices">Reload Services</el-button>
+  <el-button type="primary" @click="restartServer">Restart System</el-button>
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
@@ -33,10 +35,9 @@ import WebRTCSetting from "./components/WebRTCSetting.vue";
 import TCPForwardSetting from "./components/TCPForwardSetting.vue";
 import LogSetting from "./components/LogSetting.vue";
 import ServiceSetting from "./components/ServiceSetting.vue";
-import { getClientConfigFromFileApi, saveClientConfigApi } from "@/api/modules/clientConfig";
-import { getConnectionApi } from "@/api/modules/connection";
+import { getClientConfigFromFileApi, getRunningClientConfigApi, saveClientConfigApi } from "@/api/modules/clientConfig";
+import { reloadServicesApi, restartServerApi } from "@/api/modules/server";
 import { v4 as uuidv4 } from "uuid";
-import yaml from "js-yaml";
 import { Config } from "@/api/interface";
 import {
   mapClientGeneralSetting,
@@ -94,20 +95,17 @@ const addService = () => {
 };
 const removeService = (index: number) => {
   console.log("removeService");
-  console.log("index " + index);
   if (services.length === 1) {
     ElMessage.warning("At least one service is required!");
     return;
   } else {
     services.splice(index, 1);
     serviceSettingRefs.splice(index, 1);
-    console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     adjustView();
   }
 };
 
 const clientConfig = reactive<ClientConfig.Config>({
-  Version: "1",
   Services: services,
   ...options
 });
@@ -231,18 +229,39 @@ const tabList = computed<Tab[]>(() => [
   ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
   ...dynamicTabs.value.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
 ]);
-// TODO: must input and trim
+
 const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => {
   return Promise.all(formRefs.map(formRef => formRef.value?.validateForm()));
 };
-// TODO: api update
-const onSubmit = async () => {
-  console.log("onSubmit");
-  const json1 = JSON.stringify(clientConfig);
-  const yamlString = yaml.dump(clientConfig);
-  console.log(json1);
-  console.log(yamlString);
-  ElMessageBox.confirm("Make sure you want to save the config setting to file.", "Save The Config Setting", {
+
+const updateData = (data: Config.Client.ResConfig) => {
+  console.log("--------------------------------------");
+  console.log("updateData");
+  console.log(data);
+  Object.assign(generalSetting, mapClientGeneralSetting(data));
+  Object.assign(sentrySetting, mapClientSentrySetting(data));
+  Object.assign(webRTCSetting, mapClientWebRTCSetting(data));
+  Object.assign(tcpForwardSetting, mapClientTCPForwardSetting(data));
+  Object.assign(logSetting, mapClientLogSetting(data));
+  options.Config = data.config.Config;
+  services.splice(0, services.length, ...mapClientServices(data));
+  serviceSettingRefs.splice(0, serviceSettingRefs.length);
+  console.log(generalSetting);
+  console.log("--------------------------------------");
+};
+
+const checkOptionsConsistency = (runningConfig: ClientConfig.Config, sendingConfig: ClientConfig.Config): boolean => {
+  const runningOptions = { ...runningConfig };
+  const sendingOptions = { ...sendingConfig };
+
+  delete runningOptions.Services;
+  delete sendingOptions.Services;
+
+  return JSON.stringify(runningOptions) === JSON.stringify(sendingOptions);
+};
+
+const submit = async () => {
+  ElMessageBox.confirm("Make sure you want to save the configuration to file.", "Save The Configuration", {
     confirmButtonText: "Confirm",
     cancelButtonText: "Cancel",
     type: "info"
@@ -257,9 +276,8 @@ const onSubmit = async () => {
           logSettingRef,
           ...serviceSettingRefs
         ]);
-        const response = await saveClientConfigApi(clientConfig);
-        console.log(response);
-        ElMessage.success("Save Success!");
+        await saveClientConfigApi(clientConfig);
+        ElMessage.success("Operation Success!");
       } catch (e) {
         console.log(e);
         if (e instanceof Error) {
@@ -270,41 +288,125 @@ const onSubmit = async () => {
       }
     })
     .catch(() => {
-      ElMessage.info("已取消发送");
+      ElMessage.info("Cancel Submit Operation!");
     });
 };
-const updateData = (data: Config.Client.ResConfig) => {
-  console.log("--------------------------------------");
-  console.log("updateData");
-  Object.assign(generalSetting, mapClientGeneralSetting(data));
-  Object.assign(sentrySetting, mapClientSentrySetting(data));
-  Object.assign(webRTCSetting, mapClientWebRTCSetting(data));
-  Object.assign(tcpForwardSetting, mapClientTCPForwardSetting(data));
-  Object.assign(logSetting, mapClientLogSetting(data));
-  options.Config = data.config.Config;
-  services.splice(0, services.length, ...mapClientServices(data));
-  serviceSettingRefs.splice(0, serviceSettingRefs.length);
-  console.log("--------------------------------------");
+const getFromFile = async () => {
+  ElMessageBox.confirm(
+    "Make sure you want to get the configuration from file, if you fail to get from file, it will get from the running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
+    "Get Configuration From File",
+    {
+      confirmButtonText: "Confirm",
+      cancelButtonText: "Cancel",
+      type: "info"
+    }
+  )
+    .then(async () => {
+      try {
+        const { data } = await getClientConfigFromFileApi();
+        updateData(data);
+        ElMessage.success("Operation Success!");
+      } catch (e) {
+        if (e instanceof Error) {
+          ElMessage.error(e.message);
+        } else {
+          ElMessage.error("Failed to Get From File!");
+        }
+      }
+    })
+    .catch(() => {
+      ElMessage.info("Cancel GetFromFile Operation!");
+    });
 };
-
-const reload = async () => {
-  const { data } = await getClientConfigFromFileApi();
-  console.log("--------------------------------------");
-  console.log(data);
-  console.log(JSON.stringify(services));
-  updateData(data);
-  console.log(JSON.stringify(services));
-  console.log("--------------------------------------");
+const getFromRunning = async () => {
+  ElMessageBox.confirm(
+    "Make sure you want to get the configuration from running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
+    "Get Configuration From Running System",
+    {
+      confirmButtonText: "Confirm",
+      cancelButtonText: "Cancel",
+      type: "info"
+    }
+  )
+    .then(async () => {
+      try {
+        const { data } = await getRunningClientConfigApi();
+        updateData(data);
+        ElMessage.success("Operation Success!");
+      } catch (e) {
+        if (e instanceof Error) {
+          ElMessage.error(e.message);
+        } else {
+          ElMessage.error("Failed to Get From Running System!");
+        }
+      }
+    })
+    .catch(() => {
+      ElMessage.info("Cancel GetFromRunning Operation!");
+    });
+};
+const reloadServices = async () => {
+  ElMessageBox.confirm(
+    "You need to make sure that the changes you make only happen in the services section,and make sure it has been saved, or the system won't reload the services.",
+    "Reload Services",
+    {
+      confirmButtonText: "Confirm",
+      cancelButtonText: "Cancel",
+      type: "info"
+    }
+  )
+    .then(async () => {
+      try {
+        const runningConfig = await getRunningClientConfigApi();
+        const fileConfig = await getClientConfigFromFileApi();
+        if (checkOptionsConsistency(runningConfig.data.config, fileConfig.data.config)) {
+          await reloadServicesApi();
+          ElMessage.success("Operation Success!");
+        } else {
+          ElMessage.warning("The options you changed are not consistent with the running system!");
+        }
+      } catch (e) {
+        if (e instanceof Error) {
+          ElMessage.error(e.message);
+        } else {
+          ElMessage.error("Failed to Reload Services!");
+        }
+      }
+    })
+    .catch(() => {
+      ElMessage.info("Cancel Reload Services Operation!");
+    });
+};
+const restartServer = async () => {
+  ElMessageBox.confirm(
+    "You need to make sure that the changes you make only happen in the services section,and make sure it has been saved, or the system won't reload the services.",
+    "Restart System",
+    {
+      confirmButtonText: "Confirm",
+      cancelButtonText: "Cancel",
+      type: "info"
+    }
+  )
+    .then(async () => {
+      try {
+        await restartServerApi();
+        ElMessage.success("Operation Success!");
+      } catch (e) {
+        if (e instanceof Error) {
+          ElMessage.error(e.message);
+        } else {
+          ElMessage.error("Failed to Reload Services!");
+        }
+      }
+    })
+    .catch(() => {
+      ElMessage.info("Cancel Restart System Operation!");
+    });
 };
 
 onMounted(() => {
-  reload();
+  getFromFile();
 });
-
-const test = async () => {
-  const { data } = await getConnectionApi();
-  console.log(data);
-};
 </script>
 
 <style scoped lang="scss">

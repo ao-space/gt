@@ -132,7 +132,7 @@
 
 <script setup lang="ts" name="home">
 import { ref, onUnmounted } from "vue";
-import { getServerInfoApi } from "@/api/modules/serverInfo";
+import { getServerInfoApi } from "@/api/modules/server";
 import { Server } from "@/api/interface";
 
 const state = ref<Server.SystemState | null>();
