@@ -21,15 +21,15 @@ import (
 )
 
 const (
-	running status = iota
+	running Status = iota
 	idle
 	wait
 )
 
-type status int
+type Status int
 
 type idleManager struct {
-	status     map[uint]status
+	status     map[uint]Status
 	statusMtx  sync.RWMutex
 	statusCond *sync.Cond
 	min        uint
@@ -42,9 +42,19 @@ func (m *idleManager) String() string {
 	return fmt.Sprintf("%#v", m.status)
 }
 
+func (m *idleManager) GetConnectionStatus() (status map[uint]Status) {
+	m.statusMtx.RLock()
+	defer m.statusMtx.RUnlock()
+	status = make(map[uint]Status, len(m.status))
+	for k, v := range m.status {
+		status[k] = v
+	}
+	return
+}
+
 func newIdleManager(min uint) *idleManager {
 	m := &idleManager{
-		status: make(map[uint]status),
+		status: make(map[uint]Status),
 		min:    min,
 	}
 	m.statusCond = sync.NewCond(&m.statusMtx)

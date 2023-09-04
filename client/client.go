@@ -327,9 +327,15 @@ func (c *Client) Start() (err error) {
 	err = c.parseServices()
 	//make sure even if there is  no service,
 	//web server still can start for config
-	if err != errNoService || (err == errNoService && !c.Config().EnableWebServer) {
-		return
+	if err != nil {
+		if err != errNoService || (err == errNoService && !c.Config().EnableWebServer) {
+			c.Logger.Info().Msg("-------------------")
+			c.Logger.Error().Err(err).Msg("failed to parse services")
+			c.Logger.Info().Msg("-------------------")
+			return
+		}
 	}
+	c.Logger.Info().Msg("parsed services")
 
 	var dialer dialer
 	if len(c.Config().Remote) > 0 {
@@ -375,7 +381,12 @@ func (c *Client) Start() (err error) {
 	} else if c.Config().RemoteIdleConnections > c.Config().RemoteConnections {
 		c.Config().RemoteIdleConnections = c.Config().RemoteConnections
 	}
+	c.Logger.Info().Msg("New IdleManager")
 	c.idleManager = newIdleManager(c.Config().RemoteIdleConnections)
+	if c.idleManager == nil {
+		c.Logger.Warn().Msg("IdleManager is nil")
+	}
+	c.Logger.Info().Msg("New IdleManager done")
 
 	for i := uint(1); i <= c.Config().RemoteConnections; i++ {
 		go c.connectLoop(dialer, i)
@@ -404,6 +415,26 @@ func (c *Client) Start() (err error) {
 
 func (c *Client) Config() *Config {
 	return c.config.Load()
+}
+
+func (c *Client) GetConnectionPoolStatus() (status map[uint]Status) {
+	if c.idleManager == nil {
+		c.Logger.Warn().Msg("idleManager is nil")
+		return nil
+	}
+	return c.idleManager.GetConnectionStatus()
+}
+
+func (c *Client) GetConnectionPoolNetInfo() (pools []PoolInfo) {
+	c.tunnelsRWMtx.RLock()
+	defer c.tunnelsRWMtx.RUnlock()
+	for conn := range c.tunnels {
+		pools = append(pools, PoolInfo{
+			LocalAddr:  conn.LocalAddr(),
+			RemoteAddr: conn.RemoteAddr(),
+		})
+	}
+	return
 }
 
 // Close stops the client agent.
@@ -572,10 +603,13 @@ var errNoService = errors.New("no service is configured")
 func (c *Client) parseServices() (err error) {
 	services, err := parseServices(c.Config())
 	if err != nil {
+		c.Logger.Info().Msg("!!!!!!!!!!!!!!!!!!!111")
+		c.Logger.Error().Err(err).Msg("failed to parse services")
 		return
 	}
 	// services 不能为空
 	if len(services) == 0 {
+		c.Logger.Info().Msg("!!!!!!!!!!!!!!!!!!!111")
 		err = errNoService
 		return
 	}

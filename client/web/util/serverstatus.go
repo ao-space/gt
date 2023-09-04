@@ -4,8 +4,6 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
-	"github.com/shirou/gopsutil/v3/net"
-	"os"
 	"runtime"
 	"time"
 )
@@ -99,23 +97,4 @@ func InitDisk() (d Disk, err error) {
 		d.UsedPercent = int(u.UsedPercent)
 	}
 	return d, nil
-}
-
-// TODO: net
-func InitNet() []string {
-
-	var msg []string
-	pid := int32(os.Getpid())
-	//var conns, _ = net.ProtoCounters(nil)
-	conns, err := net.Connections("all")
-	if err != nil {
-		return msg
-	}
-	for _, conn := range conns {
-		if pid == conn.Pid {
-			msg = append(msg, conn.String())
-		}
-	}
-	return msg
-
 }

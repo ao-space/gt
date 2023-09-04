@@ -38,6 +38,11 @@ type conn struct {
 	services      atomic.Pointer[services]
 }
 
+type PoolInfo struct {
+	LocalAddr  net.Addr
+	RemoteAddr net.Addr
+}
+
 func newConn(c net.Conn, client *Client) *conn {
 	nc := &conn{
 		Connection: connection.Connection{

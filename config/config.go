@@ -101,6 +101,13 @@ func copyFlagsValue(dst interface{}, src *flag.FlagSet, name2FieldIndex map[stri
 		fieldType := field.Type()
 		flagValue := reflect.ValueOf(f.Value.(flag.Getter).Get())
 		flagValueType := flagValue.Type()
+
+		if fieldType == reflect.TypeOf(Duration{}) {
+			durationValue := flagValue.Interface().(time.Duration)
+			field.Set(reflect.ValueOf(Duration{Duration: durationValue}))
+			return
+		}
+
 		if !flagValueType.AssignableTo(fieldType) {
 			if flagValueType.ConvertibleTo(fieldType) {
 				flagValue = flagValue.Convert(fieldType)

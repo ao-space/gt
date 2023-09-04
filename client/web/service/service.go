@@ -6,6 +6,7 @@ import (
 	"github.com/isrc-cas/gt/client/web/model/request"
 	"github.com/isrc-cas/gt/client/web/util"
 	"github.com/isrc-cas/gt/config"
+	psNet "github.com/shirou/gopsutil/v3/net"
 	"gopkg.in/yaml.v3"
 	"os"
 	"os/exec"
@@ -43,6 +44,25 @@ func GetServerInfo() (server *util.Server, err error) {
 		return nil, err
 	}
 	return &s, nil
+}
+
+func GetConnectionPoolStatus(c *client.Client) map[uint]client.Status {
+	return c.GetConnectionPoolStatus()
+}
+
+// GetConnectionInfo get all connections of current process
+// except connections of pools
+func GetConnectionInfo(c *client.Client) (info []request.SimplifiedConnection, err error) {
+	pid := int32(os.Getpid())
+	conns, err := psNet.ConnectionsPid("all", pid)
+	if err != nil {
+		return
+	}
+	pools := c.GetConnectionPoolNetInfo()
+
+	filter := util.FilterOutMatchingConnections(conns, pools)
+	info = util.SimplifyConnections(filter)
+	return
 }
 
 // GetConfigFormFile need to set configPath before

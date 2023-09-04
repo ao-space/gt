@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/isrc-cas/gt/client"
 	"github.com/isrc-cas/gt/client/web/model/request"
@@ -39,15 +40,15 @@ func GetServerInfo(ctx *gin.Context) {
 func GetRunningConfig(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var cfg = c.Config()
+		c.Logger.Info().Msg("Running CONFIG:" + cfg.Config)
 		response.SuccessWithData(gin.H{"config": cfg}, ctx)
 	}
 }
 func GetConfigFromFile(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var cfg client.Config
-		cfg = *c.Config() //initialize cfg with running config, mainly for configPath
 		cfg, err := service.GetConfigFormFile(c)
 		if err != nil {
+			c.Logger.Error().Err(err).Msg("get config from file failed")
 			// try to fetch running config
 			GetRunningConfig(c)(ctx)
 			return
@@ -59,15 +60,19 @@ func GetConfigFromFile(c *client.Client) gin.HandlerFunc {
 func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var cfg client.Config
-		cfg = *c.Config() //initialize cfg with running config, mainly for configPath
-		c.Logger.Info().Msg("CONFIG:" + cfg.Config)
-		c.Logger.Info().Msg("URL:" + cfg.Services[0].LocalURL.URL.String())
+		err := inheritImmutableConfigFields(c.Config(), &cfg)
+		if err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		c.Logger.Info().Msg("SaveConfig in :" + cfg.Config)
 		response.SuccessWithDetailed(gin.H{"config": cfg}, "JSONBind Before", ctx)
 		if err := ctx.ShouldBindJSON(&cfg); err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
 		response.SuccessWithDetailed(gin.H{"config": cfg}, "JSON", ctx)
+		response.SuccessWithDetailed(gin.H{"RunningConfig": *c.Config()}, "JSONBind After", ctx)
 		fullPath, err := service.SaveConfigToFile(&cfg)
 		if err != nil {
 			response.FailWithMessage(err.Error(), ctx)
@@ -75,6 +80,26 @@ func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 		}
 		response.SuccessWithMessage("save config in"+fullPath, ctx)
 	}
+}
+
+// inheritImmutableConfigFields copy immutable fields from original to new
+func inheritImmutableConfigFields(original *client.Config, new *client.Config) (err error) {
+	if original == nil {
+		err = errors.New("original config is nil")
+		return
+	}
+	//TODO:????
+	new.HostPrefix = original.HostPrefix
+
+	new.Config = original.Config
+	new.EnableWebServer = original.EnableWebServer
+	new.WebAddr = original.WebAddr
+	new.WebPort = original.WebPort
+	new.EnablePprof = original.EnablePprof
+	new.SigningKey = original.SigningKey
+	new.Admin = original.Admin
+	new.Password = original.Password
+	return
 }
 
 // ServerGroup api
@@ -113,4 +138,17 @@ func Kill(ctx *gin.Context) {
 		return
 	}
 	response.Success(ctx)
+}
+
+func GetConnectionInfo(c *client.Client) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		poolStatus := service.GetConnectionPoolStatus(c)
+		conn, err := service.GetConnectionInfo(c)
+		if err != nil {
+			c.Logger.Error().Msg(err.Error())
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		response.SuccessWithData(gin.H{"pool": poolStatus, "connection": conn}, ctx)
+	}
 }

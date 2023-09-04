@@ -17,6 +17,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"net/url"
 	"strconv"
 	"strings"
@@ -25,30 +26,29 @@ import (
 	"github.com/isrc-cas/gt/config"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/rs/zerolog"
-	"gopkg.in/yaml.v3"
 )
 
 // Config is a client config.
 type Config struct {
-	Version  string // 目前未使用
+	Version  string `yaml:"-" json:"-"` // 目前未使用
 	Services services
 	Options
 }
 
 // Options is the config options for a client.
 type Options struct {
-	Config                string   `arg:"config" yaml:"-" json:",omitempty" usage:"The config file path to load"`
-	ID                    string   `yaml:"id" usage:"The unique id used to connect to server. Now it's the prefix of the domain."`
-	Secret                string   `yaml:"secret" usage:"The secret used to verify the id"`
-	ReconnectDelay        Duration `yaml:"reconnectDelay" json:",omitempty" usage:"The delay before reconnect. Supports values like '30s', '5m'"`
-	Remote                string   `yaml:"remote" json:",omitempty" usage:"The remote server url. Supports tcp:// and tls://, default tcp://"`
-	RemoteSTUN            string   `yaml:"remoteSTUN" json:",omitempty" usage:"The remote STUN server address"`
-	RemoteAPI             string   `yaml:"remoteAPI" json:",omitempty" usage:"The API to get remote server url"`
-	RemoteCert            string   `yaml:"remoteCert" json:",omitempty" usage:"The path to remote cert"`
-	RemoteCertInsecure    bool     `yaml:"remoteCertInsecure" json:",omitempty" usage:"Accept self-signed SSL certs from remote"`
-	RemoteConnections     uint     `yaml:"remoteConnections" json:",omitempty" usage:"The max number of server connections in the pool. Valid value is 1 to 10"`
-	RemoteIdleConnections uint     `yaml:"remoteIdleConnections" json:",omitempty" usage:"The number of idle server connections kept in the pool"`
-	RemoteTimeout         Duration `yaml:"remoteTimeout" json:",omitempty" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
+	Config                string          `arg:"config" yaml:"-" json:"-" usage:"The config file path to load"`
+	ID                    string          `yaml:"id" usage:"The unique id used to connect to server. Now it's the prefix of the domain."`
+	Secret                string          `yaml:"secret" json:",omitempty" usage:"The secret used to verify the id"`
+	ReconnectDelay        config.Duration `yaml:"reconnectDelay" json:",omitempty" usage:"The delay before reconnect. Supports values like '30s', '5m'"`
+	Remote                string          `yaml:"remote" json:",omitempty" usage:"The remote server url. Supports tcp:// and tls://, default tcp://"`
+	RemoteSTUN            string          `yaml:"remoteSTUN" json:",omitempty" usage:"The remote STUN server address"`
+	RemoteAPI             string          `yaml:"remoteAPI" json:",omitempty" usage:"The API to get remote server url"`
+	RemoteCert            string          `yaml:"remoteCert" json:",omitempty" usage:"The path to remote cert"`
+	RemoteCertInsecure    bool            `yaml:"remoteCertInsecure" json:",omitempty" usage:"Accept self-signed SSL certs from remote"`
+	RemoteConnections     uint            `yaml:"remoteConnections" json:",omitempty" usage:"The max number of server connections in the pool. Valid value is 1 to 10"`
+	RemoteIdleConnections uint            `yaml:"remoteIdleConnections" json:",omitempty" usage:"The number of idle server connections kept in the pool"`
+	RemoteTimeout         config.Duration `yaml:"remoteTimeout" json:",omitempty" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
 
 	HostPrefix         config.PositionSlice[string]        `yaml:"hostPrefix" usage:"The server will recognize this host prefix and forward data to local"`
 	RemoteTCPPort      config.PositionSlice[uint16]        `yaml:"-" json:"-" arg:"remoteTCPPort" usage:"The TCP port that the remote server will open"`
@@ -65,10 +65,10 @@ type Options struct {
 	SentryServerName  string               `yaml:"sentryServerName" json:",omitempty" usage:"Sentry server name to be reported"`
 	SentryDebug       bool                 `yaml:"sentryDebug" json:",omitempty" usage:"Sentry debug mode, the debug information is printed to help you understand what sentry is doing"`
 
-	WebRTCConnectionIdleTimeout Duration `yaml:"webrtcConnectionIdleTimeout" usage:"The timeout of WebRTC connection. Supports values like '30s', '5m'"`
-	WebRTCLogLevel              string   `yaml:"webrtcLogLevel" json:",omitempty" usage:"WebRTC log level: verbose, info, warning, error"`
-	WebRTCMinPort               uint16   `yaml:"webrtcMinPort" json:",omitempty" usage:"The min port of WebRTC peer connection"`
-	WebRTCMaxPort               uint16   `yaml:"webrtcMaxPort" json:",omitempty" usage:"The max port of WebRTC peer connection"`
+	WebRTCConnectionIdleTimeout config.Duration `yaml:"webrtcConnectionIdleTimeout" usage:"The timeout of WebRTC connection. Supports values like '30s', '5m'"`
+	WebRTCLogLevel              string          `yaml:"webrtcLogLevel" json:",omitempty" usage:"WebRTC log level: verbose, info, warning, error"`
+	WebRTCMinPort               uint16          `yaml:"webrtcMinPort" json:",omitempty" usage:"The min port of WebRTC peer connection"`
+	WebRTCMaxPort               uint16          `yaml:"webrtcMaxPort" json:",omitempty" usage:"The max port of WebRTC peer connection"`
 
 	TCPForwardAddr        string `yaml:"tcpForwardAddr" json:",omitempty" usage:"The address of TCP forward"`
 	TCPForwardHostPrefix  string `yaml:"tcpForwardHostPrefix" json:",omitempty" usage:"The host prefix of TCP forward"`
@@ -95,15 +95,15 @@ type Options struct {
 func defaultConfig() Config {
 	return Config{
 		Options: Options{
-			ReconnectDelay:        Duration{5 * time.Second},
-			RemoteTimeout:         Duration{45 * time.Second},
+			ReconnectDelay:        config.Duration{Duration: 5 * time.Second},
+			RemoteTimeout:         config.Duration{Duration: 45 * time.Second},
 			RemoteConnections:     3,
 			RemoteIdleConnections: 1,
 
 			SentrySampleRate: 1.0,
 			SentryRelease:    predef.Version,
 
-			WebRTCConnectionIdleTimeout: Duration{5 * time.Minute},
+			WebRTCConnectionIdleTimeout: config.Duration{Duration: 5 * time.Minute},
 			WebRTCLogLevel:              "warning",
 
 			TCPForwardConnections: 3,
@@ -149,57 +149,13 @@ func (c clientURL) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.URL.String())
 }
 
-type Duration struct {
-	time.Duration
-}
-
-func (d *Duration) UnmarshalYAML(value *yaml.Node) (err error) {
-	duration, err := time.ParseDuration(value.Value)
-	if err != nil {
-		return
-	}
-	d.Duration = duration
-	return
-}
-
-func (d Duration) MarshalYAML() (interface{}, error) {
-	return d.Duration.String(), nil
-}
-
-func (d *Duration) UnmarshalJSON(data []byte) (err error) {
-	var s string
-	if err = json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	duration, err := time.ParseDuration(s)
-	if err != nil {
-		return err
-	}
-	d.Duration = duration
-	return nil
-}
-
-func (d Duration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.Duration.String())
-}
-
-func (d *Duration) Set(s string) error {
-	var err error
-	d.Duration, err = time.ParseDuration(s)
-	return err
-}
-
-func (d *Duration) String() string {
-	return d.Duration.String()
-}
-
 type service struct {
-	HostPrefix         string    `yaml:"hostPrefix"`
-	RemoteTCPPort      uint16    `yaml:"remoteTCPPort"`
-	RemoteTCPRandom    *bool     `yaml:"remoteTCPRandom"`
-	LocalURL           clientURL `yaml:"local"`
-	LocalTimeout       Duration  `yaml:"localTimeout"`
-	UseLocalAsHTTPHost bool      `yaml:"useLocalAsHTTPHost"`
+	HostPrefix         string          `yaml:"hostPrefix"`
+	RemoteTCPPort      uint16          `yaml:"remoteTCPPort"`
+	RemoteTCPRandom    *bool           `yaml:"remoteTCPRandom"`
+	LocalURL           clientURL       `yaml:"local"`
+	LocalTimeout       config.Duration `yaml:"localTimeout"`
+	UseLocalAsHTTPHost bool            `yaml:"useLocalAsHTTPHost"`
 }
 
 func (s *service) String() string {

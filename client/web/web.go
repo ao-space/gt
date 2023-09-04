@@ -59,10 +59,15 @@ func setRoutes(c *client.Client, r *gin.Engine) {
 		serverGroup := apiGroup.Group("/server")
 		{
 			serverGroup.GET("/info", api.GetServerInfo)
-			serverGroup.POST("/reload", api.ReloadServices)
+			serverGroup.PUT("/reload", api.ReloadServices)
 			serverGroup.PUT("/restart", api.Restart)
 			serverGroup.PUT("/stop", api.Stop)
 			serverGroup.PUT("/kill", api.Kill)
+		}
+
+		connectionGroup := apiGroup.Group("/connection")
+		{
+			connectionGroup.GET("/list", api.GetConnectionInfo(c))
 		}
 	}
 
