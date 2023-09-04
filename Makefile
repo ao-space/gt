@@ -61,6 +61,8 @@ export CGO_ENABLED=1
 
 all: gofumpt golangci-lint test release
 
+prepare: gofumpt golangci-lint test
+
 gofumpt:
 	gofumpt --version || go install mvdan.cc/gofumpt@latest
 	gofumpt -l -w $(shell find . -name '*.go' | grep -Ev '^\./bufio|^\./client/std|^\./logger/file-rotatelogs|^\./dep')
@@ -70,7 +72,7 @@ test: compile_webrtc
 	go test -race -cover -count 1 ./...
 
 golangci-lint:
-	golangci-lint --version || go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
+	golangci-lint --version || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	golangci-lint run \
 		--skip-dirs client/std \
 		--skip-dirs dep \

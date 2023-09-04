@@ -1,0 +1,16 @@
+version: 1.0
+options:
+  addr: 80
+  sniAddr: 443
+  #  tlsAddr: 4443
+  #  certFile: /opt/crt/tls.crt
+  #  keyFile: /opt/crt/tls.key
+  logLevel: info
+  timeout: 90s
+  stunAddr: 3478
+users:
+  id-should-be-overwritten:
+    secret: secret-should-be-overwritten
+    tcp:
+      - range: 10000-15000
+      - range: 20000-25000

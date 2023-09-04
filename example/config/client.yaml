@@ -1,0 +1,26 @@
+version: 1.0
+services:
+  # http 转发
+  - local: http://127.0.0.1:80
+    hostPrefix: blog
+  # http 转发
+  - local: http://127.0.0.1:80
+    hostPrefix: web
+  # https sni 转发
+  - local: https://www.baidu.com
+    hostPrefix: www
+  # server 10022 tcp 端口转发流量到 client 本地 22 tcp 端口
+  - local: tcp://127.0.0.1:22
+    # 服务器端口
+    remoteTCPPort: 10022
+    # 如果 10022 端口被占用，则使用服务器随机端口
+    remoteTCPRandom: true
+options:
+  id: id-should-be-overwritten
+  secret: secret-should-be-overwritten
+  # 服务器地址
+  # remote: tls://1.1.1.1:4443
+  remote: tcp://1.1.1.1:80
+  # 连接池并发连接数
+  remoteConnections: 5
+  logLevel: info

@@ -62,7 +62,7 @@ func TestP2PGetOffer(t *testing.T) {
 		"-secret", "eec1eabf-2c59-4e19-bf10-34707c17ed89",
 		"-local", fmt.Sprintf("http://%s", httpEchoServerAddr),
 		"-remote", s.GetListenerAddrPort().String(),
-		"-remoteSTUN", "stun:" + s.GetTURNListenerAddrPort().String(),
+		"-remoteSTUN", "stun:" + s.GetSTUNListenerAddrPort().String(),
 		"-logLevel", "debug",
 		"-webrtcLogLevel", "warning",
 	}, nil)
@@ -338,7 +338,7 @@ func TestP2PSetOffer(t *testing.T) {
 		"-secret", "eec1eabf-2c59-4e19-bf10-34707c17ed89",
 		"-local", fmt.Sprintf("http://%s", httpListener.Addr().String()),
 		"-remote", s.GetListenerAddrPort().String(),
-		"-remoteSTUN", "stun:" + s.GetTURNListenerAddrPort().String(),
+		"-remoteSTUN", "stun:" + s.GetSTUNListenerAddrPort().String(),
 		"-logLevel", "trace",
 	}, nil)
 	if err != nil {
@@ -348,7 +348,7 @@ func TestP2PSetOffer(t *testing.T) {
 
 	httpClient := setupHTTPClient(s.GetListenerAddrPort().String(), nil)
 
-	pc, ctx, offer := initOffer(t, s.GetTURNListenerAddrPort().String())
+	pc, ctx, offer := initOffer(t, s.GetSTUNListenerAddrPort().String())
 
 	req, err := http.NewRequest("XP", "http://abc.p2p.com/test", nil)
 	if err != nil {
@@ -571,7 +571,7 @@ func TestTCPForward(t *testing.T) {
 			"-local", "http://www.baidu.com/",
 			"-remoteTimeout", "5s",
 			"-useLocalAsHTTPHost",
-			"-remoteSTUN", "stun:" + s.GetTURNListenerAddrPort().String(),
+			"-remoteSTUN", "stun:" + s.GetSTUNListenerAddrPort().String(),
 		},
 	}, clientOption{
 		args: []string{
@@ -582,7 +582,7 @@ func TestTCPForward(t *testing.T) {
 			"-local", "http://www.baidu.com/",
 			"-remoteTimeout", "5s",
 			"-useLocalAsHTTPHost",
-			"-remoteSTUN", "stun:" + s.GetTURNListenerAddrPort().String(),
+			"-remoteSTUN", "stun:" + s.GetSTUNListenerAddrPort().String(),
 			"-tcpForwardAddr", "127.0.0.1:0",
 			"-tcpForwardHostPrefix", "id1",
 		},
