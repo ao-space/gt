@@ -39,16 +39,20 @@ export const mapClientLogSetting = (data: Config.Client.ResConfig): ClientConfig
   LogFileMaxCount: data.config.LogFileMaxCount,
   LogLevel: data.config.LogLevel
 });
-export const mapClientServices = (data: Config.Client.ResConfig) =>
-  data.config.Services.map(service => ({
-    HostPrefix: service.HostPrefix,
-    RemoteTCPPort: service.RemoteTCPPort,
-    RemoteTCPRandom: service.RemoteTCPRandom,
-    LocalURL: service.LocalURL,
-    LocalTimeout: humanizeDuration(service.LocalTimeout),
-    UseLocalAsHTTPHost: service.UseLocalAsHTTPHost
-  }));
-
+export const mapClientServices = (data: Config.Client.ResConfig) => {
+  if (!data.config.Services) {
+    return [];
+  } else {
+    return data.config.Services.map(service => ({
+      HostPrefix: service.HostPrefix,
+      RemoteTCPPort: service.RemoteTCPPort,
+      RemoteTCPRandom: service.RemoteTCPRandom,
+      LocalURL: service.LocalURL,
+      LocalTimeout: humanizeDuration(service.LocalTimeout),
+      UseLocalAsHTTPHost: service.UseLocalAsHTTPHost
+    }));
+  }
+};
 const humanizeDuration = (value: string): string => {
   if (!value) return "";
   const regex = /^(?:\d+(?:ns|µ?s|ms|[smh]))+$/;
