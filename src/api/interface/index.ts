@@ -24,13 +24,6 @@ export interface ReqPage {
   pageSize: number;
 }
 
-// 文件上传模块
-export namespace Upload {
-  export interface ResFileUrl {
-    fileUrl: string;
-  }
-}
-
 // 登录模块
 export namespace Login {
   export interface ReqLoginForm {

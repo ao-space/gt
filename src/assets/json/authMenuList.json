@@ -16,20 +16,6 @@
       }
     },
     {
-      "path": "/about/index",
-      "name": "about",
-      "component": "/about/index",
-      "meta": {
-        "icon": "InfoFilled",
-        "title": "About",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true
-      }
-    },
-    {
       "path": "/config/index",
       "name": "config",
       "redirect": "/config/children",
