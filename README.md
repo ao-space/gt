@@ -1,5 +1,7 @@
 # GT
 
+English | [简体中文](./README_CN.md)
+
 GT is an open source reverse proxy project that supports peer-to-peer (P2P) and Internet relay.
 
 It has the following design features:
@@ -57,7 +59,6 @@ The main features that have been implemented so far:
 - [Compile](#compile)
 - [TODO](#todo)
 - [Contribution Guidelines](#contribution-guidelines)
-- [中文文档](./README_CN.md)
 
 ## Working Principle
 
@@ -685,13 +686,13 @@ You can either build GT with webrtc downloaded from mirror or from official:
 
 2. Build
 
-      Build it on linux:
+   Build it on linux:
 
       ```shell
       make release
       ```
 
-      The compiled executable file is in the release directory.
+   The compiled executable file is in the release directory.
 
 ### Build GT with webrtc downloaded from official repo
 
@@ -710,19 +711,19 @@ You can either build GT with webrtc downloaded from mirror or from official:
       git clone https://webrtc.googlesource.com/src
       ```
 
-      And then follow [the steps in the link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
-      check out the build toolchain and many
-      dependencies.
+   And then follow [the steps in the link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
+   check out the build toolchain and many
+   dependencies.
 
 3. Build
 
-      Build it on linux:
+   Build it on linux:
 
       ```shell
       WITH_OFFICIAL_WEBRTC=1 make release
       ```
 
-      The compiled executable file is in the release directory.
+   The compiled executable file is in the release directory.
 
 ## TODO
 
