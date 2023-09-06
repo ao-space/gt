@@ -16,6 +16,20 @@
       }
     },
     {
+      "path": "/connection",
+      "name": "connection",
+      "component": "/connection/index",
+      "meta": {
+        "icon": "Connection",
+        "title": "Connection Status",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": false
+      }
+    },
+    {
       "path": "/config/index",
       "name": "config",
       "redirect": "/config/children",
@@ -88,21 +102,7 @@
           }
         }
       ]
-    },
-    {
-      "path": "/connection",
-      "name": "connection",
-      "component": "/connection/index",
-      "meta": {
-        "icon": "Connection",
-        "title": "Connection Status",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": false
-      }
     }
   ],
-  "msg": "成功"
+  "msg": "Success"
 }
