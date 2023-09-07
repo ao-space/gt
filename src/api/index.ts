@@ -35,7 +35,8 @@ class RequestHttp {
     this.service.interceptors.request.use(
       (config: CustomAxiosRequestConfig) => {
         const userStore = useUserStore();
-        // 当前请求不需要显示 loading，在 api 服务中通过指定的第三个参数: { noLoading: true } 来控制
+        // if current request is no need for loading,
+        // it will be controlled by the third parameter: { noLoading: true } in the api service
         config.noLoading || showFullScreenLoading();
         config.headers["x-token"] = userStore.token;
         return config;

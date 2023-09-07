@@ -28,50 +28,35 @@
       }
     },
     {
-      "path": "/config/index",
-      "name": "config",
-      "redirect": "/config/children",
+      "path": "/config/client",
+      "name": "client",
+      "component": "/config/ClientConfig/index",
       "meta": {
         "icon": "Setting",
-        "title": "Config",
+        "title": "Client",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
         "isKeepAlive": false
-      },
-      "children": [
-        {
-          "path": "/config/client",
-          "name": "client",
-          "component": "/config/ClientConfig/index",
-          "meta": {
-            "icon": "Connection",
-            "title": "Client",
-            "isHide": false,
-            "isFull": false,
-            "isAffix": false,
-            "isKeepAlive": false
-          }
-        },
-        {
-          "path": "/config/server",
-          "name": "server",
-          "component": "/config/ServerConfig/index",
-          "meta": {
-            "icon": "Connection",
-            "title": "Server",
-            "isHide": false,
-            "isFull": false,
-            "isAffix": false,
-            "isKeepAlive": false
-          }
-        }
-      ]
+      }
+    },
+    {
+      "path": "/config/server",
+      "name": "server",
+      "component": "/config/ServerConfig/index",
+      "meta": {
+        "icon": "Setting",
+        "title": "Server",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": false
+      }
     },
     {
       "path": "/pprof",
       "name": "pprof",
-      "redirect": "/pprof",
+      "component": "/pprof/index",
       "meta": {
         "icon": "link",
         "title": "pprof",

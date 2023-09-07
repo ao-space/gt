@@ -130,6 +130,7 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
   setting: () => ClientConfig.defaultGeneralSetting
 });
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
+
 watchEffect(() => {
   console.log("GeneralSetting: props.setting changed");
   console.log(props.setting);
@@ -193,7 +194,6 @@ watch(
 watch(
   () => localSetting.Remote,
   () => {
-    console.log("GeneralSetting: localSetting.Remote changed");
     const remote = localSetting.Remote;
     if (remote.startsWith("tcp://")) {
       selectRemote.value = "tcp://";
@@ -206,8 +206,6 @@ watch(
 );
 
 watchEffect(() => {
-  console.log("GeneralSetting: localSetting changed");
-  console.log(localSetting);
   emit("update:setting", localSetting);
 });
 

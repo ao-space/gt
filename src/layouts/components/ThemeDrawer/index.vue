@@ -3,7 +3,7 @@
     <!-- Layout Style -->
     <el-divider class="divider" content-position="center">
       <el-icon><Notification /></el-icon>
-      Layout Style
+      Layout
     </el-divider>
     <div class="layout-box">
       <el-tooltip effect="dark" content="classic" placement="top" :show-after="200">
@@ -28,20 +28,10 @@
       </span>
       <el-switch v-model="asideInverted" @change="setAsideTheme" />
     </div>
-    <!-- <div class="theme-item mb50">
-      <span>
-        头部反转色
-        <el-tooltip effect="dark" content="头部颜色变为深色模式" placement="top">
-          <el-icon><QuestionFilled /></el-icon>
-        </el-tooltip>
-      </span>
-      <el-switch v-model="headerInverted" @change="setHeaderTheme" />
-    </div> -->
-
     <!-- Global Theme -->
     <el-divider class="divider" content-position="center">
       <el-icon><ColdDrink /></el-icon>
-      Global Theme
+      Theme
     </el-divider>
     <div class="theme-item">
       <span>Theme Color</span>

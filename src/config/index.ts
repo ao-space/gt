@@ -1,13 +1,13 @@
-// ? 全局默认配置项
+// Global default configuration item
 
-// 首页地址（默认）
+// Home page address (default)
 export const HOME_URL: string = "/home/index";
 
-// 登录页地址（默认）
+// Login page address (default)
 export const LOGIN_URL: string = "/login";
 
-// 默认主题颜色
+// Default theme color
 export const DEFAULT_PRIMARY: string = "#1890FF";
 
-// 路由白名单地址（必须是本地存在的路由 staticRouter.ts 中）
+// Router white list address (must be a local existing route staticRouter.ts)
 export const ROUTER_WHITE_LIST: string[] = ["/500"];

@@ -16,7 +16,7 @@ export const useTheme = () => {
   // const { primary, isDark, isGrey, isWeak, layout, asideInverted } = storeToRefs(globalStore);
   const { primary, isDark, isGrey, isWeak, asideInverted } = storeToRefs(globalStore);
 
-  // 切换暗黑模式 ==> 并带修改主题颜色、侧边栏、头部颜色
+  // Switch dark mode ==> and modify theme color, sidebar, header color
   const switchDark = () => {
     const html = document.documentElement as HTMLElement;
     if (isDark.value) html.setAttribute("class", "dark");
@@ -26,13 +26,13 @@ export const useTheme = () => {
     setHeaderTheme();
   };
 
-  // 修改主题颜色
+  // Change theme color
   const changePrimary = (val: string | null) => {
     if (!val) {
       val = DEFAULT_PRIMARY;
       ElMessage({ type: "success", message: `主题颜色已重置为 ${DEFAULT_PRIMARY}` });
     }
-    // 计算主题颜色变化
+    // calculate theme color change
     document.documentElement.style.setProperty("--el-color-primary", val);
     document.documentElement.style.setProperty(
       "--el-color-primary-dark-2",
@@ -45,7 +45,7 @@ export const useTheme = () => {
     globalStore.setGlobalState("primary", val);
   };
 
-  // 灰色和弱色切换
+  // Switch grey or weak
   const changeGreyOrWeak = (type: Theme.GreyOrWeakType, value: boolean) => {
     const body = document.body as HTMLElement;
     if (!value) return body.removeAttribute("style");
@@ -58,7 +58,7 @@ export const useTheme = () => {
     globalStore.setGlobalState(propName, false);
   };
 
-  // 设置菜单样式
+  // Set menu style
   const setMenuTheme = () => {
     let type: Theme.ThemeType = "light";
     if (asideInverted.value) type = "inverted";
@@ -69,7 +69,7 @@ export const useTheme = () => {
     }
   };
 
-  // 设置侧边栏样式
+  // Set sidebar style
   const setAsideTheme = () => {
     let type: Theme.ThemeType = "light";
     if (asideInverted.value) type = "inverted";
@@ -81,7 +81,7 @@ export const useTheme = () => {
     setMenuTheme();
   };
 
-  // 设置头部样式
+  // Set header style
   const setHeaderTheme = () => {
     let type: Theme.ThemeType = "light";
     if (isDark.value) type = "dark";

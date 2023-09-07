@@ -48,6 +48,7 @@ import {
   mapClientServices
 } from "@/utils/map";
 
+//init the options
 const generalSetting = reactive<ClientConfig.GeneralSetting>({ ...ClientConfig.defaultGeneralSetting });
 const sentrySetting = reactive<ClientConfig.SentrySetting>({ ...ClientConfig.defaultSentrySetting });
 const webRTCSetting = reactive<ClientConfig.WebRTCSetting>({ ...ClientConfig.defaultWebRTCSetting });
@@ -76,6 +77,7 @@ watchEffect(() => {
 
 let services = reactive<ClientConfig.Service[]>([{ ...ClientConfig.defaultServiceSetting }]);
 
+//adjust the view when the service setting is added or removed
 const adjustView = () => {
   //Need the el-main element to be set to overflow: auto
   const elMain = document.querySelector(".el-main");
@@ -88,13 +90,11 @@ const adjustView = () => {
 };
 
 const addService = () => {
-  console.log("addService");
   services.push({ ...ClientConfig.defaultServiceSetting });
   serviceSettingRefs.push(ref<InstanceType<typeof ServiceSetting> | null>(null));
   adjustView();
 };
 const removeService = (index: number) => {
-  console.log("removeService");
   if (services.length === 1) {
     ElMessage.warning("At least one service is required!");
     return;
@@ -203,6 +203,7 @@ const staticTabs = reactive([
     updateSetting: updateLogSetting
   } as staticTabType<ClientConfig.LogSetting>
 ]);
+
 interface dynamicTabType<T> {
   title: string;
   name: string;
@@ -235,9 +236,6 @@ const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => 
 };
 
 const updateData = (data: Config.Client.ResConfig) => {
-  console.log("--------------------------------------");
-  console.log("updateData");
-  console.log(data);
   Object.assign(generalSetting, mapClientGeneralSetting(data));
   Object.assign(sentrySetting, mapClientSentrySetting(data));
   Object.assign(webRTCSetting, mapClientWebRTCSetting(data));
@@ -246,8 +244,6 @@ const updateData = (data: Config.Client.ResConfig) => {
   options.Config = data.config.Config;
   services.splice(0, services.length, ...mapClientServices(data));
   serviceSettingRefs.splice(0, serviceSettingRefs.length);
-  console.log(generalSetting);
-  console.log("--------------------------------------");
 };
 
 const checkOptionsConsistency = (runningConfig: ClientConfig.Config, sendingConfig: ClientConfig.Config): boolean => {
@@ -279,7 +275,6 @@ const submit = async () => {
         await saveClientConfigApi(clientConfig);
         ElMessage.success("Operation Success!");
       } catch (e) {
-        console.log(e);
         if (e instanceof Error) {
           ElMessage.error(e.message);
         } else {

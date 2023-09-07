@@ -1,6 +1,5 @@
 export namespace ClientConfig {
   export interface Config extends Options {
-    // Version: string;
     Services?: Service[];
   }
 
@@ -53,12 +52,6 @@ export namespace ClientConfig {
   }
   export interface Options extends GeneralSetting, SentrySetting, WebRTCSetting, TCPForwardSetting, LogSetting {
     Config: string;
-    // HostPrefix: string[];
-    // RemoteTCPPort: number[];
-    // RemoteTCPRandom: (boolean | null)[];
-    // Local: string[];
-    // LocalTimeout: string[];
-    // UseLocalAsHTTPHost: boolean[];
   }
 
   export const defaultGeneralSetting: GeneralSetting = {

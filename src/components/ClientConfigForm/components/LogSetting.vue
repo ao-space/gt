@@ -70,6 +70,7 @@ const emit = defineEmits(["update:setting"]);
 watchEffect(() => {
   emit("update:setting", localSetting);
 });
+
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (LogSettingRef.value) {
