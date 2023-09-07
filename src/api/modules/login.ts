@@ -30,7 +30,7 @@ export const getAuthButtonListApi = () => {
   return authButtonList;
 };
 
-// 用户退出登录
-export const logoutApi = () => {
-  return http.post(`/logout`);
-};
+// // 用户退出登录
+// export const logoutApi = () => {
+//   return http.post(`/logout`);
+// };

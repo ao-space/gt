@@ -1,10 +1,10 @@
 <template>
   <el-dropdown trigger="click">
-    <div class="avatar"></div>
+    <div class="username">{{ username }}</div>
     <template #dropdown>
       <el-dropdown-menu>
         <el-dropdown-item divided @click="logout">
-          <el-icon><SwitchButton /></el-icon>退出登录
+          <el-icon><SwitchButton /></el-icon>Login out
         </el-dropdown-item>
       </el-dropdown-menu>
     </template>
@@ -14,43 +14,35 @@
 <script setup lang="ts">
 import { LOGIN_URL } from "@/config";
 import { useRouter } from "vue-router";
-import { logoutApi } from "@/api/modules/login";
 import { useUserStore } from "@/stores/modules/user";
 import { ElMessageBox, ElMessage } from "element-plus";
+import { computed } from "vue";
 
 const router = useRouter();
 const userStore = useUserStore();
 
+const username = computed(() => userStore.userInfo.name);
 // 退出登录
 const logout = () => {
-  ElMessageBox.confirm("您是否确认退出登录?", "温馨提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm("Are you sure to log out?", "Tips", {
+    confirmButtonText: "Confirm",
+    cancelButtonText: "Cancel",
     type: "warning"
   }).then(async () => {
-    // 1.执行退出登录接口
-    await logoutApi();
-
-    // 2.清除 Token
+    //clear token
     userStore.setToken("");
-
-    // 3.重定向到登陆页
     router.replace(LOGIN_URL);
-    ElMessage.success("退出登录成功！");
+    ElMessage.success("Logout success");
   });
 };
 </script>
 
 <style scoped lang="scss">
-.avatar {
-  width: 40px;
-  height: 40px;
+.username {
+  margin-left: 20px;
   overflow: hidden;
+  font-size: 15px;
+  color: var(--el-header-text-color);
   cursor: pointer;
-  border-radius: 50%;
-  img {
-    width: 100%;
-    height: 100%;
-  }
 }
 </style>

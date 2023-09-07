@@ -28,7 +28,7 @@
       </span>
       <el-switch v-model="asideInverted" @change="setAsideTheme" />
     </div>
-    <div class="theme-item mb50">
+    <!-- <div class="theme-item mb50">
       <span>
         头部反转色
         <el-tooltip effect="dark" content="头部颜色变为深色模式" placement="top">
@@ -36,7 +36,7 @@
         </el-tooltip>
       </span>
       <el-switch v-model="headerInverted" @change="setHeaderTheme" />
-    </div>
+    </div> -->
 
     <!-- 全局主题 -->
     <el-divider class="divider" content-position="center">
@@ -102,7 +102,8 @@ import { DEFAULT_PRIMARY } from "@/config";
 import mittBus from "@/utils/mittBus";
 import SwitchDark from "@/components/SwitchDark/index.vue";
 
-const { changePrimary, changeGreyOrWeak, setAsideTheme, setHeaderTheme } = useTheme();
+const { changePrimary, changeGreyOrWeak, setAsideTheme } = useTheme();
+// const { changePrimary, changeGreyOrWeak, setAsideTheme, setHeaderTheme } = useTheme();
 
 const globalStore = useGlobalStore();
 const {
@@ -111,7 +112,7 @@ const {
   isGrey,
   isWeak,
   asideInverted,
-  headerInverted,
+  // headerInverted,
   isCollapse,
   breadcrumb,
   breadcrumbIcon,
