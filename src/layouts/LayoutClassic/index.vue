@@ -29,7 +29,7 @@
         </div>
       </el-aside>
       <el-container class="classic-main">
-        <Main />
+        <Main></Main>
       </el-container>
     </el-container>
   </el-container>

@@ -8,7 +8,6 @@
       "meta": {
         "icon": "HomeFilled",
         "title": "Home",
-        "isLink": "",
         "isHide": false,
         "isFull": false,
         "isAffix": true,
@@ -22,7 +21,6 @@
       "meta": {
         "icon": "Connection",
         "title": "Connection Status",
-        "isLink": "",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
@@ -36,7 +34,6 @@
       "meta": {
         "icon": "Setting",
         "title": "Config",
-        "isLink": "",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
@@ -50,7 +47,6 @@
           "meta": {
             "icon": "Connection",
             "title": "Client",
-            "isLink": "",
             "isHide": false,
             "isFull": false,
             "isAffix": false,
@@ -64,7 +60,6 @@
           "meta": {
             "icon": "Connection",
             "title": "Server",
-            "isLink": "",
             "isHide": false,
             "isFull": false,
             "isAffix": false,
@@ -74,34 +69,18 @@
       ]
     },
     {
-      "path": "/link",
-      "name": "link",
-      "redirect": "/link/pprof",
+      "path": "/pprof",
+      "name": "pprof",
+      "redirect": "/pprof",
       "meta": {
-        "icon": "Paperclip",
+        "icon": "link",
         "title": "pprof",
-        "isLink": "",
+        "isLink": "http://localhost:8080/debug/pprof",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
         "isKeepAlive": false
-      },
-      "children": [
-        {
-          "path": "/link/pprof",
-          "name": "pprof",
-          "component": "/link/pprof/index",
-          "meta": {
-            "icon": "link",
-            "title": "pprof",
-            "isLink": "http://localhost:8080/debug/pprof",
-            "isHide": false,
-            "isFull": false,
-            "isAffix": false,
-            "isKeepAlive": false
-          }
-        }
-      ]
+      }
     }
   ],
   "msg": "Success"
