@@ -88,9 +88,6 @@ func inheritImmutableConfigFields(original *client.Config, new *client.Config) (
 		err = errors.New("original config is nil")
 		return
 	}
-	//TODO:????
-	new.HostPrefix = original.HostPrefix
-
 	new.Config = original.Config
 	new.EnableWebServer = original.EnableWebServer
 	new.WebAddr = original.WebAddr
@@ -150,5 +147,12 @@ func GetConnectionInfo(c *client.Client) gin.HandlerFunc {
 			return
 		}
 		response.SuccessWithData(gin.H{"pool": poolStatus, "connection": conn}, ctx)
+	}
+}
+
+func GetClientMenu(c *client.Client) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		router := service.GetClientMenu(c)
+		response.SuccessWithData(router, ctx)
 	}
 }

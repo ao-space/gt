@@ -14,7 +14,7 @@ const SuccessMsg = "SUCCESS"
 const ErrorMsg = "FAIL"
 const OverdueMsg = "Token is overdue"
 
-func Response(httpStatus int, code int, data gin.H, msg string, ctx *gin.Context) {
+func Response(httpStatus int, code int, data interface{}, msg string, ctx *gin.Context) {
 	ctx.JSON(httpStatus, gin.H{
 		"code": code,
 		"data": data,
@@ -28,10 +28,10 @@ func SuccessWithMessage(message string, ctx *gin.Context) {
 	Response(http.StatusOK, SUCCESS, nil, message, ctx)
 }
 
-func SuccessWithData(data gin.H, ctx *gin.Context) {
+func SuccessWithData(data interface{}, ctx *gin.Context) {
 	Response(http.StatusOK, SUCCESS, data, SuccessMsg, ctx)
 }
-func SuccessWithDetailed(data gin.H, message string, ctx *gin.Context) {
+func SuccessWithDetailed(data interface{}, message string, ctx *gin.Context) {
 	Response(http.StatusOK, SUCCESS, data, message, ctx)
 }
 
@@ -42,7 +42,7 @@ func FailWithMessage(message string, ctx *gin.Context) {
 
 	Response(http.StatusOK, ERROR, nil, message, ctx)
 }
-func FailWithDetailed(data gin.H, message string, ctx *gin.Context) {
+func FailWithDetailed(data interface{}, message string, ctx *gin.Context) {
 	Response(http.StatusOK, ERROR, data, message, ctx)
 }
 func InvalidToken(ctx *gin.Context) {

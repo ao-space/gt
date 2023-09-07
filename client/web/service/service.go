@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/isrc-cas/gt/client"
 	"github.com/isrc-cas/gt/client/web/model/request"
 	"github.com/isrc-cas/gt/client/web/util"
@@ -126,5 +127,84 @@ func SendSignal(signal string) (err error) {
 		return
 	}
 	err = cmd.Process.Release()
+	return
+}
+
+func GetClientMenu(c *client.Client) (router []request.Menu) {
+	router = []request.Menu{
+		//Home
+		{
+			Path:      "/home/index",
+			Name:      "home",
+			Component: "/home/index",
+			Meta: request.MetaProps{
+				Icon:        "HomeFilled",
+				Title:       "Home",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     true,
+				IsKeepAlive: false,
+			},
+		},
+		//Connection
+		{
+			Path:      "/connection",
+			Name:      "connection",
+			Component: "/connection/index",
+			Meta: request.MetaProps{
+				Icon:        "Connection",
+				Title:       "Connection Status",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: false,
+			},
+		},
+		//Client Config
+		{
+			Path:      "/config/client",
+			Name:      "client",
+			Component: "/config/ClientConfig/index",
+			Meta: request.MetaProps{
+				Icon:        "Setting",
+				Title:       "Client",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: false,
+			},
+		},
+		//Server Config
+		{
+			Path:      "/config/server",
+			Name:      "server",
+			Component: "/config/ServerConfig/index",
+			Meta: request.MetaProps{
+				Icon:        "Setting",
+				Title:       "Server",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: false,
+			},
+		},
+	}
+	if c.Config().EnablePprof {
+		pprofLink := fmt.Sprintf("http://%s:%d/debug/pprof", c.Config().WebAddr, c.Config().WebPort)
+		router = append(router, request.Menu{
+			Path:      "/pprof",
+			Name:      "pprof",
+			Component: "/pprof/index",
+			Meta: request.MetaProps{
+				Icon:        "link",
+				Title:       "pprof",
+				IsLink:      pprofLink,
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: false,
+			},
+		})
+	}
 	return
 }

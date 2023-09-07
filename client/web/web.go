@@ -69,6 +69,11 @@ func setRoutes(c *client.Client, r *gin.Engine) {
 		{
 			connectionGroup.GET("/list", api.GetConnectionInfo(c))
 		}
+
+		permissionGroup := apiGroup.Group("/permission")
+		{
+			permissionGroup.GET("/menu", api.GetClientMenu(c))
+		}
 	}
 
 	if c.Config().EnablePprof {
