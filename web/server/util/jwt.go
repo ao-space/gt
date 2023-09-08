@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// TODO: change
 const TokenExpireDuration = 6 * time.Hour
 
 type JWT struct {
@@ -23,15 +22,14 @@ type CustomClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (j *JWT) CreateClaims(username string) CustomClaims {
+func (j *JWT) CreateClaims(username string, issuer string) CustomClaims {
 	return CustomClaims{
 		username: username,
-		//BufferTime: int64(24 * time.Hour),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExpireDuration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "gt",
+			Issuer:    issuer,
 			Subject:   "user token",
 		},
 	}

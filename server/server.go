@@ -929,3 +929,7 @@ func (s *Server) GetTURNListenerAddrPort() (addrPort netip.AddrPort) {
 	addrPort = s.turnListener.LocalAddr().(*net.UDPAddr).AddrPort()
 	return
 }
+
+func (s *Server) Config() *Config {
+	return &s.config
+}

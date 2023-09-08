@@ -1,0 +1,129 @@
+package service
+
+import (
+	"errors"
+	"fmt"
+	"github.com/isrc-cas/gt/config"
+	"github.com/isrc-cas/gt/server"
+	"github.com/isrc-cas/gt/web/server/model/request"
+	"github.com/isrc-cas/gt/web/server/util"
+	"gopkg.in/yaml.v3"
+	"path/filepath"
+)
+
+func VerifyUser(user request.User, s *server.Server) (err error) {
+	if user.Username == s.Config().Admin && user.Password == s.Config().Password {
+		return nil
+	} else {
+		return errors.New("username or password is wrong, please try again")
+	}
+}
+func GenerateToken(signingKey string, user request.User) (token string, err error) {
+	j := util.NewJWT(signingKey)
+	claims := j.CreateClaims(user.Username, "gt-server")
+	token, err = j.CreateToken(claims)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+func GetConfigFromFile(s *server.Server) (cfg server.Config, err error) {
+	fullPath := s.Config().Options.Config
+	if fullPath == "" {
+		return
+	}
+	err = config.Yaml2Interface(fullPath, &cfg)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func GetRunningConfig(s *server.Server) (cfg server.Config, err error) {
+	cfg = *s.Config()
+	return
+}
+
+func SaveConfigToFile(cfg *server.Config) (fullpath string, err error) {
+	yamlData, err := yaml.Marshal(&cfg)
+	if err != nil {
+		return
+	}
+	if cfg.Config == "" {
+		fullpath = cfg.Config
+	} else {
+		fullpath = filepath.Join(util.GetAppDir(), "server.yaml")
+	}
+	err = util.WriteYamlToFile(fullpath, yamlData)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func GetMenu(s *server.Server) (menu []request.Menu) {
+	menu = []request.Menu{
+		//Home
+		{
+			Path:      "/home/index",
+			Name:      "home",
+			Component: "/home/index",
+			Meta: request.MetaProps{
+				Icon:        "HomeFilled",
+				Title:       "Home",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     true,
+				IsKeepAlive: false,
+			},
+		},
+		//Connection
+		{
+			Path:      "/connection",
+			Name:      "connection",
+			Component: "/connection/index",
+			Meta: request.MetaProps{
+				Icon:        "Connection",
+				Title:       "Connection Status",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: false,
+			},
+		},
+		//Server Config
+		{
+			Path:      "/config/server",
+			Name:      "server",
+			Component: "/config/ServerConfig/index",
+			Meta: request.MetaProps{
+				Icon:        "Setting",
+				Title:       "Server",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: false,
+			},
+		},
+	}
+	if s.Config().EnablePprof {
+		pprofLink := fmt.Sprintf("http://%s:%d/debug/pprof/", s.Config().WebAddr, s.Config().WebPort)
+
+		menu = append(menu, request.Menu{
+			Path:      "/pprof",
+			Name:      "pprof",
+			Component: "/pprof/index",
+			Meta: request.MetaProps{
+				Icon:        "link",
+				Title:       "pprof",
+				IsLink:      pprofLink,
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: false,
+			},
+		})
+	}
+	return
+}

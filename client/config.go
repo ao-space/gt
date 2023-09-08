@@ -80,7 +80,6 @@ type Options struct {
 	LogLevel        string `yaml:"logLevel" json:",omitempty" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
 	Version         bool   `arg:"version" yaml:"-" json:"-" usage:"Show the version of this program"`
 
-	//TODO: add -
 	EnableWebServer bool   `arg:"web"  yaml:"web" json:"-" usage:"Enable web server"`
 	WebAddr         string `arg:"webAddr"  yaml:"webAddr" json:"-" usage:"Web server address"`
 	WebPort         uint16 `arg:"webPort" yaml:"webPort" json:"-" usage:"Web server port"`

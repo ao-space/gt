@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/isrc-cas/gt/web/server/model/request"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -15,44 +16,7 @@ const (
 	GB = 1024 * MB
 )
 
-type Server struct {
-	Os   Os   `json:"os"`
-	Cpu  Cpu  `json:"cpu"`
-	Ram  Ram  `json:"ram"`
-	Disk Disk `json:"disk"`
-}
-
-type Os struct {
-	GOOS         string `json:"goos"`
-	NumCPU       int    `json:"numCpu"`
-	Compiler     string `json:"compiler"`
-	GoVersion    string `json:"goVersion"`
-	NumGoroutine int    `json:"numGoroutine"`
-}
-
-type Cpu struct {
-	Cpus  []float64 `json:"cpus"`
-	Cores int       `json:"cores"`
-}
-
-type Ram struct {
-	UsedMB      int `json:"usedMb"`
-	TotalMB     int `json:"totalMb"`
-	UsedPercent int `json:"usedPercent"`
-}
-
-type Disk struct {
-	UsedMB      int `json:"usedMb"`
-	UsedGB      int `json:"usedGb"`
-	TotalMB     int `json:"totalMb"`
-	TotalGB     int `json:"totalGb"`
-	UsedPercent int `json:"usedPercent"`
-}
-type Net struct {
-	Type string `json:"type"`
-}
-
-func InitOS() (o Os) {
+func initOS() (o request.Os) {
 	o.GOOS = runtime.GOOS
 	o.NumCPU = runtime.NumCPU()
 	o.Compiler = runtime.Compiler
@@ -61,7 +25,7 @@ func InitOS() (o Os) {
 	return o
 }
 
-func InitCPU() (c Cpu, err error) {
+func initCPU() (c request.Cpu, err error) {
 	if cores, err := cpu.Counts(false); err != nil {
 		return c, err
 	} else {
@@ -75,7 +39,7 @@ func InitCPU() (c Cpu, err error) {
 	return c, nil
 }
 
-func InitRAM() (r Ram, err error) {
+func initRAM() (r request.Ram, err error) {
 	if u, err := mem.VirtualMemory(); err != nil {
 		return r, err
 	} else {
@@ -86,7 +50,7 @@ func InitRAM() (r Ram, err error) {
 	return r, nil
 }
 
-func InitDisk() (d Disk, err error) {
+func initDisk() (d request.Disk, err error) {
 	if u, err := disk.Usage("/"); err != nil {
 		return d, err
 	} else {
@@ -97,4 +61,18 @@ func InitDisk() (d Disk, err error) {
 		d.UsedPercent = int(u.UsedPercent)
 	}
 	return d, nil
+}
+func GetServerInfo() (server *request.Server, err error) {
+	var s request.Server
+	s.Os = initOS()
+	if s.Cpu, err = initCPU(); err != nil {
+		return nil, err
+	}
+	if s.Ram, err = initRAM(); err != nil {
+		return nil, err
+	}
+	if s.Disk, err = initDisk(); err != nil {
+		return nil, err
+	}
+	return &s, nil
 }

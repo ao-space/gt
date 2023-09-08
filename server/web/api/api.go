@@ -1,0 +1,107 @@
+package api
+
+import (
+	"errors"
+	"github.com/gin-gonic/gin"
+	"github.com/isrc-cas/gt/server"
+	"github.com/isrc-cas/gt/server/web/service"
+	"github.com/isrc-cas/gt/web/server/model/request"
+	"github.com/isrc-cas/gt/web/server/model/response"
+	"github.com/isrc-cas/gt/web/server/util"
+)
+
+func Login(s *server.Server) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var loginReq = request.User{}
+		if err := ctx.ShouldBindJSON(&loginReq); err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		if err := service.VerifyUser(loginReq, s); err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		token, err := service.GenerateToken(s.Config().SigningKey, loginReq)
+		if err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		response.SuccessWithData(gin.H{"token": token}, ctx)
+	}
+}
+
+func GetServerInfo(ctx *gin.Context) {
+	serverInfo, err := util.GetServerInfo()
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.SuccessWithData(gin.H{"serverInfo": serverInfo}, ctx)
+}
+func GetRunningConfig(s *server.Server) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var cfg = s.Config()
+		s.Logger.Info().Msg("Running CONFIG:" + cfg.Config)
+		response.SuccessWithData(gin.H{"config": cfg}, ctx)
+	}
+}
+
+func GetConfigFromFile(s *server.Server) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		cfg, err := service.GetConfigFromFile(s)
+		if err != nil {
+			s.Logger.Error().Err(err).Msg("get config from file failed")
+			// try to fetch running config
+			GetRunningConfig(s)(ctx)
+			return
+		}
+		response.SuccessWithData(gin.H{"config": cfg}, ctx)
+	}
+}
+
+func SaveConfigToFile(s *server.Server) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var cfg server.Config
+		err := inheritImmutableConfigFields(s.Config(), &cfg)
+		if err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		s.Logger.Info().Msg("Saving CONFIG in:" + cfg.Config)
+		if err := ctx.ShouldBindJSON(&cfg); err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		fullPath, err := service.SaveConfigToFile(&cfg)
+		if err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		response.SuccessWithMessage("config saved to "+fullPath, ctx)
+	}
+}
+
+// inheritImmutableConfigFields copy immutable fields from original to new
+func inheritImmutableConfigFields(original *server.Config, new *server.Config) (err error) {
+	if original == nil {
+		err = errors.New("original config is nil")
+		return
+	}
+	new.Config = original.Config
+	new.EnableWebServer = original.EnableWebServer
+	new.WebAddr = original.WebAddr
+	new.WebPort = original.WebPort
+	new.EnablePprof = original.EnablePprof
+	new.SigningKey = original.SigningKey
+	new.Admin = original.Admin
+	new.Password = original.Password
+	return
+}
+
+func GetMenu(s *server.Server) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		menu := service.GetMenu(s)
+		response.SuccessWithData(menu, ctx)
+
+	}
+}

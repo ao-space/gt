@@ -49,9 +49,8 @@ func main() {
 	if err != nil {
 		c.Logger.Fatal().Err(err).Msg("failed to start")
 	}
-	if c.Config().EnableWebServer {
-		startWebServer(c)
-	}
+
+	startWebServer(c)
 
 	osSig := make(chan os.Signal, 1)
 	signal.Notify(osSig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)

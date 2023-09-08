@@ -94,6 +94,14 @@ type Options struct {
 	LogFileMaxCount uint   `yaml:"logFileMaxCount" usage:"Max count of the log files"`
 	LogLevel        string `yaml:"logLevel" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
 	Version         bool   `arg:"version" yaml:"-" usage:"Show the version of this program"`
+
+	EnableWebServer bool   `arg:"web"  yaml:"web" json:"-" usage:"Enable web server"`
+	WebAddr         string `arg:"webAddr"  yaml:"webAddr" json:"-" usage:"Web server address"`
+	WebPort         uint16 `arg:"webPort" yaml:"webPort" json:"-" usage:"Web server port"`
+	EnablePprof     bool   `arg:"pprof"  yaml:"pprof" json:"-" usage:"Enable pprof in web server"`
+	SigningKey      string `arg:"signingKey" yaml:"signingKey" json:"-" usage:"JWT signing key for web server"`
+	Admin           string `arg:"admin" yaml:"admin" json:"-" usage:"Admin username use for login in web server"`
+	Password        string `arg:"password" yaml:"password" json:"-" usage:"Admin password use for login in web server"`
 }
 
 func defaultConfig() Config {

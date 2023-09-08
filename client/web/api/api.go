@@ -4,9 +4,10 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/isrc-cas/gt/client"
-	"github.com/isrc-cas/gt/client/web/model/request"
-	"github.com/isrc-cas/gt/client/web/model/response"
 	"github.com/isrc-cas/gt/client/web/service"
+	"github.com/isrc-cas/gt/web/server/model/request"
+	"github.com/isrc-cas/gt/web/server/model/response"
+	"github.com/isrc-cas/gt/web/server/util"
 )
 
 func Login(c *client.Client) gin.HandlerFunc {
@@ -30,7 +31,7 @@ func Login(c *client.Client) gin.HandlerFunc {
 }
 
 func GetServerInfo(ctx *gin.Context) {
-	serverInfo, err := service.GetServerInfo()
+	serverInfo, err := util.GetServerInfo()
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
@@ -46,7 +47,7 @@ func GetRunningConfig(c *client.Client) gin.HandlerFunc {
 }
 func GetConfigFromFile(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		cfg, err := service.GetConfigFormFile(c)
+		cfg, err := service.GetConfigFromFile(c)
 		if err != nil {
 			c.Logger.Error().Err(err).Msg("get config from file failed")
 			// try to fetch running config
@@ -66,13 +67,10 @@ func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 			return
 		}
 		c.Logger.Info().Msg("SaveConfig in :" + cfg.Config)
-		response.SuccessWithDetailed(gin.H{"config": cfg}, "JSONBind Before", ctx)
 		if err := ctx.ShouldBindJSON(&cfg); err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
-		response.SuccessWithDetailed(gin.H{"config": cfg}, "JSON", ctx)
-		response.SuccessWithDetailed(gin.H{"RunningConfig": *c.Config()}, "JSONBind After", ctx)
 		fullPath, err := service.SaveConfigToFile(&cfg)
 		if err != nil {
 			response.FailWithMessage(err.Error(), ctx)
@@ -150,9 +148,9 @@ func GetConnectionInfo(c *client.Client) gin.HandlerFunc {
 	}
 }
 
-func GetClientMenu(c *client.Client) gin.HandlerFunc {
+func GetMenu(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		router := service.GetClientMenu(c)
-		response.SuccessWithData(router, ctx)
+		menu := service.GetMenu(c)
+		response.SuccessWithData(menu, ctx)
 	}
 }

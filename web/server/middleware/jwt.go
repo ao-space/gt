@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/isrc-cas/gt/client/web/model/response"
-	"github.com/isrc-cas/gt/client/web/util"
+	"github.com/isrc-cas/gt/web/server/model/response"
+	"github.com/isrc-cas/gt/web/server/util"
 )
 
 func JWTAuthMiddleware(signingKey string) gin.HandlerFunc {

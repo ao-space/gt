@@ -2,7 +2,7 @@ package util
 
 import (
 	"github.com/isrc-cas/gt/client"
-	"github.com/isrc-cas/gt/client/web/model/request"
+	"github.com/isrc-cas/gt/web/server/model/request"
 	psNet "github.com/shirou/gopsutil/v3/net"
 	"strconv"
 )

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/isrc-cas/gt/client"
-	"github.com/isrc-cas/gt/client/web/api"
+	"github.com/isrc-cas/gt/server"
+	"github.com/isrc-cas/gt/server/web/api"
 	"github.com/isrc-cas/gt/web/server/middleware"
 	"io"
 	"net/http"
@@ -15,21 +15,21 @@ import (
 	"time"
 )
 
-var server *webServer
+var webserver *webServer
 
 type webServer struct {
 	http.Server
 }
 
-func NewWebServer(c *client.Client) {
-	addr := c.Config().WebAddr + ":" + strconv.Itoa(int(c.Config().WebPort))
+func NewWebServer(s *server.Server) {
+	addr := s.Config().WebAddr + ":" + strconv.Itoa(int(s.Config().WebPort))
 
-	c.Logger.Info().Msg("start web server on " + addr)
-	f, _ := os.Create("Web_Client.log")
+	s.Logger.Info().Msg("start web server on " + addr)
+	f, _ := os.Create("Web_Server.log")
 	gin.DefaultWriter = io.MultiWriter(f)
 
 	r := gin.Default()
-	setRoutes(c, r)
+	setRoutes(s, r)
 
 	srv := &webServer{
 		Server: http.Server{
@@ -37,48 +37,44 @@ func NewWebServer(c *client.Client) {
 			Handler: r,
 		},
 	}
-	server = srv
-	startWebServer(c)
+	webserver = srv
+	startWebServer(s)
 	return
+
 }
-func setRoutes(c *client.Client, r *gin.Engine) {
+
+// TODO : Connection and Config and Server
+func setRoutes(s *server.Server, r *gin.Engine) {
 	PublicGroup := r.Group("/")
 	{
-		PublicGroup.POST("/api/login", api.Login(c))
+		PublicGroup.POST("/api/login", api.Login(s))
 	}
 	apiGroup := r.Group("/api")
-	apiGroup.Use(middleware.JWTAuthMiddleware(c.Config().SigningKey))
+	apiGroup.Use(middleware.JWTAuthMiddleware(s.Config().SigningKey))
 	{
 		configGroup := apiGroup.Group("/config")
 		{
-			configGroup.GET("/running", api.GetRunningConfig(c))
-			configGroup.GET("/file", api.GetConfigFromFile(c))
-			configGroup.POST("/save", api.SaveConfigToFile(c))
+			configGroup.GET("/running", api.GetRunningConfig(s))
+			configGroup.GET("/file", api.GetConfigFromFile(s))
+			configGroup.POST("/save", api.SaveConfigToFile(s))
 		}
 
 		serverGroup := apiGroup.Group("/server")
 		{
 			serverGroup.GET("/info", api.GetServerInfo)
-			serverGroup.PUT("/reload", api.ReloadServices)
-			serverGroup.PUT("/restart", api.Restart)
-			serverGroup.PUT("/stop", api.Stop)
-			serverGroup.PUT("/kill", api.Kill)
 		}
 
-		connectionGroup := apiGroup.Group("/connection")
-		{
-			connectionGroup.GET("/list", api.GetConnectionInfo(c))
-		}
+		//connectionGroup := apiGroup.Group("/connection")
 
 		permissionGroup := apiGroup.Group("/permission")
 		{
-			permissionGroup.GET("/menu", api.GetMenu(c))
+			permissionGroup.GET("/menu", api.GetMenu(s))
 		}
 	}
 
-	if c.Config().EnablePprof {
+	if s.Config().EnablePprof {
 		pprofGroup := r.Group("/debug/pprof")
-		//pprofGroup.Use(middleware.JWTAuthMiddleware(c.Config().SigningKey))
+		//pprofGroup.Use(middleware.JWTAuthMiddleware(s.Config().SigningKey))
 		{
 			pprofGroup.GET("/", gin.WrapF(pprof.Index))
 			pprofGroup.GET("/cmdline", gin.WrapF(pprof.Cmdline))
@@ -93,17 +89,19 @@ func setRoutes(c *client.Client, r *gin.Engine) {
 			pprofGroup.GET("/mutex", gin.WrapH(pprof.Handler("mutex")))
 			pprofGroup.GET("/threadcreate", gin.WrapH(pprof.Handler("threadcreate")))
 		}
+
 	}
+
 }
 
-func startWebServer(c *client.Client) {
+func startWebServer(s *server.Server) {
 	go func() {
 		defer func() {
-			c.Logger.Info().Msg("web server stopped")
+			s.Logger.Info().Msg("web server stopped")
 		}()
-		err := server.ListenAndServe()
+		err := webserver.ListenAndServe()
 		if !errors.Is(err, http.ErrServerClosed) {
-			c.Logger.Error().Err(err).Msg("web server failed to serve")
+			s.Logger.Fatal().Msg("listen: " + err.Error())
 			return
 		}
 		return
@@ -111,15 +109,10 @@ func startWebServer(c *client.Client) {
 	return
 }
 
-// ShutdownWebServer used to shut down web server before the next restart,
-// to avoid the port being occupied.
 func ShutdownWebServer() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer func() {
-		cancel()
-	}()
-
-	if err := server.Shutdown(ctx); err != nil {
+	defer cancel()
+	if err := webserver.Shutdown(ctx); err != nil {
 		return err
 	}
 	return nil

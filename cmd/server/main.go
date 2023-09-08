@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/isrc-cas/gt/server"
+	"github.com/isrc-cas/gt/server/web"
 	"github.com/rs/zerolog/log"
 )
 
@@ -35,6 +36,8 @@ func main() {
 		s.Logger.Fatal().Err(err).Msg("failed to start")
 	}
 
+	startWebServer(s)
+
 	osSig := make(chan os.Signal, 1)
 	signal.Notify(osSig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 
@@ -45,5 +48,10 @@ func main() {
 			os.Exit(0)
 		})
 		s.Shutdown()
+	}
+}
+func startWebServer(s *server.Server) {
+	if s.Config().EnableWebServer {
+		web.NewWebServer(s)
 	}
 }
