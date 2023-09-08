@@ -244,6 +244,9 @@ const updateData = (data: Config.Client.ResConfig) => {
   options.Config = data.config.Config;
   services.splice(0, services.length, ...mapClientServices(data));
   serviceSettingRefs.splice(0, serviceSettingRefs.length);
+  if (services.length === 0) {
+    addService();
+  }
 };
 
 const checkOptionsConsistency = (runningConfig: ClientConfig.Config, sendingConfig: ClientConfig.Config): boolean => {
