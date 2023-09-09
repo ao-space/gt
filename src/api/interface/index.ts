@@ -82,6 +82,7 @@ export namespace Connection {
     port: number;
   }
   export interface Connection {
+    id?: string;
     family: number;
     type: number;
     localaddr: LocalAddr;
