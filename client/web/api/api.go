@@ -144,7 +144,7 @@ func GetConnectionInfo(c *client.Client) gin.HandlerFunc {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
-		response.SuccessWithData(gin.H{"pool": poolStatus, "connection": conn}, ctx)
+		response.SuccessWithData(gin.H{"clientPool": poolStatus, "external": conn}, ctx)
 	}
 }
 

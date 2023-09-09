@@ -933,3 +933,13 @@ func (s *Server) GetTURNListenerAddrPort() (addrPort netip.AddrPort) {
 func (s *Server) Config() *Config {
 	return &s.config
 }
+
+func (s *Server) GetConnectionInfo() (info []ConnectionInfo) {
+	s.id2Client.Range(func(key, value interface{}) bool {
+		client := value.(*client)
+		clientInfo := client.GetConnectionInfo()
+		info = append(info, clientInfo...)
+		return true
+	})
+	return
+}

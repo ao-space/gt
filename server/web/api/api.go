@@ -105,3 +105,14 @@ func GetMenu(s *server.Server) gin.HandlerFunc {
 
 	}
 }
+
+func GetConnectionInfo(s *server.Server) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		serverPool, external, err := service.GetConnectionInfo(s)
+		if err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		response.SuccessWithData(gin.H{"serverPool": serverPool, "external": external}, ctx)
+	}
+}

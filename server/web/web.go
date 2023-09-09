@@ -64,7 +64,10 @@ func setRoutes(s *server.Server, r *gin.Engine) {
 			serverGroup.GET("/info", api.GetServerInfo)
 		}
 
-		//connectionGroup := apiGroup.Group("/connection")
+		connectionGroup := apiGroup.Group("/connection")
+		{
+			connectionGroup.GET("/list", api.GetConnectionInfo(s))
+		}
 
 		permissionGroup := apiGroup.Group("/permission")
 		{

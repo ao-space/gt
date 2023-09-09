@@ -7,7 +7,9 @@ import (
 	"github.com/isrc-cas/gt/server"
 	"github.com/isrc-cas/gt/web/server/model/request"
 	"github.com/isrc-cas/gt/web/server/util"
+	"github.com/shirou/gopsutil/v3/net"
 	"gopkg.in/yaml.v3"
+	"os"
 	"path/filepath"
 )
 
@@ -37,11 +39,6 @@ func GetConfigFromFile(s *server.Server) (cfg server.Config, err error) {
 	if err != nil {
 		return
 	}
-	return
-}
-
-func GetRunningConfig(s *server.Server) (cfg server.Config, err error) {
-	cfg = *s.Config()
 	return
 }
 
@@ -125,5 +122,20 @@ func GetMenu(s *server.Server) (menu []request.Menu) {
 			},
 		})
 	}
+	return
+}
+
+func GetConnectionInfo(s *server.Server) (serverPool []request.SimplifiedConnectionWithID, external []request.SimplifiedConnection, err error) {
+	pid := int32(os.Getpid())
+	conns, err := net.ConnectionsPid("all", pid)
+	if err != nil {
+		return
+	}
+	pools := s.GetConnectionInfo()
+	poolsInfo := util.SelectedMatchingConnections(conns, pools)
+	externalConnection := util.FilterOutMatchingConnections(conns, util.SwitchToPoolInfo(pools))
+
+	serverPool = util.SimplifyConnectionsWithID(poolsInfo)
+	external = util.SimplifyConnections(externalConnection)
 	return
 }
