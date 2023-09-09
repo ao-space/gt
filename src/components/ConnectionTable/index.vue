@@ -36,32 +36,42 @@ const props = defineProps<{
 
 const tableRef = ref<TableInstance>();
 const remoteAddrFilterOptions = reactive<{ text: string; value: string }[]>([]);
-watch(props.tableData, newVal => {
-  const uniqueRemoteAddrs = [...new Set(newVal.map(item => item.remoteaddr.ip))];
-  remoteAddrFilterOptions.splice(0, remoteAddrFilterOptions.length, ...uniqueRemoteAddrs.map(ip => ({ text: ip, value: ip })));
-});
+watch(
+  props.tableData,
+  newVal => {
+    const uniqueRemoteAddrs = [...new Set(newVal.map(item => item.remoteaddr.ip))];
+    remoteAddrFilterOptions.splice(0, remoteAddrFilterOptions.length, ...uniqueRemoteAddrs.map(ip => ({ text: ip, value: ip })));
+  },
+  {
+    immediate: true
+  }
+);
 const localAddrFilterOptions = reactive<{ text: string; value: string }[]>([]);
-watch(props.tableData, newVal => {
-  const uniqueLocalAddrs = [...new Set(newVal.map(item => item.localaddr.ip))];
-  localAddrFilterOptions.splice(0, localAddrFilterOptions.length, ...uniqueLocalAddrs.map(ip => ({ text: ip, value: ip })));
-});
+watch(
+  props.tableData,
+  newVal => {
+    const uniqueLocalAddrs = [...new Set(newVal.map(item => item.localaddr.ip))];
+    localAddrFilterOptions.splice(0, localAddrFilterOptions.length, ...uniqueLocalAddrs.map(ip => ({ text: ip, value: ip })));
+  },
+  {
+    immediate: true
+  }
+);
 
 const idFilterOptions = reactive<{ text: string; value: string }[]>([]);
-watch(props.tableData, newVal => {
-  const uniqueIDs = [...new Set(newVal.map(item => item.id))];
-  idFilterOptions.splice(
-    0,
-    idFilterOptions.length,
-    ...uniqueIDs.filter(id => id !== undefined).map(id => ({ text: id as string, value: id as string }))
-  );
-});
-
-const filterID = (value: string, row: Connection.Connection, column: TableColumnCtx<Connection.Connection>) => {
-  const property = column["property"];
-  if (property === "id") {
-    return row[property] === value;
+watch(
+  props.tableData,
+  newVal => {
+    const uniqueIDs = [...new Set(newVal.map(item => item.id))];
+    idFilterOptions.splice(0, idFilterOptions.length, ...uniqueIDs.map(id => ({ text: id as string, value: id as string })));
+  },
+  {
+    immediate: true
   }
-  return false;
+);
+
+const filterID = (value: string, row: Connection.Connection) => {
+  return row.id === value;
 };
 const filterAddr = (value: string, row: Connection.Connection, column: TableColumnCtx<Connection.Connection>) => {
   const property = column["property"];

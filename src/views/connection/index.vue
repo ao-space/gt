@@ -1,71 +1,29 @@
 <template>
   <div class="card">
+    <!-- Client Pool -->
     <el-row v-if="poolForClient">
       <el-card>
         <v-chart ref="pie" class="echarts" :option="chartOptions" />
       </el-card>
     </el-row>
 
-    <el-row v-if="poolForServer">
+    <!-- Server Pool -->
+    <el-row v-if="poolForServer.length != 0">
       <el-card>
         <template #header>
           <div class="card_header">Server Pool Info</div>
         </template>
         <ConnectionTable :table-data="poolForServer" :show-i-d="true" />
-        <!-- <el-table ref="tableRef" :data="poolForServer" highlight-current-row stripe style="width: 100%">
-          <el-table-column type="index"></el-table-column>
-          <el-table-column prop="id" label="ID"></el-table-column>
-          <el-table-column prop="family" label="Family" :formatter="formatFamily"></el-table-column>
-          <el-table-column prop="type" label="Type" min-width="180" :formatter="formatType"></el-table-column>
-          <el-table-column
-            prop="localaddr"
-            label="Local Address"
-            min-width="180"
-            :formatter="formatAddress('localaddr')"
-            :filters="localAddrFilterOptions"
-            :filter-method="filterAddr"
-          ></el-table-column>
-          <el-table-column
-            prop="remoteaddr"
-            label="Remote Address"
-            min-width="180"
-            :formatter="formatAddress('remoteaddr')"
-            :filters="remoteAddrFilterOptions"
-            :filter-method="filterAddr"
-          ></el-table-column>
-          <el-table-column prop="status" label="Status"></el-table-column>
-        </el-table> -->
       </el-card>
     </el-row>
 
+    <!-- External Connection -->
     <el-row>
       <el-card>
         <template #header>
           <div class="card_header">External Connection</div>
         </template>
         <ConnectionTable :table-data="connection" :show-i-d="false" />
-        <!-- <el-table ref="tableRef" :data="connection" highlight-current-row stripe style="width: 100%">
-          <el-table-column type="index"></el-table-column>
-          <el-table-column prop="family" label="Family" :formatter="formatFamily"></el-table-column>
-          <el-table-column prop="type" label="Type" min-width="180" :formatter="formatType"></el-table-column>
-          <el-table-column
-            prop="localaddr"
-            label="Local Address"
-            min-width="180"
-            :formatter="formatAddress('localaddr')"
-            :filters="localAddrFilterOptions"
-            :filter-method="filterAddr"
-          ></el-table-column>
-          <el-table-column
-            prop="remoteaddr"
-            label="Remote Address"
-            min-width="180"
-            :formatter="formatAddress('remoteaddr')"
-            :filters="remoteAddrFilterOptions"
-            :filter-method="filterAddr"
-          ></el-table-column>
-          <el-table-column prop="status" label="Status"></el-table-column>
-        </el-table> -->
       </el-card>
     </el-row>
   </div>
@@ -74,7 +32,6 @@
 import { onMounted, onUnmounted, reactive, ref, shallowRef } from "vue";
 import { Connection } from "@/api/interface";
 import ConnectionTable from "@/components/ConnectionTable/index.vue";
-// import { type TableColumnCtx, type TableInstance } from "element-plus";
 import { use } from "echarts/core";
 import { PieChart } from "echarts/charts";
 import { PolarComponent, TitleComponent, TooltipComponent, LegendComponent } from "echarts/components";
@@ -127,55 +84,7 @@ const pie = shallowRef<ECharts | null>(null);
 
 const connection = reactive<Connection.Connection[]>([]);
 const poolForClient = ref<Connection.Pool>();
-const poolForServer = ref<Connection.Connection[]>();
-
-// const tableRef = ref<TableInstance>();
-// const remoteAddrFilterOptions = reactive<{ text: string; value: string }[]>([]);
-// watch(connection, newVal => {
-//   const uniqueRemoteAddrs = [...new Set(newVal.map(item => item.remoteaddr.ip))];
-//   remoteAddrFilterOptions.splice(0, remoteAddrFilterOptions.length, ...uniqueRemoteAddrs.map(ip => ({ text: ip, value: ip })));
-// });
-// const localAddrFilterOptions = reactive<{ text: string; value: string }[]>([]);
-// watch(connection, newVal => {
-//   const uniqueLocalAddrs = [...new Set(newVal.map(item => item.localaddr.ip))];
-//   localAddrFilterOptions.splice(0, localAddrFilterOptions.length, ...uniqueLocalAddrs.map(ip => ({ text: ip, value: ip })));
-// });
-
-// const filterAddr = (value: string, row: Connection.Connection, column: TableColumnCtx<Connection.Connection>) => {
-//   const property = column["property"];
-//   if (property === "remoteaddr" || property === "localaddr") {
-//     return row[property].ip === value;
-//   }
-//   return false;
-// };
-// const formatFamily = (row: Connection.Connection) => {
-//   switch (row.family) {
-//     case 1:
-//       return "Unix";
-//     case 2:
-//       return "IPv4";
-//     case 10:
-//       return "IPv6";
-//     default:
-//       return "Unknown";
-//   }
-// };
-// const formatAddress = (type: "localaddr" | "remoteaddr") => (row: Connection.Connection) => {
-//   const addr = row[type];
-//   return `${addr.ip}:${addr.port}`;
-// };
-// const formatType = (row: Connection.Connection) => {
-//   switch (row.type) {
-//     case 1:
-//       return "SOCK_STREAM";
-//     case 2:
-//       return "SOCK_DGRAM";
-//     case 3:
-//       return "SOCK_RAW";
-//     default:
-//       return "Unknown";
-//   }
-// };
+const poolForServer = reactive<Connection.Connection[]>([]);
 
 function transformPoolToPieChartData(pool: Connection.Pool) {
   const statusCount: Record<string, number> = {};
@@ -188,13 +97,21 @@ function transformPoolToPieChartData(pool: Connection.Pool) {
   }
   return Object.keys(statusCount).map(status => ({ name: status, value: statusCount[status] }));
 }
-const isFirstDataLoaded = ref(true);
 
+const isFirstDataLoaded = ref(true);
 const reload = async () => {
   const { data } = await getConnectionApi();
-  connection.splice(0, connection.length, ...data.external);
-  if (data.clientPool) {
-    poolForClient.value = data.clientPool;
+  updateConnectionData(data.external);
+  updateClientPoolData(data.clientPool);
+  updateServerPoolData(data.serverPool);
+};
+
+const updateConnectionData = (externalData: Connection.Connection[]) => {
+  connection.splice(0, connection.length, ...externalData);
+};
+const updateClientPoolData = (clientPoolData: Connection.Pool | undefined) => {
+  if (clientPoolData) {
+    poolForClient.value = clientPoolData;
     const pieChartData = transformPoolToPieChartData(poolForClient.value);
     (chartOptions.series as PieSeriesOption[])[0].data = pieChartData;
     (chartOptions.legend as LegendComponentOption).data = pieChartData.map(item => item.name);
@@ -202,9 +119,15 @@ const reload = async () => {
       isFirstDataLoaded.value = false;
       startChartSwitchTimer();
     }
+  } else if (poolForClient.value) {
+    poolForClient.value = {};
   }
-  if (data.serverPool) {
-    poolForServer.value = data.serverPool;
+};
+const updateServerPoolData = (serverPoolData: Connection.Connection[] | undefined) => {
+  if (serverPoolData) {
+    poolForServer.splice(0, poolForServer.length, ...serverPoolData);
+  } else {
+    poolForServer.splice(0, poolForServer.length);
   }
 };
 
