@@ -1,10 +1,42 @@
 <template>
   <div class="card">
-    <el-row v-if="pool">
+    <el-row v-if="poolForClient">
       <el-card>
         <v-chart ref="pie" class="echarts" :option="chartOptions" />
       </el-card>
     </el-row>
+
+    <el-row>
+      <el-card>
+        <template #header>
+          <div class="card_header">Server Pool Info</div>
+        </template>
+        <el-table ref="tableRef" :data="poolForServer" highlight-current-row stripe style="width: 100%">
+          <el-table-column type="index"></el-table-column>
+          <el-table-column prop="id" label="ID"></el-table-column>
+          <el-table-column prop="family" label="Family" :formatter="formatFamily"></el-table-column>
+          <el-table-column prop="type" label="Type" min-width="180" :formatter="formatType"></el-table-column>
+          <el-table-column
+            prop="localaddr"
+            label="Local Address"
+            min-width="180"
+            :formatter="formatAddress('localaddr')"
+            :filters="localAddrFilterOptions"
+            :filter-method="filterAddr"
+          ></el-table-column>
+          <el-table-column
+            prop="remoteaddr"
+            label="Remote Address"
+            min-width="180"
+            :formatter="formatAddress('remoteaddr')"
+            :filters="remoteAddrFilterOptions"
+            :filter-method="filterAddr"
+          ></el-table-column>
+          <el-table-column prop="status" label="Status"></el-table-column>
+        </el-table>
+      </el-card>
+    </el-row>
+
     <el-row>
       <el-card>
         <template #header>
@@ -91,7 +123,8 @@ const chartOptions = reactive<EChartsOption>({
 const pie = shallowRef<ECharts | null>(null);
 
 const connection = reactive<Connection.Connection[]>([]);
-const pool = ref<Connection.Pool>();
+const poolForClient = ref<Connection.Pool>();
+const poolForServer = ref<Connection.Connection[]>();
 
 const tableRef = ref<TableInstance>();
 const remoteAddrFilterOptions = reactive<{ text: string; value: string }[]>([]);
@@ -155,17 +188,22 @@ const isFirstDataLoaded = ref(true);
 
 const reload = async () => {
   const { data } = await getConnectionApi();
-  connection.splice(0, connection.length, ...data.connection);
-  pool.value = data.pool;
-  const pieChartData = transformPoolToPieChartData(pool.value);
-  (chartOptions.series as PieSeriesOption[])[0].data = pieChartData;
-  (chartOptions.legend as LegendComponentOption).data = pieChartData.map(item => item.name);
-
-  if (isFirstDataLoaded.value) {
-    isFirstDataLoaded.value = false;
-    startChartSwitchTimer();
+  connection.splice(0, connection.length, ...data.external);
+  if (data.clientPool) {
+    poolForClient.value = data.clientPool;
+    const pieChartData = transformPoolToPieChartData(poolForClient.value);
+    (chartOptions.series as PieSeriesOption[])[0].data = pieChartData;
+    (chartOptions.legend as LegendComponentOption).data = pieChartData.map(item => item.name);
+    if (isFirstDataLoaded.value) {
+      isFirstDataLoaded.value = false;
+      startChartSwitchTimer();
+    }
+  }
+  if (data.serverPool) {
+    poolForServer.value = data.serverPool;
   }
 };
+
 const timers = new Set<NodeJS.Timeout>();
 function dispatchAction(type: string, dataIndex: number) {
   pie.value?.dispatchAction({
@@ -209,6 +247,7 @@ function clearAllTimers() {
   }
   timers.clear();
 }
+
 onMounted(() => {
   reload();
   startDataFetchTimer();

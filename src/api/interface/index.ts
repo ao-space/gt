@@ -92,7 +92,8 @@ export namespace Connection {
     [key: string]: Status;
   }
   export interface ResConnection {
-    connection: Connection[];
-    pool: Pool;
+    external: Connection[];
+    serverPool?: Connection[];
+    clientPool?: Pool;
   }
 }

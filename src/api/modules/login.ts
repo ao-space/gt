@@ -16,7 +16,7 @@ export const loginApi = (params: Login.ReqLoginForm) => {
 };
 
 export const getAuthMenuListApi = () => {
-  // return http.get<Menu.MenuOptions[]>(`/permission/menu`, {}, { noLoading: true });
+  return http.get<Menu.MenuOptions[]>(`/permission/menu`, {}, { noLoading: true });
 
   //If you want to make the menu a local data,
   //comment out the previous line of code and introduce the local authMenuList.json data
