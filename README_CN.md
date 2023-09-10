@@ -29,40 +29,50 @@ GT 是一个支持点对点直连（P2P）和互联网中转的反向代理开�
 
 <!-- TOC -->
 
-  * [工作原理](#工作原理)
-  * [用法](#用法)
-    * [配置文件](#配置文件)
-    * [服务端配置 users](#服务端配置-users)
-      * [通过命令行配置 users](#通过命令行配置-users)
-      * [通过 users 配置文件配置 users](#通过-users-配置文件配置-users)
-      * [通过 config 配置文件配置 users](#通过-config-配置文件配置-users)
-      * [允许所有的客户端](#允许所有的客户端)
-    * [服务端配置 TCP](#服务端配置-tcp)
-      * [通过 users 配置文件配置 TCP](#通过-users-配置文件配置-tcp)
-      * [通过 config 配置文件配置 TCP](#通过-config-配置文件配置-tcp)
-    * [命令行参数](#命令行参数)
-      * [HTTP 内网穿透](#http-内网穿透)
-      * [HTTPS 内网穿透](#https-内网穿透)
-      * [HTTPS SNI 内网穿透](#https-sni-内网穿透)
-      * [TLS 加密客户端服务端之间的通信](#tls-加密客户端服务端之间的通信)
-      * [TCP 内网穿透](#tcp-内网穿透)
-      * [客户端同时开启多个服务](#客户端同时开启多个服务)
-      * [服务端 API](#服务端-api)
-  * [性能测试](#性能测试)
-    * [GT benchmark](#gt-benchmark)
-    * [frp dev branch 42745a3](#frp-dev-branch-42745a3)
-  * [编译](#编译)
-    * [从 ISCAS 镜像获取 WebRTC 并编译 GT](#从-iscas-镜像获取-webrtc-并编译-gt)
-    * [从官方获取 WebRTC 并编译 GT](#从官方获取-webrtc-并编译-gt)
-  * [演进计划](#演进计划)
-  * [贡献指南](#贡献指南)
-    * [贡献代码](#贡献代码)
-    * [代码质量](#代码质量)
-    * [提交信息](#提交信息)
-    * [问题报告](#问题报告)
-    * [功能请求](#功能请求)
-    * [感谢您的贡献](#感谢您的贡献)
-    * [贡献者](#贡献者)
+* [工作原理](#工作原理)
+* [用法](#用法)
+  * [配置文件](#配置文件)
+  * [服务端配置 users](#服务端配置-users)
+    * [通过命令行配置 users](#通过命令行配置-users)
+    * [通过 users 配置文件配置 users](#通过-users-配置文件配置-users)
+    * [通过 config 配置文件配置 users](#通过-config-配置文件配置-users)
+    * [允许所有的客户端](#允许所有的客户端)
+  * [服务端配置 TCP](#服务端配置-tcp)
+    * [通过 users 配置文件配置 TCP](#通过-users-配置文件配置-tcp)
+    * [通过 config 配置文件配置 TCP](#通过-config-配置文件配置-tcp)
+  * [命令行参数](#命令行参数)
+    * [HTTP 内网穿透](#http-内网穿透)
+    * [HTTPS 内网穿透](#https-内网穿透)
+    * [HTTPS SNI 内网穿透](#https-sni-内网穿透)
+    * [TLS 加密客户端服务端之间的通信](#tls-加密客户端服务端之间的通信)
+    * [TCP 内网穿透](#tcp-内网穿透)
+    * [客户端同时开启多个服务](#客户端同时开启多个服务)
+    * [服务端 API](#服务端-api)
+* [性能测试](#性能测试)
+  * [GT benchmark](#gt-benchmark)
+  * [frp dev branch 42745a3](#frp-dev-branch-42745a3)
+* [运行](#运行)
+  * [Docker 容器运行](#docker-容器运行)
+* [编译](#编译)
+  * [在 Ubuntu/Debian 上编译](#在-ubuntudebian-上编译)
+    * [安装依赖](#安装依赖)
+    * [获取代码并编译](#获取代码并编译)
+      * [从 ISCAS 镜像获取 WebRTC 并编译 GT](#从-iscas-镜像获取-webrtc-并编译-gt)
+      * [从官方获取 WebRTC 并编译 GT](#从官方获取-webrtc-并编译-gt)
+  * [在 Ubuntu/Debian 上通过 Docker 编译](#在-ubuntudebian-上通过-docker-编译)
+    * [安装依赖](#安装依赖-1)
+    * [获取代码并编译](#获取代码并编译-1)
+      * [从 ISCAS 镜像获取 WebRTC 并编译 GT](#从-iscas-镜像获取-webrtc-并编译-gt-1)
+      * [从官方获取 WebRTC 并编译 GT](#从官方获取-webrtc-并编译-gt-1)
+* [演进计划](#演进计划)
+* [贡献指南](#贡献指南)
+  * [贡献代码](#贡献代码)
+  * [代码质量](#代码质量)
+  * [提交信息](#提交信息)
+  * [问题报告](#问题报告)
+  * [功能请求](#功能请求)
+  * [感谢您的贡献](#感谢您的贡献)
+  * [贡献者](#贡献者)
 
 <!-- TOC -->
 
@@ -418,11 +428,34 @@ $ ps aux
  2976   0.0  0.4 408712832  66112 s005  S+    5:01PM   1:06.51 ./frpc -c ./frpc.ini
 ```
 
+## 运行
+
+### Docker 容器运行
+
+更多容器镜像信息可以从<https://github.com/ao-space/gt/pkgs/container/gt>获取。
+
+```shell
+docker pull ghcr.io/ao-space/gt:server-dev
+
+docker pull ghcr.io/ao-space/gt:client-dev
+```
+
 ## 编译
+
+### 在 Ubuntu/Debian 上编译
+
+#### 安装依赖
+
+```shell
+apt-get update
+apt-get install make git gn ninja-build python3 python3-pip libgtk-3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu -y
+```
+
+#### 获取代码并编译
 
 你可以选择从镜像或者官方获取 WebRTC 并编译 GT：
 
-### 从 ISCAS 镜像获取 WebRTC 并编译 GT
+##### 从 ISCAS 镜像获取 WebRTC 并编译 GT
 
 1. 获取代码
 
@@ -433,15 +466,13 @@ $ ps aux
 
 2. 编译
 
-   在 Linux 上编译：
-
       ```shell
       make release
       ```
 
    编译后的可执行文件在 release 目录下。
 
-### 从官方获取 WebRTC 并编译 GT
+##### 从官方获取 WebRTC 并编译 GT
 
 1. 获取代码
 
@@ -462,10 +493,62 @@ $ ps aux
 
 3. 编译
 
-   在 Linux 上编译：
-
       ```shell
       WITH_OFFICIAL_WEBRTC=1 make release
+      ```
+
+   编译后的可执行文件在 release 目录下。
+
+### 在 Ubuntu/Debian 上通过 Docker 编译
+
+#### 安装依赖
+
+[安装 Docker](https://docs.docker.com/engine/install/)
+
+#### 获取代码并编译
+
+你可以选择从镜像或者官方获取 WebRTC 并编译 GT：
+
+##### 从 ISCAS 镜像获取 WebRTC 并编译 GT
+
+1. 获取代码
+
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
+
+2. 编译
+
+      ```shell
+      make docker_release_linux_amd64 # docker_release_linux_arm64
+      ```
+
+   编译后的可执行文件在 release 目录下。
+
+##### 从官方获取 WebRTC 并编译 GT
+
+1. 获取代码
+
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
+
+2. 从官方获取 WebRTC
+
+      ```shell
+      mkdir -p dep/_google-webrtc
+      cd dep/_google-webrtc
+      git clone https://webrtc.googlesource.com/src
+      ```
+
+   然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
+
+3. 编译
+
+      ```shell
+      WITH_OFFICIAL_WEBRTC=1 make docker_release_linux_amd64 # docker_release_linux_arm64
       ```
 
    编译后的可执行文件在 release 目录下。
