@@ -11,7 +11,7 @@
             <UsageTooltip :usage-text="ServerConfig.usage['Users']" />
           </template>
           <el-form-item prop="Users">
-            <el-input v-model="localSetting.Users"></el-input>
+            <el-input v-model="localSetting.UserPath"></el-input>
           </el-form-item>
         </el-descriptions-item>
         <!-- AuthAPI -->
@@ -46,28 +46,19 @@ import TCPSetting from "./TCPSetting.vue";
 import HostSetting from "./HostSetting.vue";
 
 interface GeneralSettingProps {
-  setting: ServerConfig.GeneralSetting;
+  setting: ServerConfig.GeneralSettingProps;
 }
 const props = withDefaults(defineProps<GeneralSettingProps>(), {
-  setting: () => ServerConfig.defaultGeneralSetting
+  setting: () => ServerConfig.defaultGeneralSettingProps
 });
-const localSetting = reactive<ServerConfig.GeneralSetting>({ ...props.setting });
+const localSetting = reactive<ServerConfig.GeneralSettingProps>({ ...props.setting });
 const emit = defineEmits(["update:setting"]);
-// Note: the component TCPSetting and HostSetting
-// need the type of TCP and Host respectively
-// instead of TCPInOptions and HostInOptions
 
-//switch TCPInOptions and HostInOptions to TCP and Host
-const tcpSetting = reactive<ServerConfig.TCP[]>(
-  localSetting.TCPRanges.map((range, index) => ({
-    Range: range,
-    Number: parseInt(localSetting.TCPNumbers[index])
-  }))
-);
+const tcpSetting = reactive<ServerConfig.TCP[]>([...localSetting.TCPs]);
 const hostSetting = reactive<ServerConfig.Host>({
-  Number: localSetting.HostNumber,
-  RegexStr: localSetting.HostRegex,
-  WithID: localSetting.HostWithID
+  Number: localSetting.Host.Number,
+  RegexStr: localSetting.Host.RegexStr,
+  WithID: localSetting.Host.WithID
 });
 
 //make sure the consistency
@@ -75,18 +66,17 @@ watch(
   () => tcpSetting,
   newSetting => {
     console.log("tcpSetting change");
-    localSetting.TCPRanges = newSetting.map(tcp => tcp.Range);
-    localSetting.TCPNumbers = newSetting.map(tcp => tcp.Number.toString());
+    localSetting.TCPs.splice(0, localSetting.TCPs.length, ...newSetting);
   },
   { deep: true }
 );
 watch(
   () => hostSetting,
-  newSetting => {
+  () => {
     console.log("hostSetting change");
-    localSetting.HostNumber = newSetting.Number;
-    localSetting.HostRegex = newSetting.RegexStr;
-    localSetting.HostWithID = newSetting.WithID;
+    localSetting.Host.Number = hostSetting.Number;
+    localSetting.Host.RegexStr = hostSetting.RegexStr;
+    localSetting.Host.WithID = hostSetting.WithID;
   },
   { deep: true }
 );

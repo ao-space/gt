@@ -15,8 +15,12 @@
         @update:setting="tab.updateSetting"
       />
     </template>
-    <el-button type="primary" @click="submit">Submit</el-button>
   </Anchor>
+  <el-button type="primary" @click="submit">Submit</el-button>
+  <el-button type="primary" @click="getFromFile">Get From File</el-button>
+  <el-button type="primary" @click="getFromRunning">Get From Running</el-button>
+  <el-button type="primary" @click="save">Save</el-button>
+  <el-button type="primary" @click="test">Test</el-button>
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">
@@ -36,6 +40,8 @@ import UserSetting from "./components/UserSetting.vue";
 import SentrySetting from "@/components/ClientConfigForm/components/SentrySetting.vue";
 import LogSetting from "../ClientConfigForm/components/LogSetting.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { getRunningServerConfigApi, getServerConfigFromFileApi, saveServerConfigApi } from "@/api/modules/serverConfig";
+import { Config } from "@/api/interface";
 
 const tcps = reactive<ServerConfig.TCP[]>([
   {
@@ -52,11 +58,11 @@ const host = reactive<ServerConfig.Host>({
   RegexStr: [".*", "http.*", "tcp://"],
   WithID: false
 });
-const hostInOptions = reactive<ServerConfig.HostInOptions>({
-  HostNumber: host.Number,
-  HostRegex: host.RegexStr,
-  HostWithID: host.WithID
-});
+// const hostInOptions = reactive<ServerConfig.HostInOptions>({
+//   HostNumber: host.Number,
+//   HostRegex: host.RegexStr,
+//   HostWithID: host.WithID
+// });
 const users = reactive<Record<string, ServerConfig.User>>({
   id1: {
     Secret: "secret1",
@@ -79,12 +85,18 @@ const userList = reactive<ServerConfig.UserSetting[]>([
 
 const generalSetting = reactive<ServerConfig.GeneralSetting>({
   // ...ServerConfig.defaultGeneralSetting
-  Users: "",
-  AuthAPI: "",
-  TCPRanges: tcps.map(item => item.Range),
-  TCPNumbers: tcps.map(item => item.Number.toString()),
-  ...hostInOptions
+  UserPath: "",
+  AuthAPI: ""
+  // TCPRanges: tcps.map(item => item.Range),
+  // TCPNumbers: tcps.map(item => item.Number.toString()),
+  // ...hostInOptions
 });
+const generalSettingProps = reactive<ServerConfig.GeneralSettingProps>({
+  ...generalSetting,
+  TCPs: tcps,
+  Host: host
+});
+
 const netWorkSetting = reactive<ServerConfig.NetworkSetting>({
   Addr: "ao.space",
   TLSAddr: "asdf",
@@ -137,16 +149,15 @@ const options = reactive<ServerConfig.Options>({
   ...sentrySetting
 });
 const serverConfig = reactive<ServerConfig.Config>({
-  Version: "",
   Users: users,
   TCPs: tcps,
   Host: host,
-  Options: options
+  ...options
 });
 
 const updateGeneralSetting = (newSetting: ServerConfig.GeneralSetting) => {
   console.log("updateGeneralSetting", newSetting);
-  Object.assign(generalSetting, newSetting);
+  Object.assign(generalSettingProps, newSetting);
 };
 const updateNetworkSetting = (newSetting: ServerConfig.NetworkSetting) => {
   console.log("updateNetworkSetting", newSetting);
@@ -269,7 +280,7 @@ const staticTabs = reactive([
     uuid: uuidv4(),
     component: markRaw(GeneralSetting),
     ref: "generalSettingRef",
-    setting: generalSetting,
+    setting: generalSettingProps,
     updateSetting: updateGeneralSetting
   } as staticTabsType<ServerConfig.GeneralSetting>,
   {
@@ -357,6 +368,9 @@ const tabList = reactive<Tab[]>([
 const validateAllForms = (formRefs: Array<Ref<ServerConfig.FormRef | null>>) => {
   return Promise.all(formRefs.map(formRef => formRef.value?.validateForm()));
 };
+const updateData = (data: Config.Server.ResConfig) => {
+  console.log(data);
+};
 
 const submit = () => {
   console.log("submit");
@@ -389,6 +403,20 @@ const submit = () => {
     .catch(() => {
       console.log("cancel submit");
     });
+};
+const getFromFile = async () => {
+  const runningConfig = await getServerConfigFromFileApi();
+  console.log(runningConfig);
+};
+const getFromRunning = async () => {
+  const runningConfig = await getRunningServerConfigApi();
+  console.log(runningConfig);
+};
+const save = async () => {
+  await saveServerConfigApi(serverConfig);
+};
+const test = () => {
+  console.log(updateData);
 };
 </script>
 

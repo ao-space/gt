@@ -1,19 +1,17 @@
 export namespace ServerConfig {
-  export interface Config {
-    Version: string;
+  export interface Config extends Options {
     Users: Record<string, User>;
     TCPs: TCP[];
     Host: Host;
-    Options: Options;
   }
   export interface TCP {
     Range: string;
     Number: number;
   }
-  export interface TCPInOptions {
-    TCPRanges: string[];
-    TCPNumbers: string[];
-  }
+  // export interface TCPInOptions {
+  //   TCPRanges: string[];
+  //   TCPNumbers: string[];
+  // }
   export interface User {
     Secret: string;
     TCPs: TCP[];
@@ -31,16 +29,26 @@ export namespace ServerConfig {
     RegexStr: string[];
     WithID: boolean;
   }
-  export interface HostInOptions {
-    HostNumber: number;
-    HostRegex: string[];
-    HostWithID: boolean;
-  }
+  // export interface HostInOptions {
+  //   HostNumber: number;
+  //   HostRegex: string[];
+  //   HostWithID: boolean;
+  // }
 
-  export interface GeneralSetting extends HostInOptions, TCPInOptions {
-    Users: string;
+  export interface GeneralSetting {
+    UserPath: string;
     AuthAPI: string;
   }
+  export interface GeneralSettingProps {
+    UserPath: string;
+    AuthAPI: string;
+    TCPs: TCP[];
+    Host: Host;
+  }
+  // export interface GeneralSetting extends HostInOptions, TCPInOptions {
+  //   Users: string;
+  //   AuthAPI: string;
+  // }
   export interface NetworkSetting {
     Addr: string;
     TLSAddr: string;
@@ -113,13 +121,19 @@ export namespace ServerConfig {
     // usedPort: 0
   };
   export const defaultGeneralSetting: GeneralSetting = {
-    Users: "",
+    UserPath: "",
+    AuthAPI: ""
+    // TCPRanges: ["12-123", "123-11"],
+    // TCPNumbers: ["12", "1223"],
+    // HostNumber: 23,
+    // HostRegex: [".*", "http"],
+    // HostWithID: false
+  };
+  export const defaultGeneralSettingProps: GeneralSettingProps = {
+    UserPath: "",
     AuthAPI: "",
-    TCPRanges: ["12-123", "123-11"],
-    TCPNumbers: ["12", "1223"],
-    HostNumber: 23,
-    HostRegex: [".*", "http"],
-    HostWithID: false
+    TCPs: [],
+    Host: defaultHostSetting
   };
   export const defaultNetworkSetting: NetworkSetting = {
     Addr: "",

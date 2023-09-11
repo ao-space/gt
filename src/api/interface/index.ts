@@ -1,4 +1,6 @@
 import { ClientConfig } from "@/components/ClientConfigForm/interface";
+import { ServerConfig } from "@/components/ServerConfigForm/interface";
+
 // Request with no data
 export interface Result {
   code: string;
@@ -58,6 +60,11 @@ export namespace Config {
   export namespace Client {
     export interface ResConfig {
       config: ClientConfig.Config;
+    }
+  }
+  export namespace Server {
+    export interface ResConfig {
+      config: ServerConfig.Config;
     }
   }
 }

@@ -57,16 +57,23 @@
 <script setup name="HostSetting" lang="ts">
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { ServerConfig } from "../interface";
-import { reactive, ref, watch } from "vue";
+import { reactive, ref, watch, watchEffect } from "vue";
 import { ElMessage, FormInstance, FormRules } from "element-plus";
-// Note: the generalSetting use type HostSetting, need to convert !!
+
 interface HostSettingProps {
   setting: ServerConfig.Host;
 }
 const props = withDefaults(defineProps<HostSettingProps>(), {
   setting: () => ServerConfig.defaultHostSetting
 });
-let localSetting = reactive<ServerConfig.Host>({ ...props.setting });
+const localSetting = reactive<ServerConfig.Host>({ ...props.setting });
+
+watchEffect(() => {
+  console.log("props changed");
+  console.log("-------------");
+  Object.assign(localSetting, props.setting);
+  console.log("-------------");
+});
 
 const hostSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.Host>>({
@@ -96,16 +103,50 @@ const form = reactive<formType>({
 });
 
 const emit = defineEmits(["update:setting"]);
+watch(
+  () => localSetting,
+  () => {
+    console.log("localSetting change");
+    console.log("-------------");
+    form.Number = localSetting.Number;
+    localSetting.RegexStr.forEach((item, index) => {
+      form.tableData[index].RegexStr = item;
+      form.tableData[index].isEdit = false;
+    });
+    form.WithID = localSetting.WithID;
+
+    console.log(JSON.stringify(localSetting));
+    console.log("-------------");
+  },
+  { immediate: true, deep: true }
+);
+
+function hasFormChanged(oldForm: formType, newForm: formType): boolean {
+  debugger;
+  if (oldForm.Number !== newForm.Number) return true;
+  if (oldForm.WithID !== newForm.WithID) return true;
+  if (oldForm.tableData.length !== newForm.tableData.length) return true;
+  for (let i = 0; i < oldForm.tableData.length; i++) {
+    if (oldForm.tableData[i].RegexStr !== newForm.tableData[i].RegexStr) return true;
+  }
+  return false;
+}
 
 watch(
   () => form,
-  (newForm: formType) => {
+  (newForm: formType, oldForm: formType) => {
+    console.log("form change");
+    console.log(JSON.stringify(newForm));
+    console.log(JSON.stringify(oldForm));
+    if (!hasFormChanged(oldForm, newForm)) return;
+    console.log("-------------");
     localSetting.Number = newForm.Number;
     localSetting.RegexStr = newForm.tableData.map(item => item.RegexStr);
     localSetting.WithID = newForm.WithID;
+    console.log("-------------");
     emit("update:setting", localSetting);
   },
-  { deep: true }
+  { immediate: true }
 );
 
 const addRow = () => {
@@ -115,6 +156,7 @@ const addRow = () => {
   });
 };
 const editRow = (index: number) => {
+  console.log("editRow:", index);
   form.tableData[index].isEdit = true;
 };
 const finishEdit = async (index: number) => {
@@ -130,7 +172,7 @@ const finishEdit = async (index: number) => {
 const deleteRow = (index: number) => {
   form.tableData.splice(index, 1);
 };
-
+// TODO: isEdit should be false when validate failed
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (hostSettingRef.value) {
