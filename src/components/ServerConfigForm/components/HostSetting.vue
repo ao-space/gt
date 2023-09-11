@@ -9,7 +9,7 @@
             <UsageTooltip :usage-text="ServerConfig.usage['HostNumber']" />
           </template>
           <el-form-item prop="Number" :rules="rules.Number">
-            <el-input v-model="form.Number" />
+            <el-input-number v-model="form.Number" />
           </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
@@ -66,14 +66,6 @@ interface HostSettingProps {
 const props = withDefaults(defineProps<HostSettingProps>(), {
   setting: () => ServerConfig.defaultHostSetting
 });
-const localSetting = reactive<ServerConfig.Host>({ ...props.setting });
-
-watchEffect(() => {
-  console.log("props changed");
-  console.log("-------------");
-  Object.assign(localSetting, props.setting);
-  console.log("-------------");
-});
 
 const hostSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.Host>>({
@@ -96,58 +88,42 @@ interface formType {
   Number: number;
   WithID: boolean;
 }
+
 const form = reactive<formType>({
-  Number: localSetting.Number,
-  tableData: localSetting.RegexStr.map(item => ({ RegexStr: item, isEdit: false })),
-  WithID: localSetting.WithID
+  Number: props.setting.Number,
+  tableData: props.setting.RegexStr.map(item => ({ RegexStr: item, isEdit: false })),
+  WithID: props.setting.WithID
 });
 
 const emit = defineEmits(["update:setting"]);
 watch(
-  () => localSetting,
-  () => {
-    console.log("localSetting change");
-    console.log("-------------");
-    form.Number = localSetting.Number;
-    localSetting.RegexStr.forEach((item, index) => {
-      form.tableData[index].RegexStr = item;
-      form.tableData[index].isEdit = false;
+  () => props.setting,
+  newSetting => {
+    if (JSON.stringify(form) === JSON.stringify(newSetting)) return;
+    form.Number = newSetting.Number;
+    form.tableData = newSetting.RegexStr.map(item => ({ RegexStr: item, isEdit: false }));
+    form.WithID = newSetting.WithID;
+  },
+  { deep: true }
+);
+let prevFormState = JSON.stringify(form);
+
+watchEffect(() => {
+  const currentFormState = JSON.stringify(form);
+  if (currentFormState !== prevFormState) {
+    for (let item of form.tableData) {
+      if (item.isEdit) {
+        return;
+      }
+    }
+    emit("update:setting", {
+      Number: form.Number,
+      RegexStr: form.tableData.map(item => item.RegexStr),
+      WithID: form.WithID
     });
-    form.WithID = localSetting.WithID;
-
-    console.log(JSON.stringify(localSetting));
-    console.log("-------------");
-  },
-  { immediate: true, deep: true }
-);
-
-function hasFormChanged(oldForm: formType, newForm: formType): boolean {
-  debugger;
-  if (oldForm.Number !== newForm.Number) return true;
-  if (oldForm.WithID !== newForm.WithID) return true;
-  if (oldForm.tableData.length !== newForm.tableData.length) return true;
-  for (let i = 0; i < oldForm.tableData.length; i++) {
-    if (oldForm.tableData[i].RegexStr !== newForm.tableData[i].RegexStr) return true;
+    prevFormState = currentFormState;
   }
-  return false;
-}
-
-watch(
-  () => form,
-  (newForm: formType, oldForm: formType) => {
-    console.log("form change");
-    console.log(JSON.stringify(newForm));
-    console.log(JSON.stringify(oldForm));
-    if (!hasFormChanged(oldForm, newForm)) return;
-    console.log("-------------");
-    localSetting.Number = newForm.Number;
-    localSetting.RegexStr = newForm.tableData.map(item => item.RegexStr);
-    localSetting.WithID = newForm.WithID;
-    console.log("-------------");
-    emit("update:setting", localSetting);
-  },
-  { immediate: true }
-);
+});
 
 const addRow = () => {
   form.tableData.push({
@@ -172,9 +148,15 @@ const finishEdit = async (index: number) => {
 const deleteRow = (index: number) => {
   form.tableData.splice(index, 1);
 };
-// TODO: isEdit should be false when validate failed
+
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
+    //check if there is any row is editing
+    const allNotEdit = form.tableData.every(item => !item.isEdit);
+    if (!allNotEdit) {
+      reject(new Error("Please finish editing before submit"));
+      return;
+    }
     if (hostSettingRef.value) {
       hostSettingRef.value
         .validate()
@@ -193,6 +175,7 @@ defineExpose({
   validateForm
 });
 </script>
+
 <style scoped lang="scss">
 @import "../index.scss";
 .el-card {

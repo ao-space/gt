@@ -50,9 +50,7 @@ export namespace ClientConfig {
     LocalTimeout: string;
     UseLocalAsHTTPHost: boolean;
   }
-  export interface Options extends GeneralSetting, SentrySetting, WebRTCSetting, TCPForwardSetting, LogSetting {
-    Config: string;
-  }
+  export interface Options extends GeneralSetting, SentrySetting, WebRTCSetting, TCPForwardSetting, LogSetting {}
 
   export const defaultGeneralSetting: GeneralSetting = {
     ID: "",

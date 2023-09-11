@@ -56,8 +56,6 @@ const tcpForwardSetting = reactive<ClientConfig.TCPForwardSetting>({ ...ClientCo
 const logSetting = reactive<ClientConfig.LogSetting>({ ...ClientConfig.defaultLogSetting });
 
 const options = reactive<ClientConfig.Options>({
-  Config: "",
-
   ...generalSetting,
   ...sentrySetting,
   ...webRTCSetting,
@@ -241,7 +239,6 @@ const updateData = (data: Config.Client.ResConfig) => {
   Object.assign(webRTCSetting, mapClientWebRTCSetting(data));
   Object.assign(tcpForwardSetting, mapClientTCPForwardSetting(data));
   Object.assign(logSetting, mapClientLogSetting(data));
-  options.Config = data.config.Config;
   services.splice(0, services.length, ...mapClientServices(data));
   serviceSettingRefs.splice(0, serviceSettingRefs.length);
   if (services.length === 0) {

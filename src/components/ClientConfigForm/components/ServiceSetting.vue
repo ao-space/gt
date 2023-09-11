@@ -5,7 +5,6 @@
       <el-descriptions :column="2" :border="true">
         <template #title> Service {{ index + 1 }} Setting </template>
         <template #extra>
-          <!-- <el-button v-if="index === services.length - 1" type="primary" @click="addService">Add Service</el-button> -->
           <el-button v-if="isLast" type="primary" @click="emit('addService')">Add Service</el-button>
           <el-button type="danger" @click="emit('removeService', props.index)">Delete</el-button>
         </template>
