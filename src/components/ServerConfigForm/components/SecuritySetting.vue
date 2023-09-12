@@ -48,6 +48,9 @@ const props = withDefaults(defineProps<SecuritySettingProps>(), {
   setting: () => ServerConfig.defaultSecuritySetting
 });
 const localSetting = reactive<ServerConfig.SecuritySetting>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const SecuritySettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.SecuritySetting>>({});

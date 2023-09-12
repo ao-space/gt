@@ -22,7 +22,7 @@
             <UsageTooltip :usage-text="ServerConfig.usage.user['Secret']" />
           </template>
           <el-form-item prop="Secret">
-            <el-input v-model="localSetting.Secret"></el-input>
+            <el-input v-model="localSetting.Secret" type="password" show-password></el-input>
           </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
@@ -80,6 +80,14 @@ const localSetting = reactive<ServerConfig.UserSetting>({ ...props.setting });
 const tcpSetting = reactive<ServerConfig.TCP[]>(localSetting.TCPs);
 const hostSetting = reactive<ServerConfig.Host>(localSetting.Host);
 
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+  tcpSetting.splice(0, tcpSetting.length, ...localSetting.TCPs);
+  hostSetting.Number = localSetting.Host.Number;
+  hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...localSetting.Host.RegexStr);
+  hostSetting.WithID = localSetting.Host.WithID;
+});
+
 const updateTCPSetting = (setting: ServerConfig.TCP[]) => {
   tcpSetting.splice(0, tcpSetting.length, ...setting);
 };
@@ -105,9 +113,13 @@ watch(
   },
   { deep: true }
 );
-watchEffect(() => {
-  emit("update:setting", props.index, localSetting);
-});
+watch(
+  () => localSetting,
+  () => {
+    emit("update:setting", props.index, localSetting);
+  },
+  { deep: true }
+);
 
 const userSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.UserSetting>>({});

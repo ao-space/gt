@@ -1,5 +1,6 @@
 import { Config, Connection } from "@/api/interface";
 import { ClientConfig } from "@/components/ClientConfigForm/interface";
+import { ServerConfig } from "@/components/ServerConfigForm/interface";
 export const mapClientGeneralSetting = (data: Config.Client.ResConfig): ClientConfig.GeneralSetting => ({
   ID: data.config.ID,
   Secret: data.config.Secret,
@@ -80,3 +81,96 @@ const humanizeDuration = (value: string): string => {
 export const convertToStatus = (statusCode: Connection.Status): string => {
   return Connection.StatusMap[statusCode];
 };
+
+export const mapServerTCPSetting = (data: Config.Server.ResConfig): ServerConfig.TCP[] => {
+  if (!data.config.TCPs) {
+    return [];
+  } else {
+    return data.config.TCPs.map(tcp => ({
+      Range: tcp.Range,
+      Number: tcp.Number
+    }));
+  }
+};
+export const mapServerHostSetting = (data: Config.Server.ResConfig): ServerConfig.Host => {
+  if (!data.config.Host) {
+    return {
+      Number: 0,
+      RegexStr: [],
+      WithID: false
+    };
+  } else {
+    return {
+      Number: data.config.Host.Number,
+      RegexStr: data.config.Host.RegexStr,
+      WithID: data.config.Host.WithID
+    };
+  }
+};
+export const mapServerUserSetting = (data: Config.Server.ResConfig): ServerConfig.Users => {
+  if (!data.config.Users) {
+    return {};
+  } else {
+    return Object.keys(data.config.Users).reduce<ServerConfig.Users>((acc, key) => {
+      const user = data.config.Users[key];
+      acc[key] = {
+        ...user,
+        TCPs: user.TCPs || [],
+        Speed: user.Speed || 0,
+        Connections: user.Connections || 0,
+        Host: {
+          ...user.Host,
+          RegexStr: user.Host.RegexStr || []
+        }
+      };
+      return acc;
+    }, {});
+  }
+};
+
+export const mapServerGeneralSetting = (data: Config.Server.ResConfig): ServerConfig.GeneralSetting => ({
+  UserPath: data.config.UserPath,
+  AuthAPI: data.config.AuthAPI
+});
+export const mapServerNetworkSetting = (data: Config.Server.ResConfig): ServerConfig.NetworkSetting => ({
+  Addr: data.config.Addr,
+  TLSAddr: data.config.TLSAddr,
+  TLSMinVersion: data.config.TLSMinVersion,
+  STUNAddr: data.config.STUNAddr,
+  SNIAddr: data.config.SNIAddr,
+  HTTPMUXHeader: data.config.HTTPMUXHeader
+});
+export const mapServerSecuritySetting = (data: Config.Server.ResConfig): ServerConfig.SecuritySetting => ({
+  CertFile: data.config.CertFile,
+  KeyFile: data.config.KeyFile,
+  AllowAnyClient: data.config.AllowAnyClient
+});
+export const mapServerConnectionSetting = (data: Config.Server.ResConfig): ServerConfig.ConnectionSetting => ({
+  Speed: data.config.Speed,
+  Connections: data.config.Connections,
+  ReconnectTimes: data.config.ReconnectTimes,
+  ReconnectDuration: humanizeDuration(data.config.ReconnectDuration),
+  Timeout: humanizeDuration(data.config.Timeout),
+  TimeoutOnUnidirectionalTraffic: data.config.TimeoutOnUnidirectionalTraffic
+});
+export const mapServerAPISetting = (data: Config.Server.ResConfig): ServerConfig.APISetting => ({
+  APIAddr: data.config.APIAddr,
+  APICertFile: data.config.APICertFile,
+  APIKeyFile: data.config.APIKeyFile,
+  APITLSMinVersion: data.config.APITLSMinVersion
+});
+export const mapServerSentrySetting = (data: Config.Server.ResConfig): ServerConfig.SentrySetting => ({
+  SentryDSN: data.config.SentryDSN,
+  SentryLevel: data.config.SentryLevel,
+  SentrySampleRate: data.config.SentrySampleRate,
+  SentryRelease: data.config.SentryRelease,
+  SentryEnvironment: data.config.SentryEnvironment,
+  SentryServerName: data.config.SentryServerName,
+  SentryDebug: data.config.SentryDebug
+});
+export const mapServerLogSetting = (data: Config.Server.ResConfig): ServerConfig.LogSetting => ({
+  LogFile: data.config.LogFile,
+  LogFileMaxSize: data.config.LogFileMaxSize,
+  LogFileMaxCount: data.config.LogFileMaxCount,
+  LogLevel: data.config.LogLevel
+});

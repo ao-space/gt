@@ -1,6 +1,6 @@
 export namespace ServerConfig {
   export interface Config extends Options {
-    Users: Record<string, User>;
+    Users: Users;
     TCPs: TCP[];
     Host: Host;
   }
@@ -8,7 +8,9 @@ export namespace ServerConfig {
     Range: string;
     Number: number;
   }
-
+  export interface Users {
+    [key: string]: User;
+  }
   export interface User {
     Secret: string;
     TCPs: TCP[];
@@ -98,11 +100,6 @@ export namespace ServerConfig {
   export const defaultGeneralSetting: GeneralSetting = {
     UserPath: "",
     AuthAPI: ""
-    // TCPRanges: ["12-123", "123-11"],
-    // TCPNumbers: ["12", "1223"],
-    // HostNumber: 23,
-    // HostRegex: [".*", "http"],
-    // HostWithID: false
   };
   export const defaultGeneralSettingProps: GeneralSettingProps = {
     UserPath: "",

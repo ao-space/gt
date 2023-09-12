@@ -51,7 +51,13 @@ interface GeneralSettingProps {
 const props = withDefaults(defineProps<GeneralSettingProps>(), {
   setting: () => ServerConfig.defaultGeneralSettingProps
 });
-const localSetting = reactive<ServerConfig.GeneralSettingProps>({ ...props.setting });
+const localSetting = reactive<ServerConfig.GeneralSettingProps>({
+  ...props.setting,
+  Host: {
+    ...props.setting.Host,
+    RegexStr: props.setting.Host.RegexStr || []
+  }
+});
 const emit = defineEmits(["update:setting"]);
 
 const tcpSetting = reactive<ServerConfig.TCP[]>([...localSetting.TCPs]);
@@ -85,7 +91,7 @@ watch(
   () => {
     console.log("hostSetting change");
     localSetting.Host.Number = hostSetting.Number;
-    localSetting.Host.RegexStr.splice(0, localSetting.Host.RegexStr.length, ...hostSetting.RegexStr);
+    localSetting.Host.RegexStr?.splice(0, localSetting.Host.RegexStr.length, ...hostSetting.RegexStr);
     localSetting.Host.WithID = hostSetting.WithID;
   },
   { deep: true }

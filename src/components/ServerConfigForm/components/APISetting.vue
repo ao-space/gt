@@ -61,10 +61,13 @@ const props = withDefaults(defineProps<APISettingProps>(), {
   setting: () => ServerConfig.defaultAPISetting
 });
 const localSetting = reactive<ServerConfig.APISetting>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const APISettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.APISetting>>({
-  APIAddr: [{ validator: validatorAddr, trigger: "blur" }]
+  APIAddr: [{ validator: validatorAddr, trigger: "bur" }]
 });
 
 const emit = defineEmits(["update:setting"]);

@@ -1,5 +1,5 @@
 <template>
-  <el-form ref="ConnectionRef" :model="localSetting" :rules="rules">
+  <el-form ref="ConnectionSettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
         <template #title> Connection Setting </template>
@@ -75,6 +75,9 @@ const props = withDefaults(defineProps<ConnectionSettingProps>(), {
   setting: () => ServerConfig.defaultConnectionSetting
 });
 const localSetting = reactive<ServerConfig.ConnectionSetting>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const ConnectionSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.ConnectionSetting>>({

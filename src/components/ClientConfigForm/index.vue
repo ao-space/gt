@@ -73,7 +73,7 @@ watchEffect(() => {
   });
 });
 
-let services = reactive<ClientConfig.Service[]>([{ ...ClientConfig.defaultServiceSetting }]);
+const services = reactive<ClientConfig.Service[]>([{ ...ClientConfig.defaultServiceSetting }]);
 
 //adjust the view when the service setting is added or removed
 const adjustView = () => {

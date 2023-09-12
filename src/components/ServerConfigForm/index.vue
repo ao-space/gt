@@ -19,12 +19,10 @@
   <el-button type="primary" @click="submit">Submit</el-button>
   <el-button type="primary" @click="getFromFile">Get From File</el-button>
   <el-button type="primary" @click="getFromRunning">Get From Running</el-button>
-  <el-button type="primary" @click="save">Save</el-button>
-  <el-button type="primary" @click="test">Test</el-button>
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">
-import { Ref, markRaw, reactive, ref, watch } from "vue";
+import { Ref, markRaw, reactive, ref, watch, watchEffect, computed } from "vue";
 import { ServerConfig } from "./interface";
 import { v4 as uuidv4 } from "uuid";
 import Anchor, { Tab } from "@/components/Anchor/index.vue";
@@ -41,49 +39,33 @@ import LogSetting from "../ClientConfigForm/components/LogSetting.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getRunningServerConfigApi, getServerConfigFromFileApi, saveServerConfigApi } from "@/api/modules/serverConfig";
 import { Config } from "@/api/interface";
+import {
+  mapServerGeneralSetting,
+  mapServerAPISetting,
+  mapServerConnectionSetting,
+  mapServerHostSetting,
+  mapServerLogSetting,
+  mapServerNetworkSetting,
+  mapServerSecuritySetting,
+  mapServerSentrySetting,
+  mapServerTCPSetting,
+  mapServerUserSetting
+} from "@/utils/map";
 
-const tcps = reactive<ServerConfig.TCP[]>([
-  {
-    Range: "1-100",
-    Number: 100
-  },
-  {
-    Range: "2-200",
-    Number: 150
-  }
-]);
-const host = reactive<ServerConfig.Host>({
-  Number: 1,
-  RegexStr: [".*", "http.*", "tcp://"],
-  WithID: false
-});
-const users = reactive<Record<string, ServerConfig.User>>({
-  id1: {
-    Secret: "secret1",
-    TCPs: tcps,
-    Host: host,
-    Speed: 100,
-    Connections: 100
-  }
-});
-const userList = reactive<ServerConfig.UserSetting[]>([
-  {
-    ID: Object.keys(users)[0],
-    Secret: users[Object.keys(users)[0]].Secret,
-    TCPs: users[Object.keys(users)[0]].TCPs,
-    Host: users[Object.keys(users)[0]].Host,
-    Speed: users[Object.keys(users)[0]].Speed,
-    Connections: users[Object.keys(users)[0]].Connections
-  }
-]);
+const tcps = reactive<ServerConfig.TCP[]>([]);
+const host = reactive<ServerConfig.Host>({ ...ServerConfig.defaultHostSetting });
+const users = reactive<Record<string, ServerConfig.User>>({});
+const userList = reactive<ServerConfig.UserSetting[]>([{ ...ServerConfig.defaultUserSetting }]);
 
 // the sync from userList to users is happened in submit function to avoid the id conflict
 watch(
   users,
   newUsers => {
-    console.log("users change");
+    console.log("users change", newUsers);
     userList.splice(0, userList.length);
+    userSettingRefs.splice(0, userSettingRefs.length);
     Object.keys(newUsers).forEach(key => {
+      console.log("process user key", key, newUsers[key]);
       userList.push({
         ID: key,
         Secret: newUsers[key].Secret,
@@ -92,15 +74,14 @@ watch(
         Speed: newUsers[key].Speed,
         Connections: newUsers[key].Connections
       });
+      userSettingRefs.push(ref<InstanceType<typeof UserSetting> | null>(null));
     });
+    console.log("updated userList", userList);
   },
   { deep: true }
 );
 
-const generalSetting = reactive<ServerConfig.GeneralSetting>({
-  UserPath: "",
-  AuthAPI: ""
-});
+const generalSetting = reactive<ServerConfig.GeneralSetting>({ ...ServerConfig.defaultGeneralSetting });
 const generalSettingProps = reactive<ServerConfig.GeneralSettingProps>({
   ...generalSetting,
   TCPs: tcps,
@@ -125,48 +106,12 @@ watch(
   { deep: true }
 );
 
-const netWorkSetting = reactive<ServerConfig.NetworkSetting>({
-  Addr: "ao.space",
-  TLSAddr: "asdf",
-  TLSMinVersion: "tls1.1",
-  STUNAddr: "23",
-  SNIAddr: "31234",
-  HTTPMUXHeader: "dsfasd"
-});
-const securitySetting = reactive<ServerConfig.SecuritySetting>({
-  CertFile: "sdfa",
-  KeyFile: "sdf",
-  AllowAnyClient: false
-});
-const connectionsSetting = reactive<ServerConfig.ConnectionSetting>({
-  Speed: 123,
-  Connections: 324,
-  ReconnectTimes: 23,
-  ReconnectDuration: "323s",
-  Timeout: "23s",
-  TimeoutOnUnidirectionalTraffic: false
-});
-const apiSetting = reactive<ServerConfig.APISetting>({
-  APIAddr: ":8080",
-  APICertFile: "sdf",
-  APIKeyFile: "dsaf",
-  APITLSMinVersion: "tls1.1"
-});
-const sentrySetting = reactive<ServerConfig.SentrySetting>({
-  SentryDSN: "sadf",
-  SentryLevel: ["error", "fatal", "panic"],
-  SentrySampleRate: 0.2,
-  SentryRelease: "sdf",
-  SentryEnvironment: "DSF",
-  SentryServerName: "SAdf",
-  SentryDebug: false
-});
-const logSetting = reactive<ServerConfig.LogSetting>({
-  LogFile: "adsf",
-  LogFileMaxSize: 23,
-  LogFileMaxCount: 213,
-  LogLevel: "trace"
-});
+const netWorkSetting = reactive<ServerConfig.NetworkSetting>({ ...ServerConfig.defaultNetworkSetting });
+const securitySetting = reactive<ServerConfig.SecuritySetting>({ ...ServerConfig.defaultSecuritySetting });
+const connectionsSetting = reactive<ServerConfig.ConnectionSetting>({ ...ServerConfig.defaultConnectionSetting });
+const apiSetting = reactive<ServerConfig.APISetting>({ ...ServerConfig.defaultAPISetting });
+const sentrySetting = reactive<ServerConfig.SentrySetting>({ ...ServerConfig.defaultSentrySetting });
+const logSetting = reactive<ServerConfig.LogSetting>({ ...ServerConfig.defaultLogSetting });
 const options = reactive<ServerConfig.Options>({
   ...generalSetting,
   ...netWorkSetting,
@@ -181,6 +126,26 @@ const serverConfig = reactive<ServerConfig.Config>({
   TCPs: tcps,
   Host: host,
   ...options
+});
+
+watchEffect(() => {
+  Object.assign(options, {
+    ...generalSetting,
+    ...netWorkSetting,
+    ...connectionsSetting,
+    ...apiSetting,
+    ...securitySetting,
+    ...logSetting,
+    ...sentrySetting
+  });
+});
+watchEffect(() => {
+  Object.assign(serverConfig, {
+    Users: users,
+    TCPs: tcps,
+    Host: host,
+    ...options
+  });
 });
 
 const updateGeneralSetting = (newSetting: ServerConfig.GeneralSettingProps) => {
@@ -223,28 +188,8 @@ const userSettingRef = ref<InstanceType<typeof UserSetting> | null>(null);
 const userSettingRefs = reactive<Ref<InstanceType<typeof UserSetting> | null>[]>([userSettingRef]);
 
 const addUser = () => {
-  // userList.push({ ...ServerConfig.defaultUserSetting, ID: "id" + (userList.length + 1).toString() });
   userList.push({ ...ServerConfig.defaultUserSetting });
   userSettingRefs.push(ref<InstanceType<typeof UserSetting> | null>(null));
-  const uuid = uuidv4();
-
-  dynamicTabs[dynamicTabs.length - 1].isLast = false;
-  dynamicTabs.push({
-    title: `User ${userList.length} Setting`,
-    name: `User${userList.length}Setting`,
-    uuid: uuid,
-    component: markRaw(UserSetting),
-    setting: userList[userList.length - 1],
-    updateSetting: updateUserSetting,
-    index: userList.length - 1,
-    isLast: true
-  });
-
-  tabList.push({
-    title: `User ${userList.length} Setting`,
-    name: `User${userList.length}Setting`,
-    uuid: uuid
-  });
 };
 const removeUser = (index: number) => {
   if (userList.length === 1) {
@@ -253,44 +198,10 @@ const removeUser = (index: number) => {
   }
   userList.splice(index, 1);
   userSettingRefs.splice(index, 1);
-
-  dynamicTabs.splice(index, 1);
-  for (let i = index; i < dynamicTabs.length - 1; i++) {
-    dynamicTabs[i].title = `User ${i + 1} Setting`;
-    dynamicTabs[i].name = `User${i + 1}Setting`;
-    dynamicTabs[i].index = i;
-  }
-  dynamicTabs[dynamicTabs.length - 1].isLast = true;
-
-  let tabListIndex = tabList.findIndex(item => item.title === `User ${index + 1} Setting`);
-  tabList.splice(tabListIndex, 1);
-  for (let i = index; i < userList.length; i++) {
-    tabList[tabListIndex + i - index].title = `User ${i + 1} Setting`;
-    tabList[tabListIndex + i - index].name = `User${i + 1}Setting`;
-  }
 };
 
 const updateUserSetting = (index: number, newSetting: ServerConfig.UserSetting) => {
-  if (0 <= index && index < userList.length) {
-    // const oldId = Object.keys(users)[index];
-    // const newId = newSetting.ID;
-
-    // if (oldId !== newId) {
-    //   delete users[oldId];
-    // }
-
-    // users[newId] = {
-    //   Secret: newSetting.Secret,
-    //   TCPs: newSetting.TCPs,
-    //   Host: newSetting.Host,
-    //   Speed: newSetting.Speed,
-    //   Connections: newSetting.Connections
-    // };
-
-    userList.splice(index, 1, newSetting);
-  } else {
-    //ignore the delete operation
-  }
+  Object.assign(userList[index], newSetting);
 };
 
 interface staticTabsType<T> {
@@ -377,92 +288,150 @@ interface dynamicTabType<T> {
   index: number;
   isLast: boolean;
 }
-const dynamicTabs = reactive<dynamicTabType<ServerConfig.UserSetting>[]>([
-  {
-    title: "User 1 Setting",
-    name: "User1Setting",
+
+const dynamicTabs = computed<dynamicTabType<ServerConfig.UserSetting>[]>(() => {
+  return userList.map((user, index) => ({
+    title: `User ${index + 1} Setting`,
+    name: `User${index + 1}Setting`,
     uuid: uuidv4(),
     component: markRaw(UserSetting),
-    setting: userList[0],
+    setting: userList[index],
     updateSetting: updateUserSetting,
-    index: 0,
-    isLast: true
-  }
+    index: index,
+    isLast: index === userList.length - 1
+  }));
+});
+
+const tabList = computed<Tab[]>(() => [
+  ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
+  ...dynamicTabs.value.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
 ]);
 
-const tabList = reactive<Tab[]>([
-  ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
-  ...dynamicTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
-]);
 const validateAllForms = (formRefs: Array<Ref<ServerConfig.FormRef | null>>) => {
   return Promise.all(formRefs.map(formRef => formRef.value?.validateForm()));
 };
 const updateData = (data: Config.Server.ResConfig) => {
-  console.log(data);
+  console.log("updateData");
+  Object.assign(generalSetting, mapServerGeneralSetting(data));
+  Object.assign(netWorkSetting, mapServerNetworkSetting(data));
+  Object.assign(connectionsSetting, mapServerConnectionSetting(data));
+  Object.assign(apiSetting, mapServerAPISetting(data));
+  Object.assign(securitySetting, mapServerSecuritySetting(data));
+  Object.assign(logSetting, mapServerLogSetting(data));
+  Object.assign(sentrySetting, mapServerSentrySetting(data));
+  tcps.splice(0, tcps.length, ...mapServerTCPSetting(data));
+  Object.assign(host, mapServerHostSetting(data));
+  Object.keys(users).forEach(key => {
+    delete users[key];
+  });
+  Object.assign(users, mapServerUserSetting(data));
+};
+
+const checkIDConflict = () => {
+  const ids = userList.map(user => user.ID);
+  const uniqueIDs = new Set(ids);
+  if (uniqueIDs.size !== ids.length) {
+    throw new Error("ID conflict in user setting, please check.");
+  }
+};
+const clearUsers = () => {
+  for (const key of Object.keys(users)) {
+    delete users[key];
+  }
+};
+const updateUsersFormUserList = () => {
+  userList.forEach(user => {
+    users[user.ID] = {
+      Secret: user.Secret,
+      TCPs: user.TCPs,
+      Host: user.Host,
+      Speed: user.Speed,
+      Connections: user.Connections
+    };
+  });
 };
 
 const submit = () => {
-  ElMessageBox.confirm("确认提交吗？", "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
-    type: "warning"
+  ElMessageBox.confirm("Make sure you want to save the configuration file", "Save The Configuration", {
+    confirmButtonText: "Confirm",
+    cancelButtonText: "Cancel",
+    type: "info"
   })
-    .then(() => {
-      validateAllForms([
-        generalSettingRef,
-        networkSettingRef,
-        securitySettingRef,
-        connectionSettingRef,
-        apiSettingRef,
-        sentrySettingRef,
-        logSettingRef,
-        ...userSettingRefs
-      ])
-        .then(() => {
-          //check userList id conflict
-          const ids = userList.map(user => user.ID);
-          const set = new Set(ids);
-          if (set.size !== ids.length) {
-            ElMessage.error("ID conflict in user setting, please check.");
-            return;
-          }
-          //empty the users
-          for (const key of Object.keys(users)) {
-            delete users[key];
-          }
-          //update the users
-          userList.forEach(user => {
-            users[user.ID] = {
-              Secret: user.Secret,
-              TCPs: user.TCPs,
-              Host: user.Host,
-              Speed: user.Speed,
-              Connections: user.Connections
-            };
-          });
-          ElMessage.success("Submit success");
-        })
-        .catch(() => {
-          ElMessage.error("Submit failed");
-        });
+    .then(async () => {
+      try {
+        await validateAllForms([
+          generalSettingRef,
+          networkSettingRef,
+          securitySettingRef,
+          connectionSettingRef,
+          apiSettingRef,
+          sentrySettingRef,
+          logSettingRef,
+          ...userSettingRefs
+        ]);
+
+        checkIDConflict();
+        clearUsers();
+        updateUsersFormUserList();
+        await saveServerConfigApi(serverConfig);
+        ElMessage.success("Submit success");
+      } catch (e) {
+        if (e instanceof Error) {
+          ElMessage.error(e.message);
+        } else {
+          ElMessage.error("Failed to save the configuration file!");
+        }
+      }
     })
     .catch(() => {
-      console.log("cancel submit");
+      console.log("Cancel Submit Operation!");
     });
 };
 const getFromFile = async () => {
-  const runningConfig = await getServerConfigFromFileApi();
-  console.log(runningConfig);
+  ElMessageBox.confirm(
+    "Make sure you want to get the configuration from file, if you fail to get from file, it will get from the running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
+    "Get Configuration From File",
+    {
+      confirmButtonText: "Confirm",
+      cancelButtonText: "Cancel",
+      type: "info"
+    }
+  ).then(async () => {
+    try {
+      const { data } = await getServerConfigFromFileApi();
+      updateData(data);
+      ElMessage.success("Get from file success");
+    } catch (e) {
+      if (e instanceof Error) {
+        ElMessage.error(e.message);
+      } else {
+        ElMessage.error("Failed to get from file!");
+      }
+    }
+  });
 };
 const getFromRunning = async () => {
-  const runningConfig = await getRunningServerConfigApi();
-  console.log(runningConfig);
-};
-const save = async () => {
-  await saveServerConfigApi(serverConfig);
-};
-const test = () => {
-  console.log(updateData);
+  ElMessageBox.confirm(
+    "Make sure you want to get the configuration from running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
+    "Get Configuration From Running System",
+    {
+      confirmButtonText: "Confirm",
+      cancelButtonText: "Cancel",
+      type: "info"
+    }
+  ).then(async () => {
+    try {
+      const { data } = await getRunningServerConfigApi();
+      updateData(data);
+      ElMessage.success("Get from running system success");
+    } catch (e) {
+      if (e instanceof Error) {
+        ElMessage.error(e.message);
+      } else {
+        ElMessage.error("Failed to get from running system!");
+      }
+    }
+  });
 };
 </script>
 

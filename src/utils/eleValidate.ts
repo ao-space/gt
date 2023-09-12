@@ -44,13 +44,17 @@ export const validatorPositiveInteger = (rule: any, value: any, callback: any) =
 
 export const validatorAddr = (rule: any, value: any, callback: any) => {
   console.log("Calling validatorAddr");
+
   const portPattern = "\\d{1,5}";
-  const ipPattern = "(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|0\\.0\\.0\\.0)";
-  const regex = new RegExp(`^(?:${ipPattern}:)?${portPattern}$|^${portPattern}$`);
+  const ipv4Pattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}";
+  const ipv6Pattern = "\\[([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}\\]";
+  const domainPattern = "([a-zA-Z0-9-]+\\.)*[a-zA-Z0-9-]+";
+
+  const regex = new RegExp(`^(?:(?:${ipv4Pattern}|${ipv6Pattern}|${domainPattern})?:?)${portPattern}$`);
+
   if (!value) {
-    callback(new Error("Please enter a value"));
-  }
-  if (regex.test(value)) {
+    callback();
+  } else if (regex.test(value)) {
     const parts = value.split(":");
     const port = parseInt(parts[parts.length - 1]);
     const MIN_PORT = 1;
@@ -58,7 +62,10 @@ export const validatorAddr = (rule: any, value: any, callback: any) => {
     if (MIN_PORT <= port && port <= MAX_PORT) {
       console.log("regex test passed");
       callback();
+    } else {
+      callback(new Error("Port number out of range"));
     }
+  } else {
+    callback(new Error("Please enter a valid address"));
   }
-  return callback(new Error("Please enter a valid address"));
 };

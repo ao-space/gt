@@ -28,7 +28,7 @@
             <UsageTooltip :usage-text="ServerConfig.usage['TLSMinVersion']" />
           </template>
           <el-form-item prop="TLSMinVersion">
-            <el-select v-model="localSetting.TLSMinVersion" placeholder="Please select TLSMinVersion">
+            <el-select v-model="localSetting.TLSMinVersion" placeholder="Select TLSMinVersion">
               <el-option label="tls1.1" value="tls1.1" />
               <el-option label="tls1.2" value="tls1.2" />
               <el-option label="tls1.3" value="tls1.3" />
@@ -80,6 +80,9 @@ const props = withDefaults(defineProps<NetworkSettingProps>(), {
   setting: () => ServerConfig.defaultNetworkSetting
 });
 const localSetting = reactive<ServerConfig.NetworkSetting>({ ...props.setting });
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+});
 
 const NetworkSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.NetworkSetting>>({
