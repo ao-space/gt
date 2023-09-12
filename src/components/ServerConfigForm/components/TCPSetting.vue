@@ -28,7 +28,6 @@
           </template>
           <template #default="scope">
             <el-form-item :prop="`tableData[${scope.$index}].Number`" :rules="rules.Number">
-              <!-- <el-input v-if="tableData[scope.$index].isEdit" v-model="tableData[scope.$index].Number" /> -->
               <el-input v-if="scope.row.isEdit" v-model.number="scope.row.Number" />
               <span v-else>{{ scope.row.Number }}</span>
             </el-form-item>
@@ -54,7 +53,7 @@
 <script setup lang="ts" name="TCPSetting">
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { ServerConfig } from "../interface";
-import { reactive, ref, watch } from "vue";
+import { reactive, ref, watch, watchEffect } from "vue";
 import { ElMessage, FormInstance, FormRules } from "element-plus";
 import { validatorPositiveInteger, validatorRange } from "@/utils/eleValidate";
 
@@ -62,7 +61,6 @@ interface TCPSettingProps {
   setting: ServerConfig.TCP[];
 }
 const props = defineProps<TCPSettingProps>();
-const localSetting = reactive<ServerConfig.TCP[]>([...props.setting]);
 
 const tcpSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.TCP>>({
@@ -83,26 +81,38 @@ interface tableDataType {
   Number: number;
   isEdit: boolean;
 }
+
 const form = reactive<{ tableData: tableDataType[] }>({
-  tableData: localSetting.map(item => {
-    return {
-      Range: item.Range,
-      Number: item.Number,
-      isEdit: false
-    };
-  })
+  tableData: props.setting.map(({ Range, Number }) => ({ Range, Number, isEdit: false }))
 });
 
-const emit = defineEmits(["update:setting"]);
-
 watch(
-  () => form.tableData,
-  newTableData => {
-    localSetting.splice(0, localSetting.length, ...newTableData.map(item => ({ Range: item.Range, Number: item.Number })));
-    emit("update:setting", localSetting);
+  () => props.setting,
+  newSetting => {
+    console.log("props.setting change");
+    if (JSON.stringify(form.tableData) === JSON.stringify(newSetting)) return;
+    form.tableData.splice(0, form.tableData.length, ...newSetting.map(({ Range, Number }) => ({ Range, Number, isEdit: false })));
   },
   { deep: true }
 );
+
+const emit = defineEmits(["update:setting"]);
+let prevFormState = JSON.stringify(form);
+watchEffect(() => {
+  const currentFormState = JSON.stringify(form);
+  if (currentFormState !== prevFormState) {
+    for (let item of form.tableData) {
+      if (item.isEdit) {
+        return;
+      }
+    }
+    emit(
+      "update:setting",
+      form.tableData.map(item => ({ Range: item.Range, Number: item.Number }))
+    );
+    prevFormState = currentFormState;
+  }
+});
 
 const addRow = () => {
   form.tableData.push({
@@ -131,6 +141,11 @@ const deleteRow = (index: number) => {
 
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
+    const allNotEdit = form.tableData.every(item => !item.isEdit);
+    if (!allNotEdit) {
+      reject(new Error("Please finish editing before submit"));
+      return;
+    }
     if (tcpSettingRef.value) {
       tcpSettingRef.value.validate(valid => {
         if (valid) {

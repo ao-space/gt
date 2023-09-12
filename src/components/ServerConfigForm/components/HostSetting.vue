@@ -106,8 +106,8 @@ watch(
   },
   { deep: true }
 );
-let prevFormState = JSON.stringify(form);
 
+let prevFormState = JSON.stringify(form);
 watchEffect(() => {
   const currentFormState = JSON.stringify(form);
   if (currentFormState !== prevFormState) {
