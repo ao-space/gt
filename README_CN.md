@@ -185,8 +185,8 @@ id2:
 
 #### 通过 config 配置文件配置 TCP
 
-通过 config 配置文件可以配置全局 TCP 和单个用户的 TCP。下面的配置文件表示用户 id1 可以开启任意数量的任意 TCP 端口，用户
-id2 可以在 1024 到 65535 的 TCP 端口之间开启 1 个 TCP 端口。
+通过 config 配置文件可以配置全局 TCP 和单个用户的 TCP。下面的配置文件表示用户 id1 可以开启任意数量在 10000 到 20000 的
+TCP 端口，用户 id2 可以在 50000 到 65535 的 TCP 端口之间开启 1 个 TCP 端口。
 
 ```yaml
 version: 1.0
@@ -194,11 +194,12 @@ users:
   id1:
     secret: secret1
     tcp:
-      - range: 1-65535
+      - range: 10000-20000
+    tcpNumber: 0
   id2:
     secret: secret2
 tcp:
-  - range: 1024-65535
+  - range: 50000-65535
 options:
   apiAddr: 1.2.3.4:1234
   certFile: /path
@@ -213,6 +214,7 @@ options:
   tlsAddr: 1234
   tlsVersion: tls1.3
   users: testdata/users.yaml
+  tcpNumber: 1
 ```
 
 ### 命令行参数
