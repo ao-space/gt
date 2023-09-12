@@ -27,7 +27,6 @@
 import { Ref, markRaw, reactive, ref, watch } from "vue";
 import { ServerConfig } from "./interface";
 import { v4 as uuidv4 } from "uuid";
-import yaml from "js-yaml";
 import Anchor, { Tab } from "@/components/Anchor/index.vue";
 import GeneralSetting from "./components/GeneralSetting.vue";
 import NetworkSetting from "./components/NetworkSetting.vue";
@@ -77,6 +76,26 @@ const userList = reactive<ServerConfig.UserSetting[]>([
     Connections: users[Object.keys(users)[0]].Connections
   }
 ]);
+
+// the sync from userList to users is happened in submit function to avoid the id conflict
+watch(
+  users,
+  newUsers => {
+    console.log("users change");
+    userList.splice(0, userList.length);
+    Object.keys(newUsers).forEach(key => {
+      userList.push({
+        ID: key,
+        Secret: newUsers[key].Secret,
+        TCPs: newUsers[key].TCPs,
+        Host: newUsers[key].Host,
+        Speed: newUsers[key].Speed,
+        Connections: newUsers[key].Connections
+      });
+    });
+  },
+  { deep: true }
+);
 
 const generalSetting = reactive<ServerConfig.GeneralSetting>({
   UserPath: "",
@@ -204,7 +223,8 @@ const userSettingRef = ref<InstanceType<typeof UserSetting> | null>(null);
 const userSettingRefs = reactive<Ref<InstanceType<typeof UserSetting> | null>[]>([userSettingRef]);
 
 const addUser = () => {
-  userList.push({ ...ServerConfig.defaultUserSetting, ID: "id" + (userList.length + 1).toString() });
+  // userList.push({ ...ServerConfig.defaultUserSetting, ID: "id" + (userList.length + 1).toString() });
+  userList.push({ ...ServerConfig.defaultUserSetting });
   userSettingRefs.push(ref<InstanceType<typeof UserSetting> | null>(null));
   const uuid = uuidv4();
 
@@ -228,7 +248,7 @@ const addUser = () => {
 };
 const removeUser = (index: number) => {
   if (userList.length === 1) {
-    ElMessage.warning("至少需要一个用户");
+    ElMessage.warning("Can't delete the last user.");
     return;
   }
   userList.splice(index, 1);
@@ -249,23 +269,23 @@ const removeUser = (index: number) => {
     tabList[tabListIndex + i - index].name = `User${i + 1}Setting`;
   }
 };
-//TODO : IDchange 先创建 多个id 有问题key值一样  fix: 最后在同步
+
 const updateUserSetting = (index: number, newSetting: ServerConfig.UserSetting) => {
   if (0 <= index && index < userList.length) {
-    const oldId = Object.keys(users)[index];
-    const newId = newSetting.ID;
+    // const oldId = Object.keys(users)[index];
+    // const newId = newSetting.ID;
 
-    if (oldId !== newId) {
-      delete users[oldId];
-    }
+    // if (oldId !== newId) {
+    //   delete users[oldId];
+    // }
 
-    users[newId] = {
-      Secret: newSetting.Secret,
-      TCPs: newSetting.TCPs,
-      Host: newSetting.Host,
-      Speed: newSetting.Speed,
-      Connections: newSetting.Connections
-    };
+    // users[newId] = {
+    //   Secret: newSetting.Secret,
+    //   TCPs: newSetting.TCPs,
+    //   Host: newSetting.Host,
+    //   Speed: newSetting.Speed,
+    //   Connections: newSetting.Connections
+    // };
 
     userList.splice(index, 1, newSetting);
   } else {
@@ -382,8 +402,6 @@ const updateData = (data: Config.Server.ResConfig) => {
 };
 
 const submit = () => {
-  console.log("submit");
-  yaml.dump(serverConfig);
   ElMessageBox.confirm("确认提交吗？", "提示", {
     confirmButtonText: "确定",
     cancelButtonText: "取消",
@@ -401,12 +419,31 @@ const submit = () => {
         ...userSettingRefs
       ])
         .then(() => {
-          console.log("submit success");
-          ElMessage.success("提交成功");
+          //check userList id conflict
+          const ids = userList.map(user => user.ID);
+          const set = new Set(ids);
+          if (set.size !== ids.length) {
+            ElMessage.error("ID conflict in user setting, please check.");
+            return;
+          }
+          //empty the users
+          for (const key of Object.keys(users)) {
+            delete users[key];
+          }
+          //update the users
+          userList.forEach(user => {
+            users[user.ID] = {
+              Secret: user.Secret,
+              TCPs: user.TCPs,
+              Host: user.Host,
+              Speed: user.Speed,
+              Connections: user.Connections
+            };
+          });
+          ElMessage.success("Submit success");
         })
         .catch(() => {
-          console.log("submit fail");
-          ElMessage.error("提交失败");
+          ElMessage.error("Submit failed");
         });
     })
     .catch(() => {
