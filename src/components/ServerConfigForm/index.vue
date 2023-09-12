@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">
-import { Ref, markRaw, reactive, ref } from "vue";
+import { Ref, markRaw, reactive, ref, watch } from "vue";
 import { ServerConfig } from "./interface";
 import { v4 as uuidv4 } from "uuid";
 import yaml from "js-yaml";
@@ -58,11 +58,6 @@ const host = reactive<ServerConfig.Host>({
   RegexStr: [".*", "http.*", "tcp://"],
   WithID: false
 });
-// const hostInOptions = reactive<ServerConfig.HostInOptions>({
-//   HostNumber: host.Number,
-//   HostRegex: host.RegexStr,
-//   HostWithID: host.WithID
-// });
 const users = reactive<Record<string, ServerConfig.User>>({
   id1: {
     Secret: "secret1",
@@ -84,18 +79,32 @@ const userList = reactive<ServerConfig.UserSetting[]>([
 ]);
 
 const generalSetting = reactive<ServerConfig.GeneralSetting>({
-  // ...ServerConfig.defaultGeneralSetting
   UserPath: "",
   AuthAPI: ""
-  // TCPRanges: tcps.map(item => item.Range),
-  // TCPNumbers: tcps.map(item => item.Number.toString()),
-  // ...hostInOptions
 });
 const generalSettingProps = reactive<ServerConfig.GeneralSettingProps>({
   ...generalSetting,
   TCPs: tcps,
   Host: host
 });
+
+watch(
+  () => generalSetting,
+  newSetting => {
+    console.log("generalSetting change");
+    Object.assign(generalSettingProps, newSetting);
+  },
+  { deep: true }
+);
+watch(
+  () => generalSettingProps,
+  newSetting => {
+    console.log("generalSettingProps change");
+    generalSetting.UserPath = newSetting.UserPath;
+    generalSetting.AuthAPI = newSetting.AuthAPI;
+  },
+  { deep: true }
+);
 
 const netWorkSetting = reactive<ServerConfig.NetworkSetting>({
   Addr: "ao.space",
@@ -155,7 +164,7 @@ const serverConfig = reactive<ServerConfig.Config>({
   ...options
 });
 
-const updateGeneralSetting = (newSetting: ServerConfig.GeneralSetting) => {
+const updateGeneralSetting = (newSetting: ServerConfig.GeneralSettingProps) => {
   console.log("updateGeneralSetting", newSetting);
   Object.assign(generalSettingProps, newSetting);
 };
@@ -282,7 +291,7 @@ const staticTabs = reactive([
     ref: "generalSettingRef",
     setting: generalSettingProps,
     updateSetting: updateGeneralSetting
-  } as staticTabsType<ServerConfig.GeneralSetting>,
+  } as staticTabsType<ServerConfig.GeneralSettingProps>,
   {
     title: "Network Setting",
     name: "NetworkSetting",

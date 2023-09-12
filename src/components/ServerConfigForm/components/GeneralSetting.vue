@@ -57,9 +57,19 @@ const emit = defineEmits(["update:setting"]);
 const tcpSetting = reactive<ServerConfig.TCP[]>([...localSetting.TCPs]);
 const hostSetting = reactive<ServerConfig.Host>({
   Number: localSetting.Host.Number,
-  RegexStr: localSetting.Host.RegexStr,
+  RegexStr: [...localSetting.Host.RegexStr],
   WithID: localSetting.Host.WithID
 });
+
+watch(
+  () => props.setting,
+  newSetting => {
+    Object.assign(localSetting, newSetting);
+    tcpSetting.splice(0, tcpSetting.length, ...newSetting.TCPs);
+    Object.assign(hostSetting, newSetting.Host);
+  },
+  { deep: true }
+);
 
 //make sure the consistency
 watch(
@@ -75,7 +85,7 @@ watch(
   () => {
     console.log("hostSetting change");
     localSetting.Host.Number = hostSetting.Number;
-    localSetting.Host.RegexStr = hostSetting.RegexStr;
+    localSetting.Host.RegexStr.splice(0, localSetting.Host.RegexStr.length, ...hostSetting.RegexStr);
     localSetting.Host.WithID = hostSetting.WithID;
   },
   { deep: true }
@@ -85,8 +95,8 @@ watch(
 watch(
   () => localSetting,
   () => {
-    emit("update:setting", localSetting);
     console.log("update:setting");
+    emit("update:setting", localSetting);
   },
   { deep: true }
 );
@@ -103,8 +113,9 @@ const updateTCPSetting = (setting: ServerConfig.TCP[]) => {
 };
 const updateHostSetting = (setting: ServerConfig.Host) => {
   console.log("updateHostSetting");
+  if (JSON.stringify(hostSetting) === JSON.stringify(setting)) return;
   hostSetting.Number = setting.Number;
-  hostSetting.RegexStr = setting.RegexStr;
+  hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...setting.RegexStr);
   hostSetting.WithID = setting.WithID;
 };
 

@@ -8,17 +8,13 @@ export namespace ServerConfig {
     Range: string;
     Number: number;
   }
-  // export interface TCPInOptions {
-  //   TCPRanges: string[];
-  //   TCPNumbers: string[];
-  // }
+
   export interface User {
     Secret: string;
     TCPs: TCP[];
     Speed: number;
     Connections: number;
     Host: Host;
-    // temp: boolean;
   }
   export interface UserSetting extends User {
     ID: string;
@@ -29,12 +25,6 @@ export namespace ServerConfig {
     RegexStr: string[];
     WithID: boolean;
   }
-  // export interface HostInOptions {
-  //   HostNumber: number;
-  //   HostRegex: string[];
-  //   HostWithID: boolean;
-  // }
-
   export interface GeneralSetting {
     UserPath: string;
     AuthAPI: string;
@@ -45,10 +35,6 @@ export namespace ServerConfig {
     TCPs: TCP[];
     Host: Host;
   }
-  // export interface GeneralSetting extends HostInOptions, TCPInOptions {
-  //   Users: string;
-  //   AuthAPI: string;
-  // }
   export interface NetworkSetting {
     Addr: string;
     TLSAddr: string;
@@ -99,16 +85,7 @@ export namespace ServerConfig {
       ConnectionSetting,
       APISetting,
       SentrySetting,
-      LogSetting {
-    // Config: string;
-    // IDs: string[];
-    // Secrets: string[];
-    // Users: string;
-    // AuthAPI: string;
-    // TCPRanges: string[];
-    // TCPNumbers: string[];
-    // Version: boolean;
-  }
+      LogSetting {}
   export const defaultHostSetting: Host = {
     Number: 0,
     RegexStr: [],
@@ -117,8 +94,6 @@ export namespace ServerConfig {
   export const defaultTCPSetting: TCP = {
     Range: "",
     Number: 0
-    // PortRange: [],
-    // usedPort: 0
   };
   export const defaultGeneralSetting: GeneralSetting = {
     UserPath: "",
