@@ -2,63 +2,84 @@
 
 English | [简体中文](./README_CN.md)
 
-GT is an open source reverse proxy project that supports peer-to-peer (P2P) and Internet relay.
+GT is an open source reverse proxy project that supports peer-to-peer direct connection (P2P) and Internet relay.
 
 It has the following design features:
 
-- Focus on privacy protection , in the case of ensuring that meet the needs of functional implementation , minimize the
-  server side of the packet analysis , for example : the implementation of TCP-based connection , the application layer
-  HTTP protocol transmission only analyze the target data of the HTTP protocol header of the first packet , without any
-  redundant analysis , the subsequent data will be forwarded directly .
-- Performance-oriented, code implementations tend to use higher performance designs, e.g. modifying the standard library
-  to achieve a design solution that reduces memory allocation and replication.
-- WebRTC-based implementation of peer-to-peer connectivity, supporting all platforms that support WebRTC, e.g. iOS,
+- Emphasis on privacy protection, minimize server-side packet analysis to ensure functionality while protecting privacy,
+  such as TCP-based implementation, analyze only the HTTP protocol header of the first data packet for application layer
+  HTTP protocol transmission, without any redundant analysis, and directly forward subsequent data.
+
+- Emphasis on performance, code implementation tends to use higher performance designs, such as modifying standard
+  libraries to implement designs that reduce memory allocation and copying.
+
+- P2P connection functionality implemented based on WebRTC, support all platforms that support WebRTC, such as iOS,
   Android, browsers, etc.
 
-The main features that have been implemented so far:
+Currently implemented main functions:
 
-- Support for TCP-based communication protocols such as HTTP(S), WebSocket(S), SSH, SMB, etc.
-- Support for WebRTC peer-to-peer connections.
-- Multi-user functionalities.
-  - Support for multiple user authentication methods: API services, local configuration.
-  - Individual configuration for each user.
-  - Limit user speed.
-  - Limit the number of client connections.
-  - Deny access for a certain period of time after a certain number of failed authentication attempts.
-- TCP connection pooling for communication between server and client.
-- Keep command line arguments consistent with yaml configuration parameters.
-- Support logging to the Sentry service.
+- Forward communication protocols based on TCP, such as HTTP(S), WebSocket(S), SSH, SMB
+- WebRTC P2P connection
+- Multi-user functionality
+  - Support multiple user authentication methods: API service, local configuration
+  - Each user has independent configuration
+  - Limit user speed
+  - Limit number of client connections
+  - Refuse access for a period of time if authentication fails more than a certain number of times
+- Communication between server and client uses TCP connection pool
+- Maintain consistency between command line parameters and YAML configuration parameters
+- Support log reporting to Sentry service
 
 ## Index
 
-- [Working Principle](#working-principle)
-- [Examples](#examples)
-  - [HTTP](#http)
-  - [HTTPS Decrypted Into HTTP](#https-decrypted-into-http)
-  - [HTTPS Directly](#https-directly)
-  - [Client HTTP Convert to HTTPS](#client-http-convert-to-https)
-  - [TCP](#tcp)
-  - [Client Starts Multiple Services at The Same Time](#client-starts-multiple-services-at-the-same-time)
-- [Usage](#usage)
-  - [Client Command-line Arguments](#client-command-line-arguments)
-  - [Server Command-line Arguments](#server-command-line-arguments)
-  - [Configuration](#configuration)
-  - [Server User Configurations](#server-user-configurations)
-    - [Configure Users Through Command Line](#configure-users-through-command-line)
-    - [Configure Users Through Users Configuration File](#configure-users-through-users-configuration-file)
-    - [Configure Users Through Config Configuration File](#configure-users-through-config-configuration-file)
-    - [Allow Any Client](#allow-any-client)
-  - [Server TCP Configurations](#server-tcp-configurations)
-    - [Configure TCP Through Users Configuration File](#configure-tcp-through-users-configuration-file)
-    - [Configure TCP Through Config Configuration File](#configure-tcp-through-config-configuration-file)
-    - [Configure TCP Through Command Line](#configure-tcp-through-command-line)
-  - [Server API](#server-api)
-- [Benchmark](#benchmark)
-  - [GT benchmark](#gt-benchmark)
-  - [frp dev branch 42745a3](#frp-dev-branch-42745a3)
-- [Compile](#compile)
-- [TODO](#todo)
-- [Contribution Guidelines](#contribution-guidelines)
+<!-- TOC -->
+
+* [Working Principle](#working-principle)
+* [Usage](#usage)
+  * [Configuration File](#configuration-file)
+  * [Server User Configuration](#server-user-configuration)
+    * [Configure Users via Command Line](#configure-users-via-command-line)
+    * [Configure Users via Users Configuration File](#configure-users-via-users-configuration-file)
+    * [Configure Users via Config Configuration File](#configure-users-via-config-configuration-file)
+    * [Allow All Clients](#allow-all-clients)
+  * [Server TCP Configuration](#server-tcp-configuration)
+    * [Configure TCP via Users Configuration File](#configure-tcp-via-users-configuration-file)
+    * [Configure TCP via Config Configuration File](#configure-tcp-via-config-configuration-file)
+  * [Command Line Parameters](#command-line-parameters)
+    * [Internal HTTP Penetration](#internal-http-penetration)
+    * [Internal HTTPS Penetration](#internal-https-penetration)
+    * [Internal HTTPS SNI Penetration](#internal-https-sni-penetration)
+    * [Encrypt Client-Server Communication with TLS](#encrypt-client-server-communication-with-tls)
+    * [Internal TCP Penetration](#internal-tcp-penetration)
+    * [Client Start Multiple Services Simultaneously](#client-start-multiple-services-simultaneously)
+    * [Server API](#server-api)
+* [Performance Test](#performance-test)
+  * [GT benchmark](#gt-benchmark)
+  * [frp dev branch 42745a3](#frp-dev-branch-42745a3)
+* [Run](#run)
+  * [Docker Container Run](#docker-container-run)
+* [Compilation](#compilation)
+  * [Compilation on Ubuntu/Debian](#compilation-on-ubuntudebian)
+    * [Install Dependencies](#install-dependencies)
+    * [Get Code and Compile](#get-code-and-compile)
+      * [Obtain WebRTC from ISCAS Mirror and Compile GT](#obtain-webrtc-from-iscas-mirror-and-compile-gt)
+      * [Obtain WebRTC from Official and Compile GT](#obtain-webrtc-from-official-and-compile-gt)
+  * [Compile on Ubuntu/Debian via Docker](#compile-on-ubuntudebian-via-docker)
+    * [Install Dependencies](#install-dependencies-1)
+    * [Get Code and Compile](#get-code-and-compile-1)
+      * [Obtain WebRTC from ISCAS Mirror and Compile GT](#obtain-webrtc-from-iscas-mirror-and-compile-gt-1)
+      * [Obtain WebRTC from Official and Compile GT](#obtain-webrtc-from-official-and-compile-gt-1)
+* [Roadmap](#roadmap)
+* [Contribution Guide](#contribution-guide)
+  * [Contribute Code](#contribute-code)
+  * [Code Quality](#code-quality)
+  * [Commit Messages](#commit-messages)
+  * [Issue Reporting](#issue-reporting)
+  * [Feature Requests](#feature-requests)
+  * [Thank You for Your Contribution](#thank-you-for-your-contribution)
+  * [Contributors](#contributors)
+
+<!-- TOC -->
 
 ## Working Principle
 
@@ -66,7 +87,7 @@ The main features that have been implemented so far:
       ┌──────────────────────────────────────┐
       │  Web    Android     iOS    PC    ... │
       └──────────────────┬───────────────────┘
-                  ┌──────┴──────┐
+                  ┌──────┴──────┐ 
                   │  GT Server  │
                   └──────┬──────┘
        ┌─────────────────┼─────────────────┐
@@ -78,185 +99,271 @@ The main features that have been implemented so far:
 └─────────────┘   └─────────────┘   └─────────────┘
 ```
 
-## Examples
+## Usage
 
-### HTTP
+### Configuration File
 
-- Requirements: There is an internal gt server and a public gt server, id1.example.com resolves to the address of the
-  public gt server. Hope to visit the webpage served by port 80 on the intranet server by visiting id1.example.com:8080.
-
-- Server (public)
+Configuration files use YAML format. Both clients and servers can use configuration files.
 
 ```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1
-Sat Nov 19 20:16:33 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:16:33 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:16:33 CST 2022 INF acceptLoop started addr=[::]:8080
+./release/linux-amd64-server -config server.yaml
+./release/linux-amd64-client -config client.yaml
 ```
 
-- Client (intranal)
+See the [server.yaml](example/config/server.yaml) file for a basic server configuration.
+See the [client.yaml](example/config/client.yaml) file for a basic client configuration.
+
+### Server User Configuration
+
+The following four ways can be used simultaneously. Conflicts are resolved in order of decreasing priority from top to
+bottom.
+
+#### Configure Users via Command Line
+
+The ith id matches the ith secret. The following two startup methods are equivalent:
 
 ```shell
-# ./release/linux-amd64-client -local http://127.0.0.1:80 -remote tcp://id1.example.com:8080 -id id1 -secret secret1
-Sat Nov 19 20:18:59 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"http://127.0.0.1:80","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":0,"RemoteTCPRandom":false,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:18:59 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Sat Nov 19 20:18:59 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:18:59 CST 2022 INF tunnel started connID=1
+./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -id id2 -secret secret2
 ```
 
-### HTTPS Decrypted Into HTTP
-
-- Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of
-  the public network server. Want to access the HTTP web page served on port 80 on the intranet server by
-  visiting <https://id1.example.com>.
-- Server (public)
-
 ```shell
-# ./release/linux-amd64-server -addr "" -tlsAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
-Sat Nov 19 20:19:53 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"","AllowAnyClient":false,"AuthAPI":"","CertFile":"/root/openssl_crt/tls.crt","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"/root/openssl_crt/tls.key","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"443","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:19:53 CST 2022 INF Listening TLS addr=:443
-Sat Nov 19 20:19:53 CST 2022 INF acceptLoop started addr=[::]:443
+./release/linux-amd64-server -addr 8080 -id id1 -id id2 -secret secret1 -secret secret2
 ```
 
-- Client (internal), because it uses a self-signed certificate, uses the -remoteCertInsecure option, otherwise it is
-  forbidden to use this option (man-in-the-middle attacks cause encrypted content to be decrypted)
+#### Configure Users via Users Configuration File
 
-```shell
-# ./release/linux-amd64-client -local http://127.0.0.1 -remote tls://id1.example.com -remoteCertInsecure -id id1 -secret secret1
-Sat Nov 19 20:20:05 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"http://127.0.0.1","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tls://id1.example.com","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":true,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":0,"RemoteTCPRandom":false,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:20:05 CST 2022 INF remote url remote=tls://id1.example.com stun=
-Sat Nov 19 20:20:05 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:20:06 CST 2022 INF tunnel started connID=1
+```yaml
+id3:
+  secret: secret3
+id1:
+  secret: secret1-overwrite
 ```
 
-### HTTPS Directly
+#### Configure Users via Config Configuration File
 
-- Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of
-  the public network server. Want to access the HTTPS webpage served on port 443 on the intranet server by
-  visiting <https://id1.example.com>.
-- Server (public)
-
-```shell
-# ./release/linux-amd64-server -addr "" -sniAddr 443 -id id1 -secret secret1
-Sat Nov 19 20:25:15 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"443","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:25:15 CST 2022 INF Listening sniAddr=:443
-Sat Nov 19 20:25:15 CST 2022 INF acceptLoop started addr=[::]:443
+```yaml
+version: 1.0
+users:
+  id1:
+    secret: secret1
+  id2:
+    secret: secret2
+options:
+  apiAddr: 1.2.3.4:1234
+  certFile: /path
+  host: 1.2.3.4
+  keyFile: /path
+  logFile: /path
+  logFileMaxCount: 1234
+  logFileMaxSize: 1234
+  logLevel: debug
+  addr: 1234
+  timeout: 1234m1234ms
+  tlsAddr: 1234
+  tlsVersion: tls1.3
+  users: testdata/users.yaml
 ```
 
-- Client (internal)
+#### Allow All Clients
 
-```shell
-# ./release/linux-amd64-client -local https://127.0.0.1 -remote tcp://id1.example.com:443 -id id1 -secret secret1
-Sat Nov 19 20:25:49 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"https://127.0.0.1","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:443","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":0,"RemoteTCPRandom":false,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:25:49 CST 2022 INF remote url remote=tcp://id1.example.com:443 stun=
-Sat Nov 19 20:25:49 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:25:49 CST 2022 INF tunnel started connID=1
+Add `-allowAnyClient` to the server startup parameters to allow all clients to connect to the server without
+configuration on the server side. But the `secret` of the first client connecting to the server with the same `id` will
+be used as the correct `secret` and cannot be overwritten by the `secret` of subsequent clients connecting to the server
+with the same `id` to ensure security.
+
+### Server TCP Configuration
+
+The following three ways can be used simultaneously. Priority: User > Global. User priority: users configuration file >
+config configuration file. Global priority: command line > config configuration file. If TCP is not configured, it means
+TCP functionality is not enabled.
+
+#### Configure TCP via Users Configuration File
+
+The users configuration file can configure TCP for individual users. The following configuration file indicates that
+user id1 can open TCP ports of any number and any port, and user id2 does not have the permission to open TCP ports.
+
+```yaml
+id1:
+  secret: secret1
+  tcp:
+    - range: 1-65535
+id2:
+  secret: secret2  
 ```
 
-### Client HTTP Convert to HTTPS
+#### Configure TCP via Config Configuration File
 
-- Requirements: There is an internal gt server and a public gt server, id1.example.com resolves to the address of the
-  public gt server. Hope to visit the webpage served by port 80 on the intranet server by visiting id1.example.com:8080.
-  At the same time, TLS is used to encrypt the communication between the client and the server.
+The config configuration file can configure global TCP and TCP for individual users. The following configuration file
+indicates that user id1 can open TCP ports of any number and between ports
+10000 to 20000, and user id2 can open 1 TCP port between ports
+50000 to 65535.
 
-- Server (public)
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -tlsAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
-Sat Nov 19 20:20:59 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"/root/openssl_crt/tls.crt","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"/root/openssl_crt/tls.key","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"443","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:20:59 CST 2022 INF Listening TLS addr=:443
-Sat Nov 19 20:20:59 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:20:59 CST 2022 INF acceptLoop started addr=[::]:8080
-Sat Nov 19 20:20:59 CST 2022 INF acceptLoop started addr=[::]:443
+```yaml
+version: 1.0
+users:
+  id1:
+    secret: secret1
+    tcp:
+      - range: 10000-20000
+    tcpNumber: 0
+  id2:
+    secret: secret2
+tcp:
+  - range: 50000-65535
+options:
+  apiAddr: 1.2.3.4:1234
+  certFile: /path
+  host: 1.2.3.4
+  keyFile: /path
+  logFile: /path
+  logFileMaxCount: 1234
+  logFileMaxSize: 1234
+  logLevel: debug
+  addr: 1234
+  timeout: 1234m1234ms
+  tlsAddr: 1234
+  tlsVersion: tls1.3
+  users: testdata/users.yaml
+  tcpNumber: 1
 ```
 
-- Client (internal), because it uses a self-signed certificate, so the use of the -remoteCertInsecureoption,
-  otherwise prohibit the use of this option (middle attack led to the encrypted content is decrypted)
+### Command Line Parameters
 
 ```shell
-# ./release/linux-amd64-client -local http://127.0.0.1:80 -remote tls://id1.example.com -remoteCertInsecure -id id1 -secret secret1
-Sat Nov 19 20:26:33 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"http://127.0.0.1:80","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tls://id1.example.com","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":true,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":0,"RemoteTCPRandom":false,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:26:33 CST 2022 INF remote url remote=tls://id1.example.com stun=
-Sat Nov 19 20:26:33 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:26:33 CST 2022 INF tunnel started connID=1
+./release/linux-amd64-server -h
+./release/linux-amd64-client -h
 ```
 
-### TCP
+#### Internal HTTP Penetration
 
-- Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of
-  the public network server. Hope to access the SSH service on port 22 on the intranet server by accessing
-  id1.example.com:2222. If the server port 2222 cannot be used, the server will choose a random port.
+- Requirement: There is an internal network server and a public network server, and id1.example.com resolves to the
+  address of the public network server. It is hoped to access the webpage service on port 80 of the internal network
+  server through accessing id1.example.com:8080.
 
-- Server (public)
+- Server (Public network server)
 
 ```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 1 -tcpRange 1024-65535
-Fri Dec  9 18:38:21 CST 2022 INF linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":10,"HTTPMUXHeader":"Host","Host":{"Number":null,"Regex":null,"RegexStr":null,"WithID":null},"HostNumber":1,"HostRegex":null,"HostWithID":false,"IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDuration":300000000000,"ReconnectTimes":3,"SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":["1"],"TCPRanges":["1024-65535"],"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Fri Dec  9 18:38:21 CST 2022 INF Listening addr=:8080
-Fri Dec  9 18:38:21 CST 2022 INF acceptLoop started addr=[::]:8080
+./release/linux-amd64-server -addr 8080 -id id1 -secret secret1
 ```
 
-- Client (internal)
+- Client (Internal network server)
 
 ```shell
-# ./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
-Fri Dec  9 18:39:05 CST 2022 INF linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f config={"Config":"","HostPrefix":null,"ID":"id1","Local":[{"Position":0,"Value":"tcp://127.0.0.1:22"}],"LocalTimeout":null,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":[{"Position":1,"Value":2222}],"RemoteTCPRandom":[{"Position":2,"Value":true}],"RemoteTimeout":45000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Services":null,"UseLocalAsHTTPHost":null,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Fri Dec  9 18:39:05 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Fri Dec  9 18:39:05 CST 2022 INF trying to connect to remote connID=1
-Fri Dec  9 18:39:05 CST 2022 INF receive server information: tcp port 2222 opened successfully connID=1
-Fri Dec  9 18:39:05 CST 2022 INF tunnel started connID=1
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote tcp://id1.example.com:8080 -id id1 -secret secret1
 ```
 
-### Client Starts Multiple Services at The Same Time
+#### Internal HTTPS Penetration
 
-- Requirements: There is an intranet server and a public network server, and id1-1.example.com and id1-2.example.com
-  resolve to the address of the public network server. Hope to access the service on port 80 on the intranet server by
-  accessing id1-1.example.com:8080, and hope to access the service on port 8080 on the intranet server by accessing
-  id1-2.example.com:8080. Visit id1-1.example.com:2222 to access the service on port 2222 on the intranet server, and
-  hope to access the service on port 2223 on the intranet server by visiting id1-1.example.com:2223. At the same time,
-  the server restricts the client's hostPrefix to only consist of pure numbers or pure letters.
+- Requirement: There is an internal network server and a public network server, and id1.example.com resolves to the
+  address of the public network server. It is hoped to access the HTTP webpage provided on port 80 of the internal
+  network server through accessing <https://id1.example.com>
 
-- Note: In this mode, the parameters (remoteTCPPort, hostPrefix, etc.) corresponding to the client local should be
-  located between this local and the next local.
-
-- Server (public)
+- Server (Public network server)
 
 ```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 2 -tcpRange 1024-65535 -hostNumber 2 -hostWithID -hostRegex ^[0-9]+$ -hostRegex ^[a-zA-Z]+$
-Fri Dec  9 18:39:22 CST 2022 INF linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":10,"HTTPMUXHeader":"Host","Host":{"Number":null,"Regex":null,"RegexStr":null,"WithID":null},"HostNumber":2,"HostRegex":["^[0-9]+$","^[a-zA-Z]+$"],"HostWithID":true,"IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDuration":300000000000,"ReconnectTimes":3,"SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":["2"],"TCPRanges":["1024-65535"],"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Fri Dec  9 18:39:22 CST 2022 INF Listening addr=:8080
-Fri Dec  9 18:39:22 CST 2022 INF acceptLoop started addr=[::]:8080
+./release/linux-amd64-server -addr "" -tlsAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
 ```
 
-- Client (internal)
+- Client (Internal network server), uses the `-remoteCertInsecure` option as a self-signed certificate is used,
+  otherwise this option should not be used (encryption content is decrypted due to man-in-the-middle attack)
 
 ```shell
-# ./release/linux-amd64-client -remote tcp://id1.example.com:8080 -id id1 -secret secret1 \
->     -local http://127.0.0.1:80 -useLocalAsHTTPHost -hostPrefix 1 \
->     -local http://127.0.0.1:8080 -useLocalAsHTTPHost -hostPrefix 2 \
->     -local tcp://127.0.0.1:2222 -remoteTCPPort 2222 \
->     -local tcp://127.0.0.1:2223 -remoteTCPPort 2223
-Fri Dec  9 18:40:10 CST 2022 INF linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f config={"Config":"","HostPrefix":[{"Position":2,"Value":"1"},{"Position":5,"Value":"2"}],"ID":"id1","Local":[{"Position":0,"Value":"http://127.0.0.1:80"},{"Position":3,"Value":"http://127.0.0.1:8080"},{"Position":6,"Value":"tcp://127.0.0.1:2222"},{"Position":8,"Value":"tcp://127.0.0.1:2223"}],"LocalTimeout":null,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":[{"Position":7,"Value":2222},{"Position":9,"Value":2223}],"RemoteTCPRandom":null,"RemoteTimeout":45000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Services":null,"UseLocalAsHTTPHost":[{"Position":1,"Value":true},{"Position":4,"Value":true}],"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Fri Dec  9 18:40:10 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Fri Dec  9 18:40:10 CST 2022 INF trying to connect to remote connID=1
-Fri Dec  9 18:40:10 CST 2022 INF receive server information: tcp port 2222 opened successfully connID=1
-Fri Dec  9 18:40:10 CST 2022 INF receive server information: tcp port 2223 opened successfully connID=1
-Fri Dec  9 18:40:10 CST 2022 INF tunnel started connID=1
+./release/linux-amd64-client -local http://127.0.0.1 -remote tls://id1.example.com -remoteCertInsecure -id id1 -secret secret1  
 ```
 
-The above command line can also be started using a configuration file
+#### Internal HTTPS SNI Penetration
+
+- Requirement: There is an internal network server and a public network server, and id1.example.com resolves to the
+  address of the public network server. It is hoped to access the HTTPS webpage provided on port 443 of the internal
+  network server through accessing <https://id1.example.com>
+
+- Server (Public network server)
 
 ```shell
-# ./release/linux-amd64-client -config client.yaml
-Fri Dec  9 18:41:03 CST 2022 INF linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f config={"Config":"client.yaml","HostPrefix":null,"ID":"id1","Local":null,"LocalTimeout":null,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":null,"RemoteTCPRandom":null,"RemoteTimeout":45000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Services":[{"HostPrefix":"1","LocalTimeout":0,"LocalURL":{"ForceQuery":false,"Fragment":"","Host":"127.0.0.1:80","OmitHost":false,"Opaque":"","Path":"","RawFragment":"","RawPath":"","RawQuery":"","Scheme":"http","User":null},"RemoteTCPPort":0,"RemoteTCPRandom":null,"UseLocalAsHTTPHost":true},{"HostPrefix":"2","LocalTimeout":0,"LocalURL":{"ForceQuery":false,"Fragment":"","Host":"127.0.0.1:8080","OmitHost":false,"Opaque":"","Path":"","RawFragment":"","RawPath":"","RawQuery":"","Scheme":"http","User":null},"RemoteTCPPort":0,"RemoteTCPRandom":null,"UseLocalAsHTTPHost":true},{"HostPrefix":"","LocalTimeout":0,"LocalURL":{"ForceQuery":false,"Fragment":"","Host":"127.0.0.1:2222","OmitHost":false,"Opaque":"","Path":"","RawFragment":"","RawPath":"","RawQuery":"","Scheme":"tcp","User":null},"RemoteTCPPort":2222,"RemoteTCPRandom":null,"UseLocalAsHTTPHost":false},{"HostPrefix":"","LocalTimeout":0,"LocalURL":{"ForceQuery":false,"Fragment":"","Host":"127.0.0.1:2223","OmitHost":false,"Opaque":"","Path":"","RawFragment":"","RawPath":"","RawQuery":"","Scheme":"tcp","User":null},"RemoteTCPPort":2223,"RemoteTCPRandom":null,"UseLocalAsHTTPHost":false}],"UseLocalAsHTTPHost":null,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Fri Dec  9 18:41:03 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Fri Dec  9 18:41:03 CST 2022 INF trying to connect to remote connID=1
-Fri Dec  9 18:41:03 CST 2022 INF receive server information: tcp port 2222 opened successfully connID=1
-Fri Dec  9 18:41:03 CST 2022 INF receive server information: tcp port 2223 opened successfully connID=1
-Fri Dec  9 18:41:03 CST 2022 INF tunnel started connID=1
-````
+./release/linux-amd64-server -addr 8080 -sniAddr 443 -id id1 -secret secret1
+```
 
-client.yaml file content：
+- Client (Internal network server)
+
+```shell 
+./release/linux-amd64-client -local https://127.0.0.1 -remote tcp://id1.example.com:8080 -id id1 -secret secret1
+```
+
+#### Encrypt Client-Server Communication with TLS
+
+- Requirement: There is an internal network server and a public network server, and id1.example.com resolves to the
+  address of the public network server. It is hoped to access the webpage service on port 80 of the internal network
+  server through accessing id1.example.com:8080. Meanwhile, use TLS to encrypt the communication between the client and
+  server.
+
+- Server (Public network server)
+
+```shell
+./release/linux-amd64-server -addr 8080 -tlsAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+```
+
+- Client (Internal network server), uses the `-remoteCertInsecure` option as a self-signed certificate is used,
+  otherwise this option should not be used (encryption content is decrypted due to man-in-the-middle attack)
+
+```shell  
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote tls://id1.example.com -remoteCertInsecure -id id1 -secret secret1
+```
+
+#### Internal TCP Penetration
+
+- Requirement: There is an internal network server and a public network server, and id1.example.com resolves to the
+  address of the public network server. It is hoped to access the SSH service on port 22 of the internal network server
+  through accessing id1.example.com:2222, and if the 2222 port is not available on the server side, the server selects a
+  random port.
+
+- Server (Public network server)
+
+```shell
+./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 1 -tcpRange 1024-65535
+```
+
+- Client (Internal network server)
+
+```shell
+./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
+```
+
+#### Client Start Multiple Services Simultaneously
+
+- Requirement: There is an internal network server and a public network server, and id1-1.example.com and
+  id1-2.example.com resolve to the address of the public network server. It is hoped to access the service on port 80 of
+  the internal network server through accessing id1-1.example.com:8080, and to access the service on port 8080 of the
+  internal network server through accessing id1-2.example.com:8080, and to access the service on port 2222 of the
+  internal network server through accessing id1-1.example.com:2222, and to access the service on port 2223 of the
+  internal network server through accessing id1-1.example.com:2223. At the same time, the server limits the client's
+  hostPrefix to only contain digits or letters.
+
+- Note: In this mode, the parameters corresponding to the client local (remoteTCPPort, hostPrefix, etc.) need to be
+  placed between this local and the next local.
+
+- Server (Public network server)
+
+```shell
+./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 2 -tcpRange 1024-65535 -hostNumber 2 -hostWithID -hostRegex ^[0-9]+$ -hostRegex ^[a-zA-Z]+$
+```
+
+- Client (Internal network server)
+
+```shell
+./release/linux-amd64-client -remote tcp://id1.example.com:8080 -id id1 -secret secret1 \
+   -local http://127.0.0.1:80 -useLocalAsHTTPHost -hostPrefix 1 \
+   -local http://127.0.0.1:8080 -useLocalAsHTTPHost -hostPrefix 2 \
+   -local tcp://127.0.0.1:2222 -remoteTCPPort 2222 \
+   -local tcp://127.0.0.1:2223 -remoteTCPPort 2223
+```
+
+The above command line can also be started using a configuration file:
+
+```shell
+./release/linux-amd64-client -config client.yaml
+```
+
+client.yaml file content:
 
 ```yaml
 services:
@@ -276,340 +383,16 @@ options:
   secret: secret1
 ```
 
-## Usage
+#### Server API
 
-### Client Command-line Arguments
+The server API detects service availability by simulating a client. The following example can help you better understand
+this point, where id1.example.com resolves to the address of the public network server. HTTPS is used when apiCertFile
+and apiKeyFile options are not empty, otherwise HTTP is used.
 
-```shell
-# ./release/linux-amd64-client -h
-Usage of ./release/linux-amd64-client:
-  -config string
-        The config file path to load
-  -hostPrefix value
-        The server will recognize this host prefix and forward data to local
-  -id string
-        The unique id used to connect to server. Now it's the prefix of the domain.
-  -local value
-        The local service url
-  -localTimeout value
-        The timeout of local connections. Supports values like '30s', '5m'
-  -logFile string
-        Path to save the log file
-  -logFileMaxCount uint
-        Max count of the log files (default 7)
-  -logFileMaxSize int
-        Max size of the log files (default 536870912)
-  -logLevel string
-        Log level: trace, debug, info, warn, error, fatal, panic, disable (default "info")
-  -reconnectDelay duration
-        The delay before reconnect. Supports values like '30s', '5m' (default 5s)
-  -remote string
-        The remote server url. Supports tcp:// and tls://, default tcp://
-  -remoteAPI string
-        The API to get remote server url
-  -remoteCert string
-        The path to remote cert
-  -remoteCertInsecure
-        Accept self-signed SSL certs from remote
-  -remoteConnections uint
-        The max number of server connections in the pool. Valid value is 1 to 10 (default 3)
-  -remoteIdleConnections uint
-        The number of idle server connections kept in the pool (default 1)
-  -remoteSTUN string
-        The remote STUN server address
-  -remoteTCPPort value
-        The TCP port that the remote server will open
-  -remoteTCPRandom
-        Whether to choose a random tcp port by the remote server
-  -remoteTimeout duration
-        The timeout of remote connections. Supports values like '30s', '5m' (default 45s)
-  -s string
-        Send signal to client processes. Supports values: reload, restart, stop, kill
-  -secret string
-        The secret used to verify the id
-  -sentryDSN string
-        Sentry DSN to use
-  -sentryDebug
-        Sentry debug mode, the debug information is printed to help you understand what sentry is doing
-  -sentryEnvironment string
-        Sentry environment to be sent with events
-  -sentryLevel value
-        Sentry levels: trace, debug, info, warn, error, fatal, panic (default ["error", "fatal", "panic"])
-  -sentryRelease string
-        Sentry release to be sent with events
-  -sentrySampleRate float
-        Sentry sample rate for event submission: [0.0 - 1.0] (default 1)
-  -sentryServerName string
-        Sentry server name to be reported
-  -tcpForwardAddr string
-        The address of TCP forward
-  -tcpForwardConnections uint
-        The max number of TCP forward peer connections in the pool. Valid value is 1 to 10 (default 3)
-  -tcpForwardHostPrefix string
-        The host prefix of TCP forward
-  -useLocalAsHTTPHost
-        Use the local address as host
-  -version
-        Show the version of this program
-  -webrtcConnectionIdleTimeout duration
-        The timeout of WebRTC connection. Supports values like '30s', '5m' (default 5m0s)
-  -webrtcLogLevel string
-        WebRTC log level: verbose, info, warning, error (default "warning")
-  -webrtcMaxPort uint
-        The max port of WebRTC peer connection
-  -webrtcMinPort uint
-        The min port of WebRTC peer connection
-```
-
-### Server Command-line Arguments
+- Server (Public network server)
 
 ```shell
-# ./release/linux-amd64-server -h
-Usage of ./release/linux-amd64-server:
-  -addr string
-        The address to listen on. Supports values like: '80', ':80' or '0.0.0.0:80' (default "80")
-  -allowAnyClient
-        Allow any client to connect to the server
-  -apiAddr string
-        The address to listen on for internal api service. Supports values like: '8080', ':8080' or '0.0.0.0:8080'
-  -apiCertFile string
-        The path to cert file
-  -apiKeyFile string
-        The path to key file
-  -apiTLSVersion string
-        The tls min version. Supports values: tls1.1, tls1.2, tls1.3 (default "tls1.2")
-  -authAPI string
-        The API to authenticate user with id and secret
-  -certFile string
-        The path to cert file
-  -config string
-        The config file path to load
-  -connections uint
-        The max number of tunnel connections for a client (default 10)
-  -hostNumber value
-        The number of host-based services that the user can start
-  -hostRegex value
-        The host prefix started by user must conform to one of these rules
-  -hostWithID
-        The prefix of host will become the form of id-host
-  -httpMUXHeader string
-        The http multiplexing header to be used (default "Host")
-  -id value
-        The user id
-  -keyFile string
-        The path to key file
-  -logFile string
-        Path to save the log file
-  -logFileMaxCount uint
-        Max count of the log files (default 7)
-  -logFileMaxSize int
-        Max size of the log files (default 536870912)
-  -logLevel string
-        Log level: trace, debug, info, warn, error, fatal, panic, disable (default "info")
-  -reconnectDuration duration
-        The time that the client cannot connect after the number of failed reconnections reaches the max number (default 5m0s)
-  -reconnectTimes uint
-        The max number of times the client fails to reconnect (default 3)
-  -secret value
-        The secret for user id
-  -sentryDSN string
-        Sentry DSN to use
-  -sentryDebug
-        Sentry debug mode, the debug information is printed to help you understand what sentry is doing
-  -sentryEnvironment string
-        Sentry environment to be sent with events
-  -sentryLevel value
-        Sentry levels: trace, debug, info, warn, error, fatal, panic (default ["error", "fatal", "panic"])
-  -sentryRelease string
-        Sentry release to be sent with events (default "server - 2022-05-28 17:37:00 - client-multi-service 7ad41e7")
-  -sentrySampleRate float
-        Sentry sample rate for event submission: [0.0 - 1.0] (default 1)
-  -sentryServerName string
-        Sentry server name to be reported
-  -sniAddr string
-        The address to listen on for raw tls proxy. Host comes from Server Name Indication. Supports values like: '443', ':443' or '0.0.0.0:443'
-  -speed uint
-        The max number of bytes the client can transfer per second
-  -stunAddr string
-        The address to listen on for STUN service. Supports values like: '3478', ':3478' or '0.0.0.0:3478'
-  -tcpNumber value
-        The number of tcp ports allowed to be opened for each id
-  -tcpRange value
-        The tcp port range, like 1024-65535
-  -timeout duration
-        The timeout of connections. Supports values like '30s', '5m' (default 1m30s)
-  -timeoutOnUnidirectionalTraffic
-        Timeout will happens when traffic is unidirectional
-  -tlsAddr string
-        The address for tls to listen on. Supports values like: '443', ':443' or '0.0.0.0:443'
-  -tlsVersion string
-        The tls min version. Supports values: tls1.1, tls1.2, tls1.3 (default "tls1.2")
-  -users string
-        The users yaml file to load
-  -version
-        Show the version of this program
-```
-
-### Configuration
-
-The configuration file uses the yaml format, and both the client and the server can use configuration file. The client
-in the [HTTP example](#http) can also be started with the following file (client.yaml). The startup command
-is: `./release/linux-amd64-client -config client.yaml`
-
-```yaml
-version: 1.0 # Reserved keywords, currently not used
-options:
-  local: http://127.0.0.1:80
-  remote: tcp://id1.example.com:8080
-  id: id1
-  secret: secret1
-```
-
-### Server User Configurations
-
-The following four methods can be used at the same time. If conflicts are resolved, the priority will be lowered from
-top to bottom.
-
-#### Configure Users Through Command Line
-
-The i-th id matches the i-th secret. The following two startup methods are equivalent.
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -id id2 -secret secret2
-Sat Nov 19 20:22:27 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1","id2"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1","secret2"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:22:27 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:22:27 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -id id2 -secret secret1 -secret secret2
-Sat Nov 19 20:22:47 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1","id2"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1","secret2"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:22:47 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:22:47 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-#### Configure Users Through Users Configuration File
-
-```yaml
-id3:
-  secret: secret3
-id1:
-  secret: secret1-overwrite
-```
-
-#### Configure Users Through Config Configuration File
-
-```yaml
-version: 1.0
-users:
-  id1:
-    secret: secret1
-  id2:
-    secret: secret2
-options:
-  apiAddr: 1.2.3.4:1234
-  certFile: /path
-  host: 1.2.3.4
-  keyFile: /path
-  logFile: /path
-  logFileMaxCount: 1234
-  logFileMaxSize: 1234
-  logLevel: debug
-  addr: 1234
-  timeout: 1234m1234ms
-  tlsAddr: 1234
-  tlsVersion: tls1.3
-  users: testdata/users.yaml
-```
-
-#### Allow Any Client
-
-Add `-allowAnyClient` to the startup parameters of the server, all clients can connect to the server without configuring
-the server, but the clients with the same `id` only use the `secret` of the first client connected to the server as the
-correct `secret`, which cannot be overwritten by subsequent clients to ensure security.
-
-### Server TCP Configurations
-
-The following three methods can be used at the same time. Priority: User > Global. User priority: users profile > config
-profile. Global priority: command line > config configuration file. If TCP is not configured, it means that the TCP
-function is not enabled.
-
-#### Configure TCP Through Users Configuration File
-
-TCP for a single user can be configured through the users configuration file. The following configuration file indicates
-that user id1 can open any number of arbitrary TCP ports, and user id2 has no permission to open TCP ports.
-
-```yaml
-id1:
-  secret: secret1
-  tcp:
-    - number: 65535
-      range: 1-65535
-id2:
-  secret: secret2
-```
-
-#### Configure TCP Through Config Configuration File
-
-Through the config configuration file, you can configure the global TCP and the TCP of a single user. The following
-configuration file indicates that user id1 can open any number of arbitrary TCP ports, and user id2 can open 1 TCP port
-between TCP ports 1024 to 65535.
-
-```yaml
-version: 1.0
-users:
-  id1:
-    secret: secret1
-    tcp:
-      - number: 65535
-        range: 1-65535
-  id2:
-    secret: secret2
-tcp:
-  - number: 1
-    range: 1024-65535
-options:
-  apiAddr: 1.2.3.4:1234
-  certFile: /path
-  host: 1.2.3.4
-  keyFile: /path
-  logFile: /path
-  logFileMaxCount: 1234
-  logFileMaxSize: 1234
-  logLevel: debug
-  addr: 1234
-  timeout: 1234m1234ms
-  tlsAddr: 1234
-  tlsVersion: tls1.3
-  users: testdata/users.yaml
-```
-
-#### Configure TCP Through Command Line
-
-Global TCP can be configured through the command line. The following command indicates that each user can open 1 TCP
-port between TCP ports 1024 to 65535 at the same time.
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 1 -tcpRange 1024-65535
-Sat Nov 19 20:27:41 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":["1"],"TCPRanges":["1024-65535"],"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:27:41 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:27:41 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-### Server API
-
-The server API detects whether the service is working by simulating the client. The following example can help you
-understand this better, where id1.example.com resolves to the address of the public server. Use HTTPS when the
-apiCertFile and apiKeyFile options are not empty, otherwise use HTTP.
-
-- Server (public)
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -apiAddr 8081
-Fri Dec  9 18:41:46 CST 2022 INF linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f config={"APIAddr":"8081","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":10,"HTTPMUXHeader":"Host","Host":{"Number":null,"Regex":null,"RegexStr":null,"WithID":null},"HostNumber":1,"HostRegex":null,"HostWithID":false,"IDs":null,"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDuration":300000000000,"ReconnectTimes":3,"SNIAddr":"","STUNAddr":"","Secrets":null,"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Fri Dec  9 18:41:46 CST 2022 WRN working on -allowAnyClient mode, because no user is configured
-Fri Dec  9 18:41:46 CST 2022 INF Listening addr=:8080
-Fri Dec  9 18:41:46 CST 2022 INF acceptLoop started addr=[::]:8080
+./release/linux-amd64-server -addr 8080 -apiAddr 8081
 ```
 
 - User
@@ -619,13 +402,13 @@ Fri Dec  9 18:41:46 CST 2022 INF acceptLoop started addr=[::]:8080
 {"status": "ok", "version":"linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f"}
 ```
 
-## Benchmark
+## Performance Test
 
-Stress test through wrk. This project is compared with frp. The intranet service points to the test page of running
-nginx locally. The test results are as follows:
+Load testing was performed on this project and frp for comparison using wrk. The internal service points to a test page
+running nginx locally, and the test results are as follows:
 
 ```text
-Model Name: MacBook Pro
+Model Name: MacBook Pro  
 Model Identifier: MacBookPro17,1
 Chip: Apple M1
 Total Number of Cores: 8 (4 performance and 4 efficiency)
@@ -671,148 +454,216 @@ $ ps aux
  2976   0.0  0.4 408712832  66112 s005  S+    5:01PM   1:06.51 ./frpc -c ./frpc.ini
 ```
 
-## Compile
+## Run
 
-You can either build GT with webrtc downloaded from mirror or from official:
+### Docker Container Run
 
-### Build GT with webrtc downloaded from ISCAS mirror
+More container image information can be obtained from <https://github.com/ao-space/gt/pkgs/container/gt>.
 
-1. Get the code
+```shell
+docker pull ghcr.io/ao-space/gt:server-dev
 
-      ```shell
-      git clone <url>
-      cd <folder>
-      ```
+docker pull ghcr.io/ao-space/gt:client-dev
+```
 
-2. Build
+## Compilation
 
-   Build it on linux:
+### Compilation on Ubuntu/Debian
 
-      ```shell
-      make release
-      ```
+#### Install Dependencies
 
-   The compiled executable file is in the release directory.
+```shell
+apt-get update
+apt-get install make git gn ninja-build python3 python3-pip libgtk-3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu -y
+```
 
-### Build GT with webrtc downloaded from official repo
+#### Get Code and Compile
 
-1. Get the code
+You can choose to obtain WebRTC from the mirror or official and compile GT:
 
-      ```shell
-      git clone <url>
-      cd <folder>
-      ```
+##### Obtain WebRTC from ISCAS Mirror and Compile GT
 
-2. Download webrtc from official
+1. Get code
 
-      ```shell
-      mkdir -p dep/_google-webrtc
-      cd dep/_google-webrtc
-      git clone https://webrtc.googlesource.com/src
-      ```
+     ```shell
+     git clone <url>
+     cd <folder>
+     ```
 
-   And then follow [the steps in the link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
-   check out the build toolchain and many
-   dependencies.
+2. Compile
 
-3. Build
+     ```shell
+     make release
+     ```
 
-   Build it on linux:
+   The executable files are in the release directory.
 
-      ```shell
-      WITH_OFFICIAL_WEBRTC=1 make release
-      ```
+##### Obtain WebRTC from Official and Compile GT
 
-   The compiled executable file is in the release directory.
+1. Get code
 
-## TODO
+     ```shell
+     git clone <url> 
+     cd <folder>
+     ```
 
-- Add web management capabilities
-- Support for using QUIC protocol, BBR congestion algorithm
-- Support for configuring P2P connections to forward data to multiple services
-- Authentication function supports public and private keys
+2. Obtain WebRTC from official
 
-## Contribution Guidelines
+     ```shell
+     mkdir -p dep/_google-webrtc
+     cd dep/_google-webrtc
+     git clone https://webrtc.googlesource.com/src
+     ```
 
-Contributions to this project are very welcome. Here are some guidelines and suggestions to help you get involved in the
-project.
+   Then follow the steps in [this link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
+   check out the build toolchain and many dependencies.
 
-### Contributing Code
+3. Compile
 
-If you want to contribute to the project, the best way is to submit code. Before submitting code, please ensure that you
-have downloaded and familiarized yourself with the project code repository, and that your code adheres to the following
-guidelines:
+     ```shell
+     WITH_OFFICIAL_WEBRTC=1 make release
+     ```
 
-- The code should be as concise as possible, and easy to maintain and expand.
-- The code should follow the naming convention agreed by the project to ensure the consistency of the code.
-- The code should follow the code style guide of the project, and you can refer to the existing code in the project code
-  library.
+   The executable files are in the release directory.
 
-If you want to submit code to the project, you can do so by following these steps:
+### Compile on Ubuntu/Debian via Docker
 
-- Fork the project on GitHub.
-- Clone your forked project locally.
-- Make your modifications and improvements locally.
-- Perform tests to ensure that any changes have no impact.
-- Commit your changes and create a pull request.
+#### Install Dependencies
+
+[Install Docker](https://docs.docker.com/engine/install/)
+
+#### Get Code and Compile
+
+You can choose to obtain WebRTC from the mirror or official and compile GT:
+
+##### Obtain WebRTC from ISCAS Mirror and Compile GT
+
+1. Get code
+
+     ```shell
+     git clone <url>
+     cd <folder>
+     ```
+
+2. Compile
+
+     ```shell
+     make docker_release_linux_amd64 # docker_release_linux_arm64
+     ```
+
+   The executable files are in the release directory.
+
+##### Obtain WebRTC from Official and Compile GT
+
+1. Get code
+
+     ```shell
+     git clone <url>
+     cd <folder>
+     ``` 
+
+2. Obtain WebRTC from official
+
+     ```shell
+     mkdir -p dep/_google-webrtc
+     cd dep/_google-webrtc
+     git clone https://webrtc.googlesource.com/src
+     ```
+
+   Then follow the steps in [this link](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/) to
+   check out the build toolchain and many dependencies.
+
+3. Compile
+
+     ```shell
+     WITH_OFFICIAL_WEBRTC=1 make docker_release_linux_amd64 # docker_release_linux_arm64
+     ```
+
+   The executable files are in the release directory.
+
+## Roadmap
+
+- Add web management functionality
+- Support QUIC protocol and BBR congestion algorithm
+- Support configuring P2P connections to forward data to multiple services
+- Authentication support for public and private keys
+
+## Contribution Guide
+
+We highly welcome contributions to this project. Here are some guiding principles and recommendations to help you get
+involved:
+
+### Contribute Code
+
+The best way to contribute is by submitting code. Before submitting code, please ensure you have downloaded and are
+familiar with the project codebase, and that your code follows the below guidelines:
+
+- Code should be as clean and minimal as possible while being maintainable and extensible.
+- Code should follow the project's naming conventions to ensure consistency.
+- Code should follow the project's style guide by referencing existing code in the codebase.
+
+To submit code to the project, you can:
+
+- Fork the project on GitHub
+- Clone your fork locally
+- Make your changes/improvements locally
+- Ensure any changes are tested without impacts
+- Commit your changes and new pull request
 
 ### Code Quality
 
-We attach great importance to the quality of the code, so the code you submit should meet the following requirements:
+We place strong emphasis on code quality, so submitted code should meet the following requirements:
 
-- Code should be fully tested to ensure its correctness and stability.
-- Code should follow good design principles and best practices.
-- The code should conform as closely as possible to the relevant requirements of your submitted code contribution.
+- Code should be thoroughly tested to ensure correctness and stability
+- Code should follow good design principles and best practices
+- Code should align with the requirements of your submitted contribution as much as possible
 
-### Submit Information
+### Commit Messages
 
-Before committing code, please ensure that you provide a meaningful and detailed commit message. This helps us better
-understand your code contribution and merge it more quickly.
+Before submitting code, ensure you provide meaningful and detailed commit messages. This helps us better understand your
+contribution and merge it more quickly.
 
-Submission information should include the following:
+Commit messages should include:
 
-- Describe the purpose or reason for this code contribution.
-- Describe the content or changes of this code contribution.
-- (Optional) Describe the test methods or results of this code contribution.
+- Purpose/reason for the code contribution
+- What the code contribution includes/changes
+- Optional: How to test the code contribution/results
 
-The submission information should be clear and consistent with the submission information agreement of the project code
-base.
+Messages should be clear and follow conventions set in the project codebase.
 
-### Problem Reporting
+### Issue Reporting
 
-If you encounter problems with the project, or find bugs, please submit an issue report to us. Before submitting an
-issue report, please ensure that you have thoroughly investigated and experimented with the issue and include as much of
-the following information as possible:
+If you encounter issues or bugs in the project, feel free to submit issue reports. Before reporting, ensure you have
+fully investigated and tested the issue, and provide:
 
-- Describe the symptoms and manifestations of the problem.
-- Describe the scenario and conditions under which the problem occurred.
-- Describe contextual information or any relevant background information.
-- Information describing your desired behavior.
-- (Optional) Provide relevant screenshots or error messages.
+- Description of observed behavior
+- Context/conditions of when issue occurs
+- Relevant background/contextual information
+- Description of expected behavior
+- Optional: Screenshots or error output
 
-Issue reports should be clear and follow the issue reporting conventions of the project's codebase.
+Reports should be clear and follow conventions set in the project codebase.
 
-### Feature Request
+### Feature Requests
 
-If you want to add new functionality or features to the project, you are welcome to submit a feature request to us.
-Before submitting a feature request, please make sure you understand the history and current state of the project, and
-provide as much of the following information as possible:
+If you want to suggest adding new features or capabilities, feel free to submit feature requests. Before submitting,
+ensure you understand the project history/status, and provide:
 
-- Describe the functionality or features you would like to add.
-- Describe the purpose and purpose of this function or feature.
-- (Optional) Provide relevant implementation ideas or suggestions.
+- Description of suggested feature/capability
+- Purpose/intent of the feature
+- Optional: Suggested implementation approach(es)
 
-Feature requests should be clear and follow the feature request conventions of the project's codebase.
+Requests should be clear and follow conventions set in the project codebase.
 
-### Thanks for your contribution
+### Thank You for Your Contribution
 
-Finally, thank you for your contribution to this project. We welcome contributions in all forms, including but not
-limited to code contributions, issue reports, feature requests, documentation writing, etc. We believe that with your
-help, this project will become more perfect and stronger.
+Lastly, thank you for contributing to this project. We welcome all forms of contribution including but not limited to
+code contribution, issue reporting, feature requests, documentation writing and more. We believe with your help, this
+project will become more robust and powerful.
 
 ### Contributors
 
-Many thanks to the following people who have contributed to this project:
+Thanks to the following individuals for contributing to the project:
 
 - [zhiyi](https://github.com/vyloy)
 - [jianti](https://github.com/FH0)
