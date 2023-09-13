@@ -69,7 +69,7 @@ interface UserSettingProps {
   isLast: boolean;
 }
 const props = withDefaults(defineProps<UserSettingProps>(), {
-  setting: () => ServerConfig.defaultUserSetting
+  setting: () => ServerConfig.getDefaultUserSetting()
 });
 const emit = defineEmits<{
   (e: "update:setting", index: number, setting: ServerConfig.UserSetting): void;

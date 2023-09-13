@@ -64,7 +64,7 @@ interface HostSettingProps {
   setting: ServerConfig.Host;
 }
 const props = withDefaults(defineProps<HostSettingProps>(), {
-  setting: () => ServerConfig.defaultHostSetting
+  setting: () => ServerConfig.getDefaultHostSetting()
 });
 
 const hostSettingRef = ref<FormInstance>();

@@ -49,7 +49,7 @@ interface GeneralSettingProps {
   setting: ServerConfig.GeneralSettingProps;
 }
 const props = withDefaults(defineProps<GeneralSettingProps>(), {
-  setting: () => ServerConfig.defaultGeneralSettingProps
+  setting: () => ServerConfig.getDefaultGeneralSettingProps()
 });
 const localSetting = reactive<ServerConfig.GeneralSettingProps>({
   ...props.setting,

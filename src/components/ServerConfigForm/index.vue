@@ -53,9 +53,9 @@ import {
 } from "@/utils/map";
 
 const tcps = reactive<ServerConfig.TCP[]>([]);
-const host = reactive<ServerConfig.Host>({ ...ServerConfig.defaultHostSetting });
+const host = reactive<ServerConfig.Host>({ ...ServerConfig.getDefaultHostSetting() });
 const users = reactive<Record<string, ServerConfig.User>>({});
-const userList = reactive<ServerConfig.UserSetting[]>([{ ...ServerConfig.defaultUserSetting }]);
+const userList = reactive<ServerConfig.UserSetting[]>([{ ...ServerConfig.getDefaultUserSetting() }]);
 
 // the sync from userList to users is happened in submit function to avoid the id conflict
 watch(
@@ -188,7 +188,7 @@ const userSettingRef = ref<InstanceType<typeof UserSetting> | null>(null);
 const userSettingRefs = reactive<Ref<InstanceType<typeof UserSetting> | null>[]>([userSettingRef]);
 
 const addUser = () => {
-  userList.push({ ...ServerConfig.defaultUserSetting });
+  userList.push({ ...ServerConfig.getDefaultUserSetting() });
   userSettingRefs.push(ref<InstanceType<typeof UserSetting> | null>(null));
 };
 const removeUser = (index: number) => {
@@ -201,6 +201,7 @@ const removeUser = (index: number) => {
 };
 
 const updateUserSetting = (index: number, newSetting: ServerConfig.UserSetting) => {
+  console.log("updateUserSetting", index, newSetting);
   Object.assign(userList[index], newSetting);
 };
 

@@ -18,6 +18,7 @@ export namespace ServerConfig {
     Connections: number;
     Host: Host;
   }
+
   export interface UserSetting extends User {
     ID: string;
   }
@@ -88,11 +89,13 @@ export namespace ServerConfig {
       APISetting,
       SentrySetting,
       LogSetting {}
-  export const defaultHostSetting: Host = {
-    Number: 0,
-    RegexStr: [],
-    WithID: false
-  };
+  export function getDefaultHostSetting(): Host {
+    return {
+      Number: 0,
+      RegexStr: [],
+      WithID: false
+    };
+  }
   export const defaultTCPSetting: TCP = {
     Range: "",
     Number: 0
@@ -101,12 +104,14 @@ export namespace ServerConfig {
     UserPath: "",
     AuthAPI: ""
   };
-  export const defaultGeneralSettingProps: GeneralSettingProps = {
-    UserPath: "",
-    AuthAPI: "",
-    TCPs: [],
-    Host: defaultHostSetting
-  };
+  export function getDefaultGeneralSettingProps(): GeneralSettingProps {
+    return {
+      UserPath: "",
+      AuthAPI: "",
+      TCPs: [],
+      Host: getDefaultHostSetting()
+    };
+  }
   export const defaultNetworkSetting: NetworkSetting = {
     Addr: "",
     TLSAddr: "",
@@ -150,14 +155,16 @@ export namespace ServerConfig {
     LogFileMaxCount: 0,
     LogLevel: ""
   };
-  export const defaultUserSetting: UserSetting = {
-    ID: "",
-    Secret: "",
-    TCPs: [],
-    Speed: 0,
-    Connections: 0,
-    Host: defaultHostSetting
-  };
+  export function getDefaultUserSetting(): UserSetting {
+    return {
+      ID: "",
+      Secret: "",
+      TCPs: [],
+      Speed: 0,
+      Connections: 0,
+      Host: getDefaultHostSetting()
+    };
+  }
   export interface FormRef {
     validateForm: () => Promise<void>;
   }
