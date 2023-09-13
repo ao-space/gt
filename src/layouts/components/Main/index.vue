@@ -31,12 +31,12 @@ const { maximize, isCollapse, layout, tabs, footer } = storeToRefs(globalStore);
 const keepAliveStore = useKeepAliveStore();
 const { keepAliveName } = storeToRefs(keepAliveStore);
 
-// 注入刷新页面方法
+// Inject the method to refresh the page
 const isRouterShow = ref(true);
 const refreshCurrentPage = (val: boolean) => (isRouterShow.value = val);
 provide("refresh", refreshCurrentPage);
 
-// 监听当前页面是否最大化，动态添加 class
+// Listen for whether the current page is maximized and dynamically add a class
 watch(
   () => maximize.value,
   () => {
@@ -47,7 +47,7 @@ watch(
   { immediate: true }
 );
 
-// 监听布局变化，在 body 上添加相对应的 layout class
+// Listen for layout changes and add the corresponding layout class to the body
 watch(
   () => layout.value,
   () => {
@@ -57,7 +57,7 @@ watch(
   { immediate: true }
 );
 
-// 监听窗口大小变化，折叠侧边栏
+// Listen for window size changes and collapse the sidebar if necessary
 const screenWidth = ref(0);
 const listeningWindow = useDebounceFn(() => {
   screenWidth.value = document.body.clientWidth;

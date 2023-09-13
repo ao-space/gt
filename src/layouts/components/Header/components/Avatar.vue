@@ -22,7 +22,7 @@ const router = useRouter();
 const userStore = useUserStore();
 
 const username = computed(() => userStore.userInfo.name);
-// 退出登录
+
 const logout = () => {
   ElMessageBox.confirm("Are you sure to log out?", "Tips", {
     confirmButtonText: "Confirm",

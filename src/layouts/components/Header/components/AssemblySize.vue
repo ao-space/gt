@@ -25,9 +25,9 @@ const globalStore = useGlobalStore();
 const assemblySize = computed(() => globalStore.assemblySize);
 
 const assemblySizeList = [
-  { label: "默认", value: "default" },
-  { label: "大型", value: "large" },
-  { label: "小型", value: "small" }
+  { label: "default", value: "default" },
+  { label: "large", value: "large" },
+  { label: "small", value: "small" }
 ];
 
 const setAssemblySize = (item: AssemblySizeType) => {

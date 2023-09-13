@@ -13,24 +13,24 @@ export interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const config = {
-  // 默认地址请求地址，可在 .env.** 文件中修改
+  // Default API URL, can be modified in .env.** files
   baseURL: import.meta.env.VITE_API_URL as string,
-  // 设置超时时间
+  // Setting timeout duration
   timeout: ResultEnum.TIMEOUT as number,
-  // 跨域时候允许携带凭证
+  // Allow credentials for cross-origin requests
   withCredentials: true
 };
 
 class RequestHttp {
   service: AxiosInstance;
   public constructor(config: AxiosRequestConfig) {
-    // instantiation
+    // Creating an Axios instance
     this.service = axios.create(config);
 
     /**
-     * @description 请求拦截器
-     * 客户端发送请求 -> [请求拦截器] -> 服务器
-     * token校验(JWT) : 接受服务器返回的 token,存储到 vuex/pinia/本地储存当中
+     * @description Request interceptor
+     * Client sends request -> [Request Interceptor] -> Server
+     * Token validation (JWT): Receive token from the server, store it in vuex/pinia/local storage
      */
     this.service.interceptors.request.use(
       (config: CustomAxiosRequestConfig) => {
@@ -47,38 +47,38 @@ class RequestHttp {
     );
 
     /**
-     * @description 响应拦截器
-     *  服务器换返回信息 -> [拦截统一处理] -> 客户端JS获取到信息
+     * @description Response interceptor
+     * Server returns information -> [Interceptor processes it] -> Client JS receives the information
      */
     this.service.interceptors.response.use(
       (response: AxiosResponse) => {
         const { data } = response;
         const userStore = useUserStore();
         tryHideFullScreenLoading();
-        // 登陆失效
+        // If login has expired
         if (data.code == ResultEnum.OVERDUE) {
           userStore.setToken("");
           router.replace(LOGIN_URL);
           ElMessage.error(data.msg);
           return Promise.reject(data);
         }
-        // 全局错误信息拦截（防止下载文件的时候返回数据流，没有 code 直接报错）
+        // Global error message interception (to prevent errors when downloading files that return data streams without a code)
         if (data.code && data.code !== ResultEnum.SUCCESS) {
           ElMessage.error(data.msg);
           return Promise.reject(data);
         }
-        // 成功请求（在页面上除非特殊情况，否则不用处理失败逻辑）
+        // Successful request (on the page, unless there's a special case, no need to handle failure logic)
         return data;
       },
       async (error: AxiosError) => {
         const { response } = error;
         tryHideFullScreenLoading();
-        // 请求超时 && 网络错误单独判断，没有 response
-        if (error.message.indexOf("timeout") !== -1) ElMessage.error("请求超时！请您稍后重试");
-        if (error.message.indexOf("Network Error") !== -1) ElMessage.error("网络错误！请您稍后重试");
-        // 根据服务器响应的错误状态码，做不同的处理
+        // Separate checks for request timeout and network errors, as they don't have a response
+        if (error.message.indexOf("timeout") !== -1) ElMessage.error("Request timed out! Please try again later");
+        if (error.message.indexOf("Network Error") !== -1) ElMessage.error("Network error! Please try again later");
+        // Handle different server error status codes
         if (response) checkStatus(response.status);
-        // 服务器结果都没有返回(可能服务器错误可能客户端断网)，断网处理:可以跳转到断网页面
+        // If there's no server response (could be a server error or client is offline), handle offline scenario: can redirect to an error page
         if (!window.navigator.onLine) router.replace("/500");
         return Promise.reject(error);
       }
@@ -86,7 +86,7 @@ class RequestHttp {
   }
 
   /**
-   * @description 常用请求方法封装
+   * @description Encapsulation of common request methods
    */
   get<T>(url: string, params?: object, _object = {}): Promise<ResultData<T>> {
     return this.service.get(url, { params, ..._object });

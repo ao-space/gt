@@ -122,7 +122,20 @@ watch(
 );
 
 const userSettingRef = ref<FormInstance>();
-const rules = reactive<FormRules<ServerConfig.UserSetting>>({});
+const rules = reactive<FormRules<ServerConfig.UserSetting>>({
+  ID: [
+    {
+      required: true,
+      message: "Please input ID",
+      transform(value) {
+        return value.trim();
+      },
+      trigger: "blur"
+    }
+  ],
+  Secret: [{ required: true, message: "Please input Secret", trigger: "blur" }]
+});
+
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (userSettingRef.value) {
@@ -130,11 +143,11 @@ const validateForm = (): Promise<void> => {
         if (valid) {
           resolve();
         } else {
-          reject();
+          reject(new Error("User Setting validation failed, please check your input"));
         }
       });
     } else {
-      reject();
+      reject(new Error("User Setting is not ready"));
     }
   });
 };

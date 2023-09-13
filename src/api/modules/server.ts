@@ -5,10 +5,10 @@ export const getServerInfoApi = () => {
   return http.get<Server.ResServerInfo>(`/server/info`, {}, { noLoading: true });
 };
 
+// currently use for gt-client to control Server's behavior
 export const reloadServicesApi = () => {
   return http.put(`/server/reload`);
 };
-
 export const restartServerApi = () => {
   return http.put(`/server/restart`);
 };

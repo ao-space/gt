@@ -67,7 +67,7 @@ watchEffect(() => {
 
 const APISettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.APISetting>>({
-  APIAddr: [{ validator: validatorAddr, trigger: "bur" }]
+  APIAddr: [{ validator: validatorAddr, trigger: "blur" }]
 });
 
 const emit = defineEmits(["update:setting"]);

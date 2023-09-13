@@ -41,7 +41,6 @@ import { useKeepAliveStore } from "@/stores/modules/keepAlive";
 import { initDynamicRouter } from "@/routers/modules/dynamicRouter";
 import { CircleClose, UserFilled } from "@element-plus/icons-vue";
 import type { ElForm } from "element-plus";
-// import md5 from "js-md5";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -68,20 +67,19 @@ const login = (formEl: FormInstance | undefined) => {
     if (!valid) return;
     loading.value = true;
     try {
-      // 1.执行登录接口
-      //TODO : encrypt password
+      // 1.Execute the login API with the provided login form data
       const { data } = await loginApi({ ...loginForm });
       console.log(data);
       userStore.setToken(data.token);
 
-      // 2.添加动态路由
+      // 2.Initialize dynamic routers
       await initDynamicRouter();
 
-      // 3.清空 tabs、keepAlive 数据
+      // 3.Clear any existing tabs and 'keepAlive' data
       tabsStore.closeMultipleTab();
       keepAliveStore.setKeepAliveName();
 
-      // 4.跳转到首页
+      // 4.Redirect to the home page
       router.push(HOME_URL);
       ElNotification({
         title: getTimeState(),

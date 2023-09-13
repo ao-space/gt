@@ -9,7 +9,7 @@ import { asideTheme } from "@/styles/theme/aside";
 import { headerTheme } from "@/styles/theme/header";
 
 /**
- * @description 全局主题 hooks
+ * @description Global Theme Hooks
  * */
 export const useTheme = () => {
   const globalStore = useGlobalStore();

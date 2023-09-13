@@ -7,20 +7,20 @@ import { staticRouter, errorRouter } from "@/routers/modules/staticRouter";
 import NProgress from "@/config/nprogress";
 
 /**
- * @description 📚 路由参数配置简介
- * @param path ==> 路由菜单访问路径
- * @param name ==> 路由 name (对应页面组件 name, 可用作 KeepAlive 缓存标识 && 按钮权限筛选)
- * @param redirect ==> 路由重定向地址
- * @param component ==> 视图文件路径
- * @param meta ==> 路由菜单元信息
- * @param meta.icon ==> 菜单和面包屑对应的图标
- * @param meta.title ==> 路由标题 (用作 document.title || 菜单的名称)
- * @param meta.activeMenu ==> 当前路由为详情页时，需要高亮的菜单
- * @param meta.isLink ==> 路由外链时填写的访问地址
- * @param meta.isHide ==> 是否在菜单中隐藏 (通常列表详情页需要隐藏)
- * @param meta.isFull ==> 菜单是否全屏 (示例：数据大屏页面)
- * @param meta.isAffix ==> 菜单是否固定在标签页中 (首页通常是固定项)
- * @param meta.isKeepAlive ==> 当前路由是否缓存
+ * @description 📚 Brief introduction to router configuration parameters
+ * @param path ==> Route menu access path
+ * @param name ==> Route name (corresponds to the page component name, can be used as KeepAlive cache identifier && button permission filtering)
+ * @param redirect ==> Route redirection address
+ * @param component ==> View file path
+ * @param meta ==> Route menu meta information
+ * @param meta.icon ==> Icon corresponding to the menu and breadcrumb
+ * @param meta.title ==> Route title (used as document.title or menu name)
+ * @param meta.activeMenu ==> The menu to be highlighted when the current route is a detail page
+ * @param meta.isLink ==> Access address filled in when the route is an external link
+ * @param meta.isHide ==> Whether to hide in the menu (usually detail pages of lists need to be hidden)
+ * @param meta.isFull ==> Whether the menu is full screen (example: data screen page)
+ * @param meta.isAffix ==> Whether the menu is pinned in the tab page (the homepage is usually a pinned item)
+ * @param meta.isKeepAlive ==> Whether the current route is cached
  * */
 const router = createRouter({
   history: createWebHashHistory(),
@@ -30,43 +30,42 @@ const router = createRouter({
 });
 
 /**
- * @description 路由拦截 beforeEach
+ * @description Route interception beforeEach
  * */
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
   const authStore = useAuthStore();
 
-  // 1.NProgress 开始
+  // 1.Start NProgress
   NProgress.start();
 
-  // 2.动态设置标题
+  // 2.Dynamically set the title
   const title = import.meta.env.VITE_GLOB_APP_TITLE;
   document.title = to.meta.title ? `${to.meta.title} - ${title}` : title;
 
-  // 3.判断是访问登陆页，有 Token 就在当前页面，没有 Token 重置路由到登陆页
+  // 3.Check if visiting the login page, if there's a Token stay on the current page, if not reset the route to the login page
   if (to.path.toLocaleLowerCase() === LOGIN_URL) {
     if (userStore.token) return next(from.fullPath);
     resetRouter();
     return next();
   }
 
-  // 4.判断访问页面是否在路由白名单地址(静态路由)中，如果存在直接放行
+  // 4.Check if the visited page is in the route whitelist (static routes), if it exists, let it pass directly
   if (ROUTER_WHITE_LIST.includes(to.path)) return next();
 
-  // 5.判断是否有 Token，没有重定向到 login 页面
-  // TODO: add
-  // if (!userStore.token) return next({ path: LOGIN_URL, replace: true });
+  // 5.Check if there's a Token, if not redirect to the login page
+  if (!userStore.token) return next({ path: LOGIN_URL, replace: true });
 
-  // 6.如果没有菜单列表，就重新请求菜单列表并添加动态路由
+  // 6.If there's no menu list, request the menu list again and add dynamic routes
   if (!authStore.authMenuListGet.length) {
     await initDynamicRouter();
     return next({ ...to, replace: true });
   }
 
-  // 7.存储 routerName 做按钮权限筛选
+  // 7.Store routerName for button permission filtering
   authStore.setRouteName(to.name as string);
 
-  // 8.正常访问页面
+  // 8.Normal page access
   next();
 });
 

@@ -1,5 +1,5 @@
 /**
- * @description：请求配置
+ * @description：Request configuration
  */
 export enum ResultEnum {
   SUCCESS = 200,
@@ -10,7 +10,7 @@ export enum ResultEnum {
 }
 
 /**
- * @description：请求方法
+ * @description：HTTP request methods
  */
 export enum RequestEnum {
   GET = "GET",
@@ -21,15 +21,15 @@ export enum RequestEnum {
 }
 
 /**
- * @description：常用的 contentTyp 类型
+ * @description：Commonly used content type values
  */
 export enum ContentTypeEnum {
   // json
   JSON = "application/json;charset=UTF-8",
   // text
   TEXT = "text/plain;charset=UTF-8",
-  // form-data 一般配合qs
+  // form-data, usually used with 'qs' library
   FORM_URLENCODED = "application/x-www-form-urlencoded;charset=UTF-8",
-  // form-data 上传
+  // form-data upload
   FORM_DATA = "multipart/form-data;charset=UTF-8"
 }

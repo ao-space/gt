@@ -93,23 +93,10 @@ import mittBus from "@/utils/mittBus";
 import SwitchDark from "@/components/SwitchDark/index.vue";
 
 const { changePrimary, changeGreyOrWeak, setAsideTheme } = useTheme();
-// const { changePrimary, changeGreyOrWeak, setAsideTheme, setHeaderTheme } = useTheme();
 
 const globalStore = useGlobalStore();
-const {
-  layout,
-  primary,
-  isGrey,
-  isWeak,
-  asideInverted,
-  // headerInverted,
-  isCollapse,
-  breadcrumb,
-  breadcrumbIcon,
-  tabs,
-  tabsIcon,
-  footer
-} = storeToRefs(globalStore);
+const { layout, primary, isGrey, isWeak, asideInverted, isCollapse, breadcrumb, breadcrumbIcon, tabs, tabsIcon, footer } =
+  storeToRefs(globalStore);
 
 // 预定义主题颜色
 const colorList = [
@@ -125,13 +112,13 @@ const colorList = [
   "#9b59b6"
 ];
 
-// 设置布局方式
+// Set the layout mode
 const setLayout = (val: LayoutType) => {
   globalStore.setGlobalState("layout", val);
   setAsideTheme();
 };
 
-// 打开主题设置
+// Open theme settings
 const drawerVisible = ref(false);
 mittBus.on("openThemeDrawer", () => (drawerVisible.value = true));
 </script>

@@ -5,37 +5,35 @@ import piniaPersistConfig from "@/config/piniaPersist";
 
 export const useGlobalStore = defineStore({
   id: "GT-global",
-  // 修改默认值之后，需清除 localStorage 数据
+  // After modifying the default values, need to clear the localStorage data
   state: (): GlobalState => ({
-    // 布局模式 (纵向：vertical | 经典：classic | 横向：transverse | 分栏：columns)
+    // Layout mode
     layout: "classic",
-    // element 组件大小
+    // Size of the element components
     assemblySize: "default",
-    // 当前页面是否全屏
+    // Whether the current page is in full screen
     maximize: false,
-    // 主题颜色
+    // Theme color
     primary: DEFAULT_PRIMARY,
-    // 深色模式
+    // Dark mode
     isDark: false,
-    // 灰色模式
+    // Gray mode
     isGrey: false,
-    // 色弱模式
+    // Color weak mode
     isWeak: false,
-    // 侧边栏反转
+    // Invert the sidebar
     asideInverted: false,
-    // 头部反转
-    // headerInverted: false,
-    // 折叠菜单
+    // Collapse the menu
     isCollapse: false,
-    // 面包屑导航
+    // Breadcrumb navigation
     breadcrumb: true,
-    // 面包屑导航图标
+    // Breadcrumb navigation icon
     breadcrumbIcon: true,
-    // 标签页
+    // Tabs
     tabs: true,
-    // 标签页图标
+    // Tabs icon
     tabsIcon: true,
-    // 页脚
+    // Footer
     footer: true
   }),
   getters: {},

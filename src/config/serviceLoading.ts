@@ -4,7 +4,7 @@ import { ElLoading } from "element-plus";
 let loadingInstance: ReturnType<typeof ElLoading.service>;
 
 /**
- * @description 开启 Loading
+ * @description Start Loading
  * */
 const startLoading = () => {
   loadingInstance = ElLoading.service({
@@ -16,14 +16,14 @@ const startLoading = () => {
 };
 
 /**
- * @description 结束 Loading
+ * @description End the Loading
  * */
 const endLoading = () => {
   loadingInstance.close();
 };
 
 /**
- * @description 显示全屏加载
+ * @description Display full-screen loading
  * */
 let needLoadingRequestCount = 0;
 export const showFullScreenLoading = () => {
@@ -34,7 +34,7 @@ export const showFullScreenLoading = () => {
 };
 
 /**
- * @description 隐藏全屏加载
+ * @description Hide full-screen loading
  * */
 export const tryHideFullScreenLoading = () => {
   if (needLoadingRequestCount <= 0) return;

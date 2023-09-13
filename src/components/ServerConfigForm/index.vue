@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">
-import { Ref, markRaw, reactive, ref, watch, watchEffect, computed } from "vue";
+import { Ref, markRaw, reactive, ref, watch, watchEffect, computed, onMounted } from "vue";
 import { ServerConfig } from "./interface";
 import { v4 as uuidv4 } from "uuid";
 import Anchor, { Tab } from "@/components/Anchor/index.vue";
@@ -434,6 +434,10 @@ const getFromRunning = async () => {
     }
   });
 };
+
+onMounted(() => {
+  getFromFile();
+});
 </script>
 
 <style scoped lang="scss">
