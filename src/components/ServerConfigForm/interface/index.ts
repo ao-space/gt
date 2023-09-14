@@ -89,6 +89,8 @@ export namespace ServerConfig {
       APISetting,
       SentrySetting,
       LogSetting {}
+
+  // The default value of each field, note that use deep copy to avoid reference
   export function getDefaultHostSetting(): Host {
     return {
       Number: 0,
@@ -168,6 +170,7 @@ export namespace ServerConfig {
   export interface FormRef {
     validateForm: () => Promise<void>;
   }
+  // The usage of each field, mainly used in the tooltip
   export const usage = {
     // General Setting
 

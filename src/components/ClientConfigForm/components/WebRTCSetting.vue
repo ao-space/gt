@@ -48,28 +48,31 @@ import { reactive, ref, watchEffect } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 
-const WebRTCLogLevelOptions = ["verbose", "info", "warning", "error"];
-
 interface WebRTCSettingProps {
   setting: ClientConfig.WebRTCSetting;
 }
+
 const props = withDefaults(defineProps<WebRTCSettingProps>(), {
   setting: () => ClientConfig.defaultWebRTCSetting
 });
-
 const localSetting = reactive<ClientConfig.WebRTCSetting>({ ...props.setting });
+
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
 });
 
-const WebRTCSettingRef = ref<FormInstance>();
-const rules = reactive<FormRules<ClientConfig.WebRTCSetting>>({
-  WebRTCConnectionIdleTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }]
-});
-
+//Sync with parent: localSetting -> emit("update:setting")
 const emit = defineEmits(["update:setting"]);
 watchEffect(() => {
   emit("update:setting", localSetting);
+});
+
+//Form Related
+const WebRTCLogLevelOptions = ["verbose", "info", "warning", "error"];
+const WebRTCSettingRef = ref<FormInstance>();
+const rules = reactive<FormRules<ClientConfig.WebRTCSetting>>({
+  WebRTCConnectionIdleTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }]
 });
 
 const validateForm = (): Promise<void> => {
@@ -87,6 +90,7 @@ const validateForm = (): Promise<void> => {
     }
   });
 };
+
 defineExpose({
   validateForm
 });

@@ -44,17 +44,21 @@ const props = withDefaults(defineProps<TCPForwardSettingProps>(), {
   setting: () => ClientConfig.defaultTCPForwardSetting
 });
 const localSetting = reactive<ClientConfig.TCPForwardSetting>({ ...props.setting });
+
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
 });
 
-const TCPForwardSettingRef = ref<FormInstance>();
-const rules = reactive<FormRules<ClientConfig.TCPForwardSetting>>({});
-
+//Sync with parent: localSetting -> emit("update:setting")
 const emit = defineEmits(["update:setting"]);
 watchEffect(() => {
   emit("update:setting", localSetting);
 });
+
+//Form Related
+const TCPForwardSettingRef = ref<FormInstance>();
+const rules = reactive<FormRules<ClientConfig.TCPForwardSetting>>({});
 
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -71,6 +75,7 @@ const validateForm = (): Promise<void> => {
     }
   });
 };
+
 defineExpose({
   validateForm
 });

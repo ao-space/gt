@@ -63,10 +63,12 @@ import { ElMessage, FormInstance, FormRules } from "element-plus";
 interface HostSettingProps {
   setting: ServerConfig.Host;
 }
+
 const props = withDefaults(defineProps<HostSettingProps>(), {
   setting: () => ServerConfig.getDefaultHostSetting()
 });
 
+//Form Related
 const hostSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.Host>>({
   Number: [
@@ -95,7 +97,7 @@ const form = reactive<formType>({
   WithID: props.setting.WithID
 });
 
-const emit = defineEmits(["update:setting"]);
+//Sync with parent: props.setting -> form
 watch(
   () => props.setting,
   newSetting => {
@@ -109,7 +111,9 @@ watch(
   { deep: true }
 );
 
+const emit = defineEmits(["update:setting"]);
 let prevFormState = JSON.stringify(form);
+//Sync with parent: form -> emit("update:setting")
 watchEffect(() => {
   const currentFormState = JSON.stringify(form);
   if (currentFormState !== prevFormState) {
@@ -127,6 +131,7 @@ watchEffect(() => {
   }
 });
 
+//Table Related
 const addRow = () => {
   form.tableData.push({
     RegexStr: "",
@@ -134,7 +139,6 @@ const addRow = () => {
   });
 };
 const editRow = (index: number) => {
-  console.log("editRow:", index);
   form.tableData[index].isEdit = true;
 };
 const finishEdit = async (index: number) => {

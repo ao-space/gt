@@ -62,6 +62,7 @@ interface TCPSettingProps {
 }
 const props = defineProps<TCPSettingProps>();
 
+//Form Related
 const tcpSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.TCP>>({
   Range: [{ required: true, validator: validatorRange, message: "Please input a valid TCPRange", trigger: "blur" }],
@@ -86,6 +87,7 @@ const form = reactive<{ tableData: tableDataType[] }>({
   tableData: props.setting.map(({ Range, Number }) => ({ Range, Number, isEdit: false }))
 });
 
+//Sync with parent: props.setting -> form.tableData
 watch(
   () => props.setting,
   newSetting => {
@@ -98,6 +100,7 @@ watch(
 
 const emit = defineEmits(["update:setting"]);
 let prevFormState = JSON.stringify(form);
+//Sync with parent: form.tableData -> emit("update:setting")
 watchEffect(() => {
   const currentFormState = JSON.stringify(form);
   if (currentFormState !== prevFormState) {
@@ -114,6 +117,7 @@ watchEffect(() => {
   }
 });
 
+//Table Related
 const addRow = () => {
   form.tableData.push({
     Range: "",
@@ -159,6 +163,7 @@ const validateForm = (): Promise<void> => {
     }
   });
 };
+
 defineExpose({
   validateForm
 });

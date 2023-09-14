@@ -71,14 +71,24 @@ import { validatorTimeFormat } from "@/utils/eleValidate";
 interface ConnectionSettingProps {
   setting: ServerConfig.ConnectionSetting;
 }
+
 const props = withDefaults(defineProps<ConnectionSettingProps>(), {
   setting: () => ServerConfig.defaultConnectionSetting
 });
 const localSetting = reactive<ServerConfig.ConnectionSetting>({ ...props.setting });
+
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
 });
 
+const emit = defineEmits(["update:setting"]);
+//Sync with parent: localSetting -> emit("update:setting")
+watchEffect(() => {
+  emit("update:setting", localSetting);
+});
+
+//Form Related
 const ConnectionSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.ConnectionSetting>>({
   Speed: [{ type: "number", message: "Please enter a number", trigger: "blur" }],
@@ -88,10 +98,6 @@ const rules = reactive<FormRules<ServerConfig.ConnectionSetting>>({
   Timeout: [{ validator: validatorTimeFormat, trigger: "blur" }]
 });
 
-const emit = defineEmits(["update:setting"]);
-watchEffect(() => {
-  emit("update:setting", localSetting);
-});
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (ConnectionSettingRef.value) {

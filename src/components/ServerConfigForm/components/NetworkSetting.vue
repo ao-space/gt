@@ -80,10 +80,19 @@ const props = withDefaults(defineProps<NetworkSettingProps>(), {
   setting: () => ServerConfig.defaultNetworkSetting
 });
 const localSetting = reactive<ServerConfig.NetworkSetting>({ ...props.setting });
+
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
 });
 
+const emit = defineEmits(["update:setting"]);
+//Sync with parent: localSetting -> emit("update:setting")
+watchEffect(() => {
+  emit("update:setting", localSetting);
+});
+
+//Form Related
 const NetworkSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.NetworkSetting>>({
   Addr: [{ validator: validatorAddr, trigger: "blur" }],
@@ -92,10 +101,6 @@ const rules = reactive<FormRules<ServerConfig.NetworkSetting>>({
   SNIAddr: [{ validator: validatorAddr, trigger: "blur" }]
 });
 
-const emit = defineEmits(["update:setting"]);
-watchEffect(() => {
-  emit("update:setting", localSetting);
-});
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (NetworkSettingRef.value) {

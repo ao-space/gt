@@ -87,19 +87,23 @@ interface SentrySettingProps {
   setting: ClientConfig.SentrySetting;
 }
 
-const SentryLevelOptions = ["trace", "debug", "info", "warn", "error", "fatal", "panic"];
-
 const props = withDefaults(defineProps<SentrySettingProps>(), {
   setting: () => ClientConfig.defaultSentrySetting
 });
 const localSetting = reactive<ClientConfig.SentrySetting>({ ...props.setting });
+
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
 });
 
+//Form Related
+const SentryLevelOptions = ["trace", "debug", "info", "warn", "error", "fatal", "panic"];
 const sentrySettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.SentrySetting>>({});
+
 const emit = defineEmits(["update:setting"]);
+//Sync with parent: localSetting -> emit("update:setting")
 watchEffect(() => {
   emit("update:setting", localSetting);
 });

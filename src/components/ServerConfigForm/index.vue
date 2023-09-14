@@ -3,6 +3,7 @@
     <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
       <component :is="tab.component" :ref="tab.ref" :setting="tab.setting" @update:setting="tab.updateSetting" />
     </template>
+
     <template v-for="(tab, index) in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
         :is="tab.component"
@@ -32,10 +33,9 @@ import SecuritySetting from "./components/SecuritySetting.vue";
 import ConnectionSetting from "./components/ConnectionSetting.vue";
 import APISetting from "./components/APISetting.vue";
 import UserSetting from "./components/UserSetting.vue";
-
-//TODO: move location
+// Note that the following imports is in ClientConfigForm/components
 import SentrySetting from "@/components/ClientConfigForm/components/SentrySetting.vue";
-import LogSetting from "../ClientConfigForm/components/LogSetting.vue";
+import LogSetting from "@/components/ClientConfigForm/components/LogSetting.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getRunningServerConfigApi, getServerConfigFromFileApi, saveServerConfigApi } from "@/api/modules/serverConfig";
 import { Config } from "@/api/interface";
@@ -52,12 +52,17 @@ import {
   mapServerUserSetting
 } from "@/utils/map";
 
+//Global Setting
 const tcps = reactive<ServerConfig.TCP[]>([]);
 const host = reactive<ServerConfig.Host>({ ...ServerConfig.getDefaultHostSetting() });
+
+//users is used for serverConfig
+//userList is used for child component -- UserSetting
 const users = reactive<Record<string, ServerConfig.User>>({});
 const userList = reactive<ServerConfig.UserSetting[]>([{ ...ServerConfig.getDefaultUserSetting() }]);
 
-// the sync from userList to users is happened in submit function to avoid the id conflict
+// the sync from userList to users is happened in submit function,
+// to avoid the id conflict
 watch(
   users,
   newUsers => {
@@ -81,13 +86,16 @@ watch(
   { deep: true }
 );
 
+//generalSetting is used for serverConfig
+//generalSettingProps is used for child component -- GeneralSetting
 const generalSetting = reactive<ServerConfig.GeneralSetting>({ ...ServerConfig.defaultGeneralSetting });
 const generalSettingProps = reactive<ServerConfig.GeneralSettingProps>({
   ...generalSetting,
-  TCPs: tcps,
-  Host: host
+  TCPs: tcps, //global Setting
+  Host: host //global Setting
 });
 
+//Sync generalSetting with generalSettingProps
 watch(
   () => generalSetting,
   newSetting => {
@@ -128,6 +136,7 @@ const serverConfig = reactive<ServerConfig.Config>({
   ...options
 });
 
+//Sync options with other settings
 watchEffect(() => {
   Object.assign(options, {
     ...generalSetting,
@@ -139,6 +148,8 @@ watchEffect(() => {
     ...sentrySetting
   });
 });
+
+//Sync: users, tcps, host, options -> serverConfig
 watchEffect(() => {
   Object.assign(serverConfig, {
     Users: users,
@@ -148,35 +159,30 @@ watchEffect(() => {
   });
 });
 
+//Sync with child component
 const updateGeneralSetting = (newSetting: ServerConfig.GeneralSettingProps) => {
-  console.log("updateGeneralSetting", newSetting);
   Object.assign(generalSettingProps, newSetting);
 };
 const updateNetworkSetting = (newSetting: ServerConfig.NetworkSetting) => {
-  console.log("updateNetworkSetting", newSetting);
   Object.assign(netWorkSetting, newSetting);
 };
 const updateSecuritySetting = (newSetting: ServerConfig.SecuritySetting) => {
-  console.log("updateSecuritySetting", newSetting);
   Object.assign(securitySetting, newSetting);
 };
 const updateConnectionSetting = (newSetting: ServerConfig.ConnectionSetting) => {
-  console.log("updateConnectionSetting", newSetting);
   Object.assign(connectionsSetting, newSetting);
 };
 const updateAPISetting = (newSetting: ServerConfig.APISetting) => {
-  console.log("updateAPISetting", newSetting);
   Object.assign(apiSetting, newSetting);
 };
 const updateSentrySetting = (newSetting: ServerConfig.SentrySetting) => {
-  console.log("updateSentrySetting", newSetting);
   Object.assign(sentrySetting, newSetting);
 };
 const updateLogSetting = (newSetting: ServerConfig.LogSetting) => {
-  console.log("updateLogSetting", newSetting);
   Object.assign(logSetting, newSetting);
 };
 
+//From Related
 const generalSettingRef = ref<InstanceType<typeof GeneralSetting> | null>(null);
 const networkSettingRef = ref<InstanceType<typeof NetworkSetting> | null>(null);
 const securitySettingRef = ref<InstanceType<typeof SecuritySetting> | null>(null);
@@ -311,8 +317,9 @@ const tabList = computed<Tab[]>(() => [
 const validateAllForms = (formRefs: Array<Ref<ServerConfig.FormRef | null>>) => {
   return Promise.all(formRefs.map(formRef => formRef.value?.validateForm()));
 };
+
+//update the data with the response from server
 const updateData = (data: Config.Server.ResConfig) => {
-  console.log("updateData");
   Object.assign(generalSetting, mapServerGeneralSetting(data));
   Object.assign(netWorkSetting, mapServerNetworkSetting(data));
   Object.assign(connectionsSetting, mapServerConnectionSetting(data));
@@ -352,6 +359,7 @@ const updateUsersFormUserList = () => {
   });
 };
 
+//submit the configuration to save in file
 const submit = () => {
   ElMessageBox.confirm("Make sure you want to save the configuration file", "Save The Configuration", {
     confirmButtonText: "Confirm",
@@ -388,6 +396,8 @@ const submit = () => {
       console.log("Cancel Submit Operation!");
     });
 };
+
+//get the configuration
 const getFromFile = async () => {
   ElMessageBox.confirm(
     "Make sure you want to get the configuration from file, if you fail to get from file, it will get from the running system. NOTE: please make sure the change you made is saved, or it will be discarded.",

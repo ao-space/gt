@@ -48,17 +48,22 @@ const props = withDefaults(defineProps<SecuritySettingProps>(), {
   setting: () => ServerConfig.defaultSecuritySetting
 });
 const localSetting = reactive<ServerConfig.SecuritySetting>({ ...props.setting });
+
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
 });
 
-const SecuritySettingRef = ref<FormInstance>();
-const rules = reactive<FormRules<ServerConfig.SecuritySetting>>({});
-
 const emit = defineEmits(["update:setting"]);
+//Sync with parent: localSetting -> emit("update:setting")
 watchEffect(() => {
   emit("update:setting", localSetting);
 });
+
+//Form Related
+const SecuritySettingRef = ref<FormInstance>();
+const rules = reactive<FormRules<ServerConfig.SecuritySetting>>({});
+
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (SecuritySettingRef.value) {

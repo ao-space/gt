@@ -44,6 +44,7 @@ import { getConnectionApi } from "@/api/modules/connection";
 
 use([CanvasRenderer, PolarComponent, TitleComponent, TooltipComponent, LegendComponent, PieChart]);
 
+// Chart
 type EChartsOption = ComposeOption<TitleComponentOption | TooltipComponentOption | LegendComponentOption | PieSeriesOption>;
 const chartOptions = reactive<EChartsOption>({
   textStyle: {
@@ -82,6 +83,7 @@ const chartOptions = reactive<EChartsOption>({
 });
 const pie = shallowRef<ECharts | null>(null);
 
+// Data
 const connection = reactive<Connection.Connection[]>([]);
 const poolForClient = ref<Connection.Pool>();
 const poolForServer = reactive<Connection.Connection[]>([]);

@@ -131,13 +131,12 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
 });
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
 
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
-  console.log("GeneralSetting: props.setting changed");
-  console.log(props.setting);
   Object.assign(localSetting, props.setting);
-  console.log(localSetting);
 });
 
+//Form Related
 const generalSettingRef = ref<FormInstance>();
 const validatorRemoteIdleConnections = (rule: any, value: number, callback: any) => {
   if (value < 0 || value > localSetting.RemoteConnections) {
@@ -184,13 +183,14 @@ const selectRemote = ref("tcp://");
 const remoteOptions = ["tcp://", "tls://"];
 const remote = computed(() => selectRemote.value + inputRemote.value);
 
-const emit = defineEmits(["update:setting"]);
+//Sync remote -> localSetting.Remote
 watch(
   () => remote.value,
   () => {
     localSetting.Remote = remote.value;
   }
 );
+//Sync localSetting.Remote -> remote(selectRemote, inputRemote)
 watch(
   () => localSetting.Remote,
   () => {
@@ -205,6 +205,8 @@ watch(
   }
 );
 
+const emit = defineEmits(["update:setting"]);
+//Sync with parent: localSetting -> emit("update:setting")
 watchEffect(() => {
   emit("update:setting", localSetting);
 });

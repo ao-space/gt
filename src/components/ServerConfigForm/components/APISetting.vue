@@ -57,23 +57,29 @@ import UsageTooltip from "@/components/UsageTooltip/index.vue";
 interface APISettingProps {
   setting: ServerConfig.APISetting;
 }
+
 const props = withDefaults(defineProps<APISettingProps>(), {
   setting: () => ServerConfig.defaultAPISetting
 });
 const localSetting = reactive<ServerConfig.APISetting>({ ...props.setting });
+
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
 });
 
+const emit = defineEmits(["update:setting"]);
+//Sync with parent: localSetting -> emit("update:setting")
+watchEffect(() => {
+  emit("update:setting", localSetting);
+});
+
+//Form Related
 const APISettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.APISetting>>({
   APIAddr: [{ validator: validatorAddr, trigger: "blur" }]
 });
 
-const emit = defineEmits(["update:setting"]);
-watchEffect(() => {
-  emit("update:setting", localSetting);
-});
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (APISettingRef.value) {

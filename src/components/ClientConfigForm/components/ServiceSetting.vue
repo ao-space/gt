@@ -68,19 +68,24 @@ interface ServiceSettingProps {
   index: number;
   isLast: boolean;
 }
+
 const props = withDefaults(defineProps<ServiceSettingProps>(), {
   setting: () => ClientConfig.defaultServiceSetting
 });
+const localSetting = reactive<ClientConfig.Service>({ ...props.setting });
+
 const emit = defineEmits<{
   (e: "update:setting", index: number, setting: ClientConfig.Service): void;
   (e: "removeService", index: number): void;
   (e: "addService"): void;
 }>();
-const localSetting = reactive<ClientConfig.Service>({ ...props.setting });
 
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
 });
+
+//Sync with parent: localSetting -> emit("update:setting")
 watch(
   () => localSetting,
   () => {
@@ -89,10 +94,12 @@ watch(
   { deep: true }
 );
 
+//Form Related
 const serviceSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.Service>>({
   LocalTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }]
 });
+
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (serviceSettingRef.value) {

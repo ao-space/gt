@@ -34,8 +34,11 @@ const props = defineProps<{
   showID: boolean;
 }>();
 
+//Form Related
 const tableRef = ref<TableInstance>();
+
 const remoteAddrFilterOptions = reactive<{ text: string; value: string }[]>([]);
+//Watch tableData to update filter options
 watch(
   props.tableData,
   newVal => {
@@ -46,7 +49,9 @@ watch(
     immediate: true
   }
 );
+
 const localAddrFilterOptions = reactive<{ text: string; value: string }[]>([]);
+//Watch tableData to update filter options
 watch(
   props.tableData,
   newVal => {
@@ -59,6 +64,7 @@ watch(
 );
 
 const idFilterOptions = reactive<{ text: string; value: string }[]>([]);
+//Watch tableData to update filter options
 watch(
   props.tableData,
   newVal => {
@@ -70,6 +76,7 @@ watch(
   }
 );
 
+//Filter Methods
 const filterID = (value: string, row: Connection.Connection) => {
   return row.id === value;
 };
@@ -80,6 +87,8 @@ const filterAddr = (value: string, row: Connection.Connection, column: TableColu
   }
   return false;
 };
+
+//Formatter
 const formatFamily = (row: Connection.Connection) => {
   switch (row.family) {
     case 1:

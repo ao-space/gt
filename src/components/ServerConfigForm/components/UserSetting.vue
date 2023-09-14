@@ -63,6 +63,12 @@ import TCPSetting from "./TCPSetting.vue";
 import HostSetting from "./HostSetting.vue";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 
+const emit = defineEmits<{
+  (e: "update:setting", index: number, setting: ServerConfig.UserSetting): void;
+  (e: "removeUser", index: number): void;
+  (e: "addUser"): void;
+}>();
+
 interface UserSettingProps {
   setting: ServerConfig.UserSetting;
   index: number;
@@ -71,15 +77,11 @@ interface UserSettingProps {
 const props = withDefaults(defineProps<UserSettingProps>(), {
   setting: () => ServerConfig.getDefaultUserSetting()
 });
-const emit = defineEmits<{
-  (e: "update:setting", index: number, setting: ServerConfig.UserSetting): void;
-  (e: "removeUser", index: number): void;
-  (e: "addUser"): void;
-}>();
 const localSetting = reactive<ServerConfig.UserSetting>({ ...props.setting });
 const tcpSetting = reactive<ServerConfig.TCP[]>(localSetting.TCPs);
 const hostSetting = reactive<ServerConfig.Host>(localSetting.Host);
 
+//Sync with parent: props.setting -> localSetting, tcpSetting, hostSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
   tcpSetting.splice(0, tcpSetting.length, ...localSetting.TCPs);
@@ -88,15 +90,18 @@ watchEffect(() => {
   hostSetting.WithID = localSetting.Host.WithID;
 });
 
+//Sync with child: tcpSetting -> localSetting.TCPs
 const updateTCPSetting = (setting: ServerConfig.TCP[]) => {
   tcpSetting.splice(0, tcpSetting.length, ...setting);
 };
+//Sync with child: hostSetting -> localSetting.Host
 const updateHostSetting = (setting: ServerConfig.Host) => {
   hostSetting.Number = setting.Number;
   hostSetting.RegexStr = setting.RegexStr;
   hostSetting.WithID = setting.WithID;
 };
 
+//Sync: tcpSetting -> localSetting.TCPs
 watch(
   () => tcpSetting,
   () => {
@@ -104,6 +109,7 @@ watch(
   },
   { deep: true }
 );
+//Sync: hostSetting -> localSetting.Host
 watch(
   () => hostSetting,
   () => {
@@ -113,6 +119,7 @@ watch(
   },
   { deep: true }
 );
+//Sync with parent: localSetting -> emit("update:setting")
 watch(
   () => localSetting,
   () => {
@@ -121,6 +128,7 @@ watch(
   { deep: true }
 );
 
+//Form Related
 const userSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.UserSetting>>({
   ID: [
@@ -151,6 +159,7 @@ const validateForm = (): Promise<void> => {
     }
   });
 };
+
 defineExpose({
   validateForm
 });

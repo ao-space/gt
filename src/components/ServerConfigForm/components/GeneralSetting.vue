@@ -48,6 +48,7 @@ import HostSetting from "./HostSetting.vue";
 interface GeneralSettingProps {
   setting: ServerConfig.GeneralSettingProps;
 }
+
 const props = withDefaults(defineProps<GeneralSettingProps>(), {
   setting: () => ServerConfig.getDefaultGeneralSettingProps()
 });
@@ -58,8 +59,6 @@ const localSetting = reactive<ServerConfig.GeneralSettingProps>({
     RegexStr: props.setting.Host.RegexStr || []
   }
 });
-const emit = defineEmits(["update:setting"]);
-
 const tcpSetting = reactive<ServerConfig.TCP[]>([...localSetting.TCPs]);
 const hostSetting = reactive<ServerConfig.Host>({
   Number: localSetting.Host.Number,
@@ -67,6 +66,7 @@ const hostSetting = reactive<ServerConfig.Host>({
   WithID: localSetting.Host.WithID
 });
 
+//Sync with parent: props.setting -> localSetting
 watch(
   () => props.setting,
   newSetting => {
@@ -77,11 +77,10 @@ watch(
   { deep: true }
 );
 
-//make sure the consistency
+//Sync tcpSetting and hostSetting -> localSetting
 watch(
   () => tcpSetting,
   newSetting => {
-    console.log("tcpSetting change");
     localSetting.TCPs.splice(0, localSetting.TCPs.length, ...newSetting);
   },
   { deep: true }
@@ -89,7 +88,6 @@ watch(
 watch(
   () => hostSetting,
   () => {
-    console.log("hostSetting change");
     localSetting.Host.Number = hostSetting.Number;
     localSetting.Host.RegexStr?.splice(0, localSetting.Host.RegexStr.length, ...hostSetting.RegexStr);
     localSetting.Host.WithID = hostSetting.WithID;
@@ -97,28 +95,29 @@ watch(
   { deep: true }
 );
 
-//inform parent component to update setting
+const emit = defineEmits(["update:setting"]);
+
+//Sync with parent: localSetting -> emit("update:setting")
 watch(
   () => localSetting,
   () => {
-    console.log("update:setting");
     emit("update:setting", localSetting);
   },
   { deep: true }
 );
 
+//Form Related
 const generalSettingRef = ref<FormInstance>();
-const rules = reactive<FormRules>({});
-
 const tcpSettingRef = ref<InstanceType<typeof TCPSetting> | null>(null);
 const hostSettingRef = ref<InstanceType<typeof HostSetting> | null>(null);
 
+const rules = reactive<FormRules>({});
+
+//Sync with child
 const updateTCPSetting = (setting: ServerConfig.TCP[]) => {
-  console.log("updateTCPSetting");
   tcpSetting.splice(0, tcpSetting.length, ...setting);
 };
 const updateHostSetting = (setting: ServerConfig.Host) => {
-  console.log("updateHostSetting");
   if (JSON.stringify(hostSetting) === JSON.stringify(setting)) return;
   hostSetting.Number = setting.Number;
   hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...setting.RegexStr);

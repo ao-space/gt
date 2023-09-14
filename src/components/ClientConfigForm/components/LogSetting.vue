@@ -46,30 +46,36 @@
     </div>
   </el-form>
 </template>
+
 <script setup name="LogSetting" lang="ts">
 import type { FormInstance, FormRules } from "element-plus";
 import { reactive, ref, watchEffect } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
+
 interface LogSettingProps {
   setting: ClientConfig.LogSetting;
 }
+
 const props = withDefaults(defineProps<LogSettingProps>(), {
   setting: () => ClientConfig.defaultLogSetting
 });
-
 const localSetting = reactive<ClientConfig.LogSetting>({ ...props.setting });
+
+//Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
 });
 
-const LogSettingRef = ref<FormInstance>();
-const rules = reactive<FormRules<ClientConfig.LogSetting>>({});
-
 const emit = defineEmits(["update:setting"]);
+//Sync with parent: localSetting -> emit("update:setting")
 watchEffect(() => {
   emit("update:setting", localSetting);
 });
+
+//Form Related
+const LogSettingRef = ref<FormInstance>();
+const rules = reactive<FormRules<ClientConfig.LogSetting>>({});
 
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {

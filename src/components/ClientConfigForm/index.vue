@@ -54,7 +54,6 @@ const sentrySetting = reactive<ClientConfig.SentrySetting>({ ...ClientConfig.def
 const webRTCSetting = reactive<ClientConfig.WebRTCSetting>({ ...ClientConfig.defaultWebRTCSetting });
 const tcpForwardSetting = reactive<ClientConfig.TCPForwardSetting>({ ...ClientConfig.defaultTCPForwardSetting });
 const logSetting = reactive<ClientConfig.LogSetting>({ ...ClientConfig.defaultLogSetting });
-
 const options = reactive<ClientConfig.Options>({
   ...generalSetting,
   ...sentrySetting,
@@ -63,6 +62,7 @@ const options = reactive<ClientConfig.Options>({
   ...logSetting
 });
 
+//Sync the options with the corresponding setting
 watchEffect(() => {
   Object.assign(options, {
     ...generalSetting,
@@ -74,18 +74,6 @@ watchEffect(() => {
 });
 
 const services = reactive<ClientConfig.Service[]>([{ ...ClientConfig.defaultServiceSetting }]);
-
-//adjust the view when the service setting is added or removed
-const adjustView = () => {
-  //Need the el-main element to be set to overflow: auto
-  const elMain = document.querySelector(".el-main");
-  if (elMain) {
-    const currentScrollPosition = elMain.scrollTop;
-    nextTick(() => {
-      elMain.scrollTop = currentScrollPosition;
-    });
-  }
-};
 
 const addService = () => {
   services.push({ ...ClientConfig.defaultServiceSetting });
@@ -103,10 +91,23 @@ const removeService = (index: number) => {
   }
 };
 
+//adjust the view when the service setting is added or removed
+const adjustView = () => {
+  //Need the el-main element to be set to overflow: auto
+  const elMain = document.querySelector(".el-main");
+  if (elMain) {
+    const currentScrollPosition = elMain.scrollTop;
+    nextTick(() => {
+      elMain.scrollTop = currentScrollPosition;
+    });
+  }
+};
+
 const clientConfig = reactive<ClientConfig.Config>({
   Services: services,
   ...options
 });
+//Sync the clientConfig with the options
 watchEffect(() => {
   Object.assign(clientConfig, {
     ...options
@@ -129,11 +130,12 @@ const updateLogSetting = (newSetting: ClientConfig.LogSetting) => {
   Object.assign(logSetting, newSetting);
 };
 
+//update the service setting with corresponding index
 const updateServiceSetting = (index: number, newSetting: ClientConfig.Service) => {
-  //update the service setting with corresponding index
   Object.assign(services[index], newSetting);
 };
 
+// Form Related
 const generalSettingRef = ref<InstanceType<typeof GeneralSetting> | null>(null);
 const sentrySettingRef = ref<InstanceType<typeof SentrySetting> | null>(null);
 const webRTCSettingRef = ref<InstanceType<typeof WebRTCSetting> | null>(null);
@@ -212,6 +214,7 @@ interface dynamicTabType<T> {
   index: number;
   isLast: boolean;
 }
+
 const dynamicTabs = computed<dynamicTabType<ClientConfig.Service>[]>(() => {
   return services.map((service, index) => ({
     title: `Service ${index + 1} Setting`,
@@ -224,6 +227,7 @@ const dynamicTabs = computed<dynamicTabType<ClientConfig.Service>[]>(() => {
     isLast: index == services.length - 1
   }));
 });
+
 const tabList = computed<Tab[]>(() => [
   ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
   ...dynamicTabs.value.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
@@ -233,6 +237,7 @@ const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => 
   return Promise.all(formRefs.map(formRef => formRef.value?.validateForm()));
 };
 
+//update the data with the response from the server
 const updateData = (data: Config.Client.ResConfig) => {
   Object.assign(generalSetting, mapClientGeneralSetting(data));
   Object.assign(sentrySetting, mapClientSentrySetting(data));
@@ -246,6 +251,7 @@ const updateData = (data: Config.Client.ResConfig) => {
   }
 };
 
+//check if the options are consistent with the running system
 const checkOptionsConsistency = (runningConfig: ClientConfig.Config, sendingConfig: ClientConfig.Config): boolean => {
   const runningOptions = { ...runningConfig };
   const sendingOptions = { ...sendingConfig };
@@ -256,6 +262,7 @@ const checkOptionsConsistency = (runningConfig: ClientConfig.Config, sendingConf
   return JSON.stringify(runningOptions) === JSON.stringify(sendingOptions);
 };
 
+//submit the configuration to save in file
 const submit = async () => {
   ElMessageBox.confirm("Make sure you want to save the configuration to file.", "Save The Configuration", {
     confirmButtonText: "Confirm",
@@ -286,6 +293,8 @@ const submit = async () => {
       ElMessage.info("Cancel Submit Operation!");
     });
 };
+
+//get the configuration
 const getFromFile = async () => {
   ElMessageBox.confirm(
     "Make sure you want to get the configuration from file, if you fail to get from file, it will get from the running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
@@ -340,6 +349,8 @@ const getFromRunning = async () => {
       ElMessage.info("Cancel GetFromRunning Operation!");
     });
 };
+
+//control the server
 const reloadServices = async () => {
   ElMessageBox.confirm(
     "You need to make sure that the changes you make only happen in the services section,and make sure it has been saved, or the system won't reload the services.",

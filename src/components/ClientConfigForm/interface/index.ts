@@ -52,6 +52,7 @@ export namespace ClientConfig {
   }
   export interface Options extends GeneralSetting, SentrySetting, WebRTCSetting, TCPForwardSetting, LogSetting {}
 
+  // The default value of each field, note that use deep copy to avoid reference
   export const defaultGeneralSetting: GeneralSetting = {
     ID: "",
     Secret: "",
@@ -100,6 +101,7 @@ export namespace ClientConfig {
     UseLocalAsHTTPHost: false
   };
 
+  // The usage of each field, mainly used in the tooltip
   export const usage = {
     // General Setting
     Config: "The config file path to load",
@@ -154,11 +156,5 @@ export namespace ClientConfig {
 
   export interface FormRef {
     validateForm: () => Promise<void>;
-  }
-  export interface RuleForm {
-    ReconnectDelay: string;
-    RemoteTimeout: string;
-    LocalTimeout: string;
-    WebRTCConnectionIdleTimeout: string;
   }
 }
