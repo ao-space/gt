@@ -34,22 +34,24 @@ jobs:
         submodules: recursive
 
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
       with:
-        go-version: 1.19
+        go-version: 'stable'
 
     - name: package-server
       run: |-
-        sudo apt-get update && sudo apt-get install make git gn ninja-build python3 python3-pip libgtk-3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu -y
+        sudo apt-get update && sudo apt-get install make git gn ninja-build python3 python3-pip libgtk-3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu gcc-riscv64-linux-gnu g++-riscv64-linux-gnu -y
         GOARCH=amd64 make release_server && mv release/linux-amd64-server release/linux-x86_64-server
         TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 make release_server && mv release/linux-arm64-server release/linux-aarch64-server
+        TARGET=riscv64-linux-gnu GOOS=linux GOARCH=riscv64 make release_server
         ls -al release
 
     - name: package-client
       run: |-
-        sudo apt-get update && sudo apt-get install make git gn ninja-build python3 python3-pip libgtk-3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu -y
+        sudo apt-get update && sudo apt-get install make git gn ninja-build python3 python3-pip libgtk-3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu gcc-riscv64-linux-gnu g++-riscv64-linux-gnu -y
         GOARCH=amd64 make release_client && mv release/linux-amd64-client release/linux-x86_64-client
         TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 make release_client && mv release/linux-arm64-client release/linux-aarch64-client
+        TARGET=riscv64-linux-gnu GOOS=linux GOARCH=riscv64 make release_client
         ls -al release
 
     - name: Archive Server artifacts
@@ -189,7 +191,7 @@ jobs:
         tags: ${{ steps.meta-server.outputs.tags }}
         labels: ${{ steps.meta-server.outputs.labels }}
         builder: ${{ steps.buildx.outputs.name }}
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64,linux/arm64,linux/riscv64
         cache-from: type=gha
         cache-to: type=gha,mode=max
         file: Dockerfile-server
@@ -222,7 +224,7 @@ jobs:
         tags: ${{ steps.meta-client.outputs.tags }}
         labels: ${{ steps.meta-client.outputs.labels }}
         builder: ${{ steps.buildx.outputs.name }}
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64,linux/arm64,linux/riscv64
         cache-from: type=gha
         cache-to: type=gha,mode=max
         file: Dockerfile-client
@@ -246,7 +248,7 @@ jobs:
         tags: ${{ steps.meta-opensource-server.outputs.tags }}
         labels: ${{ steps.meta-opensource-server.outputs.labels }}
         builder: ${{ steps.buildx.outputs.name }}
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64,linux/arm64,linux/riscv64
         cache-from: type=gha
         cache-to: type=gha,mode=max
         file: Dockerfile-server
@@ -269,7 +271,7 @@ jobs:
         tags: ${{ steps.meta-opensource-client.outputs.tags }}
         labels: ${{ steps.meta-opensource-client.outputs.labels }}
         builder: ${{ steps.buildx.outputs.name }}
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64,linux/arm64,linux/riscv64
         cache-from: type=gha
         cache-to: type=gha,mode=max
         file: Dockerfile-client
