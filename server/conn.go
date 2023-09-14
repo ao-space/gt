@@ -344,7 +344,7 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 			}
 
 			e := c.SendErrorSignalInvalidIDAndSecret()
-			c.Logger.Info().Err(err).AnErr("respErr", e).Msg("invalid id and secret")
+			c.Logger.Info().Err(err).Str("id", idStr).AnErr("respErr", e).Msg("invalid id and secret")
 			return
 		}
 
@@ -389,7 +389,7 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 			}
 
 			e := c.SendErrorSignalInvalidIDAndSecret()
-			c.Logger.Info().Err(err).AnErr("respErr", e).Msg("invalid id and secret")
+			c.Logger.Info().Err(err).Str("id", idStr).AnErr("respErr", e).Msg("invalid id and secret")
 			return
 		}
 		if len(u.Host.Prefixes) > 0 {

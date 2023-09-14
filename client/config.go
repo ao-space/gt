@@ -49,7 +49,7 @@ type Options struct {
 	RemoteIdleConnections uint          `yaml:"remoteIdleConnections" usage:"The number of idle server connections kept in the pool"`
 	RemoteTimeout         time.Duration `yaml:"remoteTimeout" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
 
-	HostPrefix         config.PositionSlice[string]        `yaml:"hostPrefix" usage:"The server will recognize this host prefix and forward data to local"`
+	HostPrefix         config.PositionSlice[string]        `yaml:"-" arg:"hostPrefix" usage:"The server will recognize this host prefix and forward data to local"`
 	RemoteTCPPort      config.PositionSlice[uint16]        `yaml:"-" arg:"remoteTCPPort" usage:"The TCP port that the remote server will open"`
 	RemoteTCPRandom    config.PositionSlice[bool]          `yaml:"-" arg:"remoteTCPRandom" usage:"Whether to choose a random tcp port by the remote server"`
 	Local              config.PositionSlice[string]        `yaml:"-" arg:"local" usage:"The local service url"`
