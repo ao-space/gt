@@ -98,7 +98,7 @@ const globalStore = useGlobalStore();
 const { layout, primary, isGrey, isWeak, asideInverted, isCollapse, breadcrumb, breadcrumbIcon, tabs, tabsIcon, footer } =
   storeToRefs(globalStore);
 
-// 预定义主题颜色
+// preset color list
 const colorList = [
   DEFAULT_PRIMARY,
   "#daa96e",

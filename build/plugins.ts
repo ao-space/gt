@@ -11,41 +11,41 @@ import viteCompression from "vite-plugin-compression";
 import vueSetupExtend from "unplugin-vue-setup-extend-plus/vite";
 
 /**
- * 创建 vite 插件
+ * Create Vite Plugins
  * @param viteEnv
  */
 export const createVitePlugins = (viteEnv: ViteEnv): (PluginOption | PluginOption[])[] => {
   const { VITE_GLOB_APP_TITLE, VITE_REPORT, VITE_PWA } = viteEnv;
   return [
     vue(),
-    // vue 可以使用 jsx/tsx 语法
+    // vue can use jsx/tsx
     vueJsx(),
-    // esLint 报错信息显示在浏览器界面上
+    // esLint show error message on browser
     eslintPlugin(),
-    // name 可以写在 script 标签上
+    // name can be written on the script tag
     vueSetupExtend({}),
-    // 创建打包压缩配置
+    // create vite-plugin-compression
     createCompression(viteEnv),
-    // 注入变量到 html 文件
+    // inject variable to html
     createHtmlPlugin({
       inject: {
         data: { title: VITE_GLOB_APP_TITLE }
       }
     }),
-    // 使用 svg 图标
+    // use svg icons
     createSvgIconsPlugin({
       iconDirs: [resolve(process.cwd(), "src/assets/icons")],
       symbolId: "icon-[dir]-[name]"
     }),
     // vitePWA
     VITE_PWA && createVitePwa(viteEnv),
-    // 是否生成包预览，分析依赖包大小做优化处理
+    // whether to generate package preview
     VITE_REPORT && (visualizer({ filename: "stats.html", gzipSize: true, brotliSize: true }) as PluginOption)
   ];
 };
 
 /**
- * @description 根据 compress 配置，生成不同的压缩规则
+ * @description according to VITE_BUILD_COMPRESS to create vite-plugin-compression
  * @param viteEnv
  */
 const createCompression = (viteEnv: ViteEnv): PluginOption | PluginOption[] => {

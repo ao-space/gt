@@ -6,17 +6,17 @@ import { getFlatMenuList, getShowMenuList, getAllBreadcrumbList } from "@/utils"
 export const useAuthStore = defineStore({
   id: "GT-auth",
   state: (): AuthState => ({
-    // 菜单权限列表
+    // Menu permission list
     authMenuList: []
   }),
   getters: {
-    // 菜单权限列表 ==> 这里的菜单没有经过任何处理
+    // Menu permission list ==> The menu here has not been processed
     authMenuListGet: state => state.authMenuList,
-    // 菜单权限列表 ==> 左侧菜单栏渲染，需要剔除 isHide == true
+    // Menu permission list ==> Left menu bar rendering, you need to remove isHide == true
     showMenuListGet: state => getShowMenuList(state.authMenuList),
-    // 菜单权限列表 ==> 扁平化之后的一维数组菜单，主要用来添加动态路由
+    // Menu permission list ==> One-dimensional array menu after flattening, mainly used to add dynamic routes
     flatMenuListGet: state => getFlatMenuList(state.authMenuList),
-    // 递归处理后的所有面包屑导航列表
+    // Menu permission list ==> All breadcrumb navigation lists after recursive processing
     breadcrumbListGet: state => getAllBreadcrumbList(state.authMenuList)
   },
   actions: {

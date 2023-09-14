@@ -7,9 +7,9 @@ module.exports = {
     node: true,
     es6: true
   },
-  // 指定如何解析语法
+  // Specifies how to parse syntax
   parser: "vue-eslint-parser",
-  // 优先级低于 parse 的语法解析配置
+  // Has a lower priority than the parse syntax configuration
   parserOptions: {
     parser: "@typescript-eslint/parser",
     ecmaVersion: 2020,
@@ -19,42 +19,42 @@ module.exports = {
       jsx: true
     }
   },
-  // 继承某些已有的规则
+  // Inheritance of some existing rules
   extends: ["plugin:vue/vue3-recommended", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
   /**
-   * "off" 或 0    ==>  关闭规则
-   * "warn" 或 1   ==>  打开的规则作为警告（不影响代码执行）
-   * "error" 或 2  ==>  规则作为一个错误（代码不能执行，界面报错）
+   * "off" 或 0    ==>  Turn off the rule
+   * "warn" 或 1   ==>  Turn on the rule ad a warning
+   * "error" 或 2  ==>  Rule as an error
    */
   rules: {
     // eslint (http://eslint.cn/docs/rules)
-    "no-var": "error", // 要求使用 let 或 const 而不是 var
-    "no-multiple-empty-lines": ["error", { max: 1 }], // 不允许多个空行
-    "prefer-const": "off", // 使用 let 关键字声明但在初始分配后从未重新分配的变量，要求使用 const
-    "no-use-before-define": "off", // 禁止在 函数/类/变量 定义之前使用它们
+    "no-var": "error", // Required use let or const instead of var
+    "no-multiple-empty-lines": ["error", { max: 1 }], // Disallow multiple empty lines
+    "prefer-const": "off", //  For variables declared with the let keyword but never reassigned after the initial assignment, require the use of const
+    "no-use-before-define": "off", // Prohibit the use of variables before they are defined
 
     // typeScript (https://typescript-eslint.io/rules)
-    "@typescript-eslint/no-unused-vars": "error", // 禁止定义未使用的变量
-    "@typescript-eslint/prefer-ts-expect-error": "error", // 禁止使用 @ts-ignore
-    "@typescript-eslint/ban-ts-comment": "error", // 禁止 @ts-<directive> 使用注释或要求在指令后进行描述
-    "@typescript-eslint/no-inferrable-types": "off", // 可以轻松推断的显式类型可能会增加不必要的冗长
-    "@typescript-eslint/no-namespace": "off", // 禁止使用自定义 TypeScript 模块和命名空间
-    "@typescript-eslint/no-explicit-any": "off", // 禁止使用 any 类型
-    "@typescript-eslint/ban-types": "off", // 禁止使用特定类型
-    "@typescript-eslint/no-var-requires": "off", // 允许使用 require() 函数导入模块
-    "@typescript-eslint/no-empty-function": "off", // 禁止空函数
-    "@typescript-eslint/no-non-null-assertion": "off", // 不允许使用后缀运算符的非空断言(!)
+    "@typescript-eslint/no-unused-vars": "error", // Prohibit the use of variables before they are defined
+    "@typescript-eslint/prefer-ts-expect-error": "error", // prohibit the use of @ts-ignore
+    "@typescript-eslint/ban-ts-comment": "error", // Prohibit the use of @ts-<directive> comments or require a description after the directive
+    "@typescript-eslint/no-inferrable-types": "off", // Explicit types that can be easily inferred may add unnecessary verbosity
+    "@typescript-eslint/no-namespace": "off", // Prohibit the use of custom TypeScript modules and namespaces
+    "@typescript-eslint/no-explicit-any": "off", // Prohibit the use of the any type
+    "@typescript-eslint/ban-types": "off", // Prohibit the use of specific types
+    "@typescript-eslint/no-var-requires": "off", // Allow the use of the require() function to import modules
+    "@typescript-eslint/no-empty-function": "off", // Prohibit empty functions
+    "@typescript-eslint/no-non-null-assertion": "off", // Do not allow the use of the non-null assertion postfix operator(!)
 
     // vue (https://eslint.vuejs.org/rules)
-    "vue/script-setup-uses-vars": "error", // 防止<script setup>使用的变量<template>被标记为未使用，此规则仅在启用该no-unused-vars规则时有效
-    "vue/v-slot-style": "error", // 强制执行 v-slot 指令样式
-    "vue/no-mutating-props": "error", // 不允许改变组件 prop
-    "vue/custom-event-name-casing": "error", // 为自定义事件名称强制使用特定大小写
-    "vue/html-closing-bracket-newline": "error", // 在标签的右括号之前要求或禁止换行
-    "vue/attribute-hyphenation": "error", // 对模板中的自定义组件强制执行属性命名样式：my-prop="prop"
-    "vue/attributes-order": "off", // vue api使用顺序，强制执行属性顺序
-    "vue/no-v-html": "off", // 禁止使用 v-html
-    "vue/require-default-prop": "off", // 此规则要求为每个 prop 为必填时，必须提供默认值
-    "vue/multi-word-component-names": "off" // 要求组件名称始终为 “-” 链接的单词
+    "vue/script-setup-uses-vars": "error", // Prevent variables used in <script setup> from being marked as unused in <template>, this rule is only effective when the no-unused-vars rule is enabled
+    "vue/v-slot-style": "error", // Enforce the v-slot directive style
+    "vue/no-mutating-props": "error", // Do not allow mutating component props
+    "vue/custom-event-name-casing": "error", // Enforce a specific case for custom event names
+    "vue/html-closing-bracket-newline": "error", // Require or disallow a newline before the right bracket of a tag
+    "vue/attribute-hyphenation": "error", // Enforce attribute naming style for custom components in the template: my-prop="prop"
+    "vue/attributes-order": "off", // Vue API usage order, enforce attribute order
+    "vue/no-v-html": "off", // Prohibit the use of v-html
+    "vue/require-default-prop": "off", // This rule requires a default value to be provided for each prop when it is required
+    "vue/multi-word-component-names": "off" // Require component names to always be multi-word linked by "-"
   }
 };

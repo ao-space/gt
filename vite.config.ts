@@ -52,7 +52,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     build: {
       outDir: "dist",
       // minify: "esbuild",
-      // esbuild 打包更快，但是不能去除 console.log，terser打包慢，但能去除 console.log
+      // esbuild package faster, but can't remove console.log, terser package slower, but can remove console.log
       minify: "terser",
       terserOptions: {
         compress: {
@@ -60,9 +60,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           drop_debugger: true
         }
       },
-      // 禁用 gzip 压缩大小报告，可略微减少打包时间
+      // disable gzip size report, can slightly reduce packaging time
       reportCompressedSize: false,
-      // 规定触发警告的 chunk 大小
+      // define the chunk size warning limit
       chunkSizeWarningLimit: 2000,
       rollupOptions: {
         output: {
