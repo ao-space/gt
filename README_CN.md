@@ -145,7 +145,6 @@ users:
 options:
   apiAddr: 1.2.3.4:1234
   certFile: /path
-  host: 1.2.3.4
   keyFile: /path
   logFile: /path
   logFileMaxCount: 1234
@@ -203,7 +202,6 @@ tcp:
 options:
   apiAddr: 1.2.3.4:1234
   certFile: /path
-  host: 1.2.3.4
   keyFile: /path
   logFile: /path
   logFileMaxCount: 1234
