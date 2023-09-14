@@ -62,15 +62,12 @@ router.beforeEach(async (to, from, next) => {
     return next({ ...to, replace: true });
   }
 
-  // 7.Store routerName for button permission filtering
-  authStore.setRouteName(to.name as string);
-
-  // 8.Normal page access
+  // 7.Normal page access
   next();
 });
 
 /**
- * @description 重置路由
+ * @description Reset router
  * */
 export const resetRouter = () => {
   const authStore = useAuthStore();
@@ -81,7 +78,7 @@ export const resetRouter = () => {
 };
 
 /**
- * @description 路由跳转错误
+ * @description Route jump error
  * */
 router.onError(error => {
   NProgress.done();
@@ -89,7 +86,7 @@ router.onError(error => {
 });
 
 /**
- * @description 路由跳转结束
+ * @description Route interception afterEach
  * */
 router.afterEach(() => {
   NProgress.done();

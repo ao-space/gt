@@ -69,7 +69,6 @@ const login = (formEl: FormInstance | undefined) => {
     try {
       // 1.Execute the login API with the provided login form data
       const { data } = await loginApi({ ...loginForm });
-      console.log(data);
       userStore.setToken(data.token);
 
       // 2.Initialize dynamic routers

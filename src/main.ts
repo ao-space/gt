@@ -22,8 +22,6 @@ import "virtual:svg-icons-register";
 import ElementPlus from "element-plus";
 // element icons
 import * as Icons from "@element-plus/icons-vue";
-// custom directives
-import directives from "@/directives/index";
 // vue Router
 import router from "@/routers";
 // pinia store
@@ -44,4 +42,4 @@ Object.keys(Icons).forEach(key => {
 // eslint-disable-next-line vue/component-definition-name-casing
 app.component("v-chart", ECharts);
 
-app.use(ElementPlus).use(directives).use(router).use(pinia).mount("#app");
+app.use(ElementPlus).use(router).use(pinia).mount("#app");

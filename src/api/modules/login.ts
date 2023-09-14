@@ -1,6 +1,5 @@
 import { Login } from "@/api/interface/index";
 import authMenuList from "@/assets/json/authMenuList.json";
-import authButtonList from "@/assets/json/authButtonList.json";
 import http from "@/api";
 
 /**
@@ -23,14 +22,4 @@ export const getAuthMenuListApi = () => {
   //comment out the previous line of code and introduce the local authMenuList.json data
 
   return authMenuList; //for test
-};
-
-// Get Button Permission
-export const getAuthButtonListApi = () => {
-  // return http.get<Login.ResAuthButtons>(PORT1 + `/auth/buttons`, {}, { noLoading: true });
-
-  //if you want to make the button permission a local data,
-  //comment out the previous line of code and introduce the local authButtonList.json data
-
-  return authButtonList;
 };

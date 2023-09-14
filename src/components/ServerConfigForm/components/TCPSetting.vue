@@ -91,7 +91,6 @@ const form = reactive<{ tableData: tableDataType[] }>({
 watch(
   () => props.setting,
   newSetting => {
-    console.log("props.setting change");
     if (JSON.stringify(form.tableData) === JSON.stringify(newSetting)) return;
     form.tableData.splice(0, form.tableData.length, ...newSetting.map(({ Range, Number }) => ({ Range, Number, isEdit: false })));
   },

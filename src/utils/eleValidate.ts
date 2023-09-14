@@ -5,11 +5,9 @@ export const validatorTimeFormat = (rule: any, value: any, callback: any) => {
     callback(new Error("Please enter a value"));
   } else if (regex.test(value)) {
     console.log("regex test passed");
-    console.log(value);
     callback();
   } else {
     console.log("regex test failed");
-    console.log(value);
     callback(new Error("Please enter a valid time format"));
   }
 };

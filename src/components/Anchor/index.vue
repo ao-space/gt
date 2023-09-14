@@ -27,7 +27,6 @@ defineProps({
 
 const tabRefs: Ref<{ [key: string]: HTMLDivElement | null }> = ref({});
 const handleClick = (pane: TabsPaneContext) => {
-  console.log(pane);
   if (pane.props.name !== undefined && tabRefs.value[pane.props.name.toString()]) {
     tabRefs.value[pane.props.name.toString()]!.scrollIntoView({ behavior: "smooth" });
   }

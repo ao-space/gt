@@ -16,9 +16,8 @@ export const initDynamicRouter = async () => {
   const authStore = useAuthStore();
 
   try {
-    // 1. Retrieve the menu list and button permission list
+    // 1. Retrieve the menu list
     await authStore.getAuthMenuList();
-    await authStore.getAuthButtonList();
 
     // 2. Check if the current user has menu permissions
     if (!authStore.authMenuListGet.length) {

@@ -144,7 +144,6 @@ const colors = ref([
 
 const reload = async () => {
   const { data } = await getServerInfoApi();
-  console.log(data);
   state.value = data.serverInfo;
 };
 

@@ -66,11 +66,9 @@ const userList = reactive<ServerConfig.UserSetting[]>([{ ...ServerConfig.getDefa
 watch(
   users,
   newUsers => {
-    console.log("users change", newUsers);
     userList.splice(0, userList.length);
     userSettingRefs.splice(0, userSettingRefs.length);
     Object.keys(newUsers).forEach(key => {
-      console.log("process user key", key, newUsers[key]);
       userList.push({
         ID: key,
         Secret: newUsers[key].Secret,
@@ -81,7 +79,6 @@ watch(
       });
       userSettingRefs.push(ref<InstanceType<typeof UserSetting> | null>(null));
     });
-    console.log("updated userList", userList);
   },
   { deep: true }
 );
@@ -99,7 +96,6 @@ const generalSettingProps = reactive<ServerConfig.GeneralSettingProps>({
 watch(
   () => generalSetting,
   newSetting => {
-    console.log("generalSetting change");
     Object.assign(generalSettingProps, newSetting);
   },
   { deep: true }
@@ -107,7 +103,6 @@ watch(
 watch(
   () => generalSettingProps,
   newSetting => {
-    console.log("generalSettingProps change");
     generalSetting.UserPath = newSetting.UserPath;
     generalSetting.AuthAPI = newSetting.AuthAPI;
   },
@@ -207,7 +202,6 @@ const removeUser = (index: number) => {
 };
 
 const updateUserSetting = (index: number, newSetting: ServerConfig.UserSetting) => {
-  console.log("updateUserSetting", index, newSetting);
   Object.assign(userList[index], newSetting);
 };
 
@@ -393,7 +387,7 @@ const submit = () => {
       }
     })
     .catch(() => {
-      console.log("Cancel Submit Operation!");
+      ElMessage.info("Cancel Submit Operation!");
     });
 };
 
