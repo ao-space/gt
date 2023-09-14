@@ -321,8 +321,8 @@ const updateData = (data: Config.Server.ResConfig) => {
   Object.assign(securitySetting, mapServerSecuritySetting(data));
   Object.assign(logSetting, mapServerLogSetting(data));
   Object.assign(sentrySetting, mapServerSentrySetting(data));
-  tcps.splice(0, tcps.length, ...mapServerTCPSetting(data));
   Object.assign(host, mapServerHostSetting(data));
+  tcps.splice(0, tcps.length, ...mapServerTCPSetting(data));
   Object.keys(users).forEach(key => {
     delete users[key];
   });

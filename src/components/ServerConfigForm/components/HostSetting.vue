@@ -93,7 +93,7 @@ interface formType {
 
 const form = reactive<formType>({
   Number: props.setting.Number,
-  tableData: props.setting.RegexStr ? props.setting.RegexStr.map(item => ({ RegexStr: item, isEdit: false })) : [],
+  tableData: props.setting.RegexStr.map(item => ({ RegexStr: item, isEdit: false })),
   WithID: props.setting.WithID
 });
 
@@ -103,9 +103,11 @@ watch(
   newSetting => {
     if (JSON.stringify(form) === JSON.stringify(newSetting)) return;
     form.Number = newSetting.Number;
-    form.tableData = Array.isArray(newSetting.RegexStr)
-      ? newSetting.RegexStr.map(item => ({ RegexStr: item, isEdit: false }))
-      : [];
+    if (newSetting.RegexStr) {
+      form.tableData = newSetting.RegexStr.map(item => ({ RegexStr: item, isEdit: false }));
+    } else {
+      form.tableData = [];
+    }
     form.WithID = newSetting.WithID;
   },
   { deep: true }
@@ -117,7 +119,7 @@ let prevFormState = JSON.stringify(form);
 watchEffect(() => {
   const currentFormState = JSON.stringify(form);
   if (currentFormState !== prevFormState) {
-    for (let item of form?.tableData) {
+    for (let item of form.tableData) {
       if (item.isEdit) {
         return;
       }

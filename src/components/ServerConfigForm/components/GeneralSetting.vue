@@ -40,7 +40,7 @@
 <script setup lang="ts" name="GeneralSetting">
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { ServerConfig } from "../interface";
-import { reactive, ref, watch } from "vue";
+import { reactive, ref, watch, watchEffect } from "vue";
 import { FormInstance, FormRules } from "element-plus";
 import TCPSetting from "./TCPSetting.vue";
 import HostSetting from "./HostSetting.vue";
@@ -67,15 +67,11 @@ const hostSetting = reactive<ServerConfig.Host>({
 });
 
 //Sync with parent: props.setting -> localSetting
-watch(
-  () => props.setting,
-  newSetting => {
-    Object.assign(localSetting, newSetting);
-    tcpSetting.splice(0, tcpSetting.length, ...newSetting.TCPs);
-    Object.assign(hostSetting, newSetting.Host);
-  },
-  { deep: true }
-);
+watchEffect(() => {
+  Object.assign(localSetting, props.setting);
+  tcpSetting.splice(0, tcpSetting.length, ...props.setting.TCPs);
+  Object.assign(hostSetting, props.setting.Host);
+});
 
 //Sync tcpSetting and hostSetting -> localSetting
 watch(
@@ -89,7 +85,7 @@ watch(
   () => hostSetting,
   () => {
     localSetting.Host.Number = hostSetting.Number;
-    localSetting.Host.RegexStr?.splice(0, localSetting.Host.RegexStr.length, ...hostSetting.RegexStr);
+    localSetting.Host.RegexStr.splice(0, localSetting.Host.RegexStr.length, ...hostSetting.RegexStr);
     localSetting.Host.WithID = hostSetting.WithID;
   },
   { deep: true }
