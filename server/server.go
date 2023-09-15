@@ -35,6 +35,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/isrc-cas/gt/config"
 	"github.com/isrc-cas/gt/logger"
 	"github.com/isrc-cas/gt/predef"
@@ -206,7 +207,7 @@ func (s *Server) acceptLoop(l net.Listener, handle func(*conn)) {
 
 // Start runs the server.
 func (s *Server) Start() (err error) {
-	s.Logger.Info().Interface("config", &s.config).Msg(predef.Version)
+	s.Logger.Info().Msg(predef.Version)
 
 	err = s.users.mergeUsers(s.config.Users, nil, nil)
 	if err != nil {
@@ -311,6 +312,7 @@ func (s *Server) Start() (err error) {
 			return
 		}
 	}
+	s.Logger.Info().Msg(spew.Sdump(s.config))
 	return
 }
 
