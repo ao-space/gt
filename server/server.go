@@ -43,7 +43,7 @@ import (
 	"github.com/isrc-cas/gt/server/sync"
 	"github.com/isrc-cas/gt/util"
 	"github.com/pion/logging"
-	"github.com/pion/turn/v2"
+	"github.com/pion/turn/v3"
 )
 
 // Server is a network agent server.
