@@ -18,11 +18,11 @@ import (
 	"errors"
 	"math"
 	"net"
-	"strconv"
 	"sync/atomic"
 	"time"
 
 	"github.com/isrc-cas/gt/bufio"
+	"github.com/isrc-cas/gt/pool"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/rs/zerolog"
 )
@@ -136,6 +136,7 @@ var (
 	errHostRegexMismatchBytes              = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x06}
 	errDifferentConfigClientConnectedBytes = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x07}
 	errReachedMaxOptionsBytes              = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x08}
+	errTCPNumberLimited                    = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x09}
 	infoTCPPortOpened                      = []byte{0xFF, 0xFF, 0xFF, 0xFB, 0x00, 0x01}
 	ServicesBytes                          = []byte{0xFF, 0xFF, 0xFF, 0xFA}
 )
@@ -161,6 +162,8 @@ func (e Error) Error() string {
 		return "another client that with different config already connected"
 	case ErrReachedMaxOptions:
 		return "reached the max options"
+	case ErrTCPNumberLimited:
+		return "tcp number limited"
 	}
 	return "unknown error"
 }
@@ -183,6 +186,8 @@ const (
 	ErrDifferentConfigClientConnected
 	// ErrReachedMaxOptions represents reached the max options
 	ErrReachedMaxOptions
+	// ErrTCPNumberLimited represents tcp number limited
+	ErrTCPNumberLimited
 )
 
 // Info represents a specific information signal
@@ -193,25 +198,6 @@ const (
 	// InfoTCPPortOpened represents TCP port opened successfully
 	InfoTCPPortOpened
 )
-
-// ReadInfo generate information string from reader
-func (i Info) ReadInfo(reader *bufio.Reader) (str string, err error) {
-	switch i {
-	case InfoTCPPortOpened:
-		var peekBytes []byte
-		peekBytes, err = reader.Peek(2)
-		if err != nil {
-			return
-		}
-		tcpPort := uint16(peekBytes[1]) | uint16(peekBytes[0])<<8
-		_, err = reader.Discard(2)
-		if err != nil {
-			return
-		}
-		return "tcp port " + strconv.Itoa(int(tcpPort)) + " opened successfully", nil
-	}
-	return "", errors.New("unknown info")
-}
 
 // SendPingSignal sends ping signal to the other side
 func (c *Connection) SendPingSignal() (err error) {
@@ -258,15 +244,26 @@ func (c *Connection) SendErrorSignalInvalidIDAndSecret() (err error) {
 }
 
 // SendErrorSignalFailedToOpenTCPPort sends FailedToOpenTCPPort signal to the other side
-func (c *Connection) SendErrorSignalFailedToOpenTCPPort() (err error) {
-	_, err = c.Write(errFailedToOpenTCPPortBytes)
+func (c *Connection) SendErrorSignalFailedToOpenTCPPort(si uint16) (err error) {
+	buf := pool.BytesPool.Get().([]byte)
+	defer pool.BytesPool.Put(buf)
+	n := copy(buf, errFailedToOpenTCPPortBytes)
+	buf[n] = byte(si >> 8)
+	buf[n+1] = byte(si)
+	_, err = c.Write(buf[:n+2])
 	return
 }
 
 // SendInfoTCPPortOpened sends InfoTCPPortOpened signal to the other side
-func (c *Connection) SendInfoTCPPortOpened(tcpPort uint16) (err error) {
-	writeBuf := append(infoTCPPortOpened, byte(tcpPort>>8), byte(tcpPort))
-	_, err = c.Write(writeBuf)
+func (c *Connection) SendInfoTCPPortOpened(si uint16, tcpPort uint16) (err error) {
+	buf := pool.BytesPool.Get().([]byte)
+	defer pool.BytesPool.Put(buf)
+	n := copy(buf, infoTCPPortOpened)
+	buf[n] = byte(si >> 8)
+	buf[n+1] = byte(si)
+	buf[n+2] = byte(tcpPort >> 8)
+	buf[n+3] = byte(tcpPort)
+	_, err = c.Write(buf[:n+4])
 	return
 }
 
@@ -279,6 +276,12 @@ func (c *Connection) SendErrorSignalReachedMaxConnections() (err error) {
 // SendErrorSignalHostNumberLimited sends HostNumberLimited signal to the other side
 func (c *Connection) SendErrorSignalHostNumberLimited() (err error) {
 	_, err = c.Write(errHostNumberLimitedBytes)
+	return
+}
+
+// SendErrorSignalTCPNumberLimited sends TCPNumberLimited signal to the other side
+func (c *Connection) SendErrorSignalTCPNumberLimited() (err error) {
+	_, err = c.Write(errTCPNumberLimited)
 	return
 }
 

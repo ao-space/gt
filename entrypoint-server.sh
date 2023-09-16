@@ -28,6 +28,7 @@ options:
   timeout: ${NETWORK_TIMEOUT:-90s}
   httpMUXHeader: EID
   stunAddr: ${NETWORK_STUNADDR:-3478}
+  reconnectTimes: ${NETWORK_RECONNECTTIMES:-3}
 EOF
 
 exec /usr/bin/server -config /opt/aonetwork-server.yml

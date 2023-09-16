@@ -1,5 +1,7 @@
 # GT
 
+[English](README.md) | 简体中文
+
 GT 是一个支持点对点直连（P2P）和互联网中转的反向代理开源项目。
 
 具有以下设计特点：
@@ -25,34 +27,54 @@ GT 是一个支持点对点直连（P2P）和互联网中转的反向代理开�
 
 ## 目录
 
-- [工作原理](#%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86)
-- [示例](#%E7%A4%BA%E4%BE%8B)
-  - [HTTP 内网穿透](#http-%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F)
-  - [HTTPS 解密成 HTTP 后内网穿透](#https-%E8%A7%A3%E5%AF%86%E6%88%90-http-%E5%90%8E%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F)
-  - [HTTPS 直接内网穿透](#https-%E7%9B%B4%E6%8E%A5%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F)
-  - [TLS 加密客户端服务端之间的 HTTP 通信](#tls-%E5%8A%A0%E5%AF%86%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%9C%8D%E5%8A%A1%E7%AB%AF%E4%B9%8B%E9%97%B4%E7%9A%84-http-%E9%80%9A%E4%BF%A1)
-  - [TCP 内网穿透](#tcp-%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F)
-  - [客户端同时开启多个服务](#%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%90%8C%E6%97%B6%E5%BC%80%E5%90%AF%E5%A4%9A%E4%B8%AA%E6%9C%8D%E5%8A%A1)
-- [用法](#用法)
-  - [客户端命令行参数](#客户端命令行参数)
-  - [服务端命令行参数](#服务端命令行参数)
-  - [配置文件](#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)
-  - [服务端配置 users](#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E9%85%8D%E7%BD%AE-users)
-    - [通过命令行配置 users](#%E9%80%9A%E8%BF%87%E5%91%BD%E4%BB%A4%E8%A1%8C%E9%85%8D%E7%BD%AE-users)
-    - [通过 users 配置文件配置 users](#%E9%80%9A%E8%BF%87-users-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E9%85%8D%E7%BD%AE-users)
-    - [通过 config 配置文件配置 users](#%E9%80%9A%E8%BF%87-config-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E9%85%8D%E7%BD%AE-users)
-    - [允许所有的客户端](#%E5%85%81%E8%AE%B8%E6%89%80%E6%9C%89%E7%9A%84%E5%AE%A2%E6%88%B7%E7%AB%AF)
-  - [服务端配置 TCP](#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E9%85%8D%E7%BD%AE-tcp)
-    - [通过 users 配置文件配置 TCP](#%E9%80%9A%E8%BF%87-users-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E9%85%8D%E7%BD%AE-tcp)
-    - [通过 config 配置文件配置 TCP](#%E9%80%9A%E8%BF%87-config-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E9%85%8D%E7%BD%AE-tcp)
-    - [通过命令行配置 TCP](#%E9%80%9A%E8%BF%87%E5%91%BD%E4%BB%A4%E8%A1%8C%E9%85%8D%E7%BD%AE-tcp)
-  - [服务端 API](#%E6%9C%8D%E5%8A%A1%E7%AB%AF-api)
-- [性能测试](#%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95)
-  - [GT benchmark](#gt-benchmark)
-  - [frp dev branch 42745a3](#frp-dev-branch-42745a3)
-- [编译](#%E7%BC%96%E8%AF%91)
-- [演进计划](#演进计划)
-- [贡献指南](#贡献指南)
+<!-- TOC -->
+
+* [工作原理](#工作原理)
+* [用法](#用法)
+  * [配置文件](#配置文件)
+  * [服务端配置 users](#服务端配置-users)
+    * [通过命令行配置 users](#通过命令行配置-users)
+    * [通过 users 配置文件配置 users](#通过-users-配置文件配置-users)
+    * [通过 config 配置文件配置 users](#通过-config-配置文件配置-users)
+    * [允许所有的客户端](#允许所有的客户端)
+  * [服务端配置 TCP](#服务端配置-tcp)
+    * [通过 users 配置文件配置 TCP](#通过-users-配置文件配置-tcp)
+    * [通过 config 配置文件配置 TCP](#通过-config-配置文件配置-tcp)
+  * [命令行参数](#命令行参数)
+    * [HTTP 内网穿透](#http-内网穿透)
+    * [HTTPS 内网穿透](#https-内网穿透)
+    * [HTTPS SNI 内网穿透](#https-sni-内网穿透)
+    * [TLS 加密客户端服务端之间的通信](#tls-加密客户端服务端之间的通信)
+    * [TCP 内网穿透](#tcp-内网穿透)
+    * [客户端同时开启多个服务](#客户端同时开启多个服务)
+    * [服务端 API](#服务端-api)
+* [性能测试](#性能测试)
+  * [GT benchmark](#gt-benchmark)
+  * [frp dev branch 42745a3](#frp-dev-branch-42745a3)
+* [运行](#运行)
+  * [Docker 容器运行](#docker-容器运行)
+* [编译](#编译)
+  * [在 Ubuntu/Debian 上编译](#在-ubuntudebian-上编译)
+    * [安装依赖](#安装依赖)
+    * [获取代码并编译](#获取代码并编译)
+      * [从 ISCAS 镜像获取 WebRTC 并编译 GT](#从-iscas-镜像获取-webrtc-并编译-gt)
+      * [从官方获取 WebRTC 并编译 GT](#从官方获取-webrtc-并编译-gt)
+  * [在 Ubuntu/Debian 上通过 Docker 编译](#在-ubuntudebian-上通过-docker-编译)
+    * [安装依赖](#安装依赖-1)
+    * [获取代码并编译](#获取代码并编译-1)
+      * [从 ISCAS 镜像获取 WebRTC 并编译 GT](#从-iscas-镜像获取-webrtc-并编译-gt-1)
+      * [从官方获取 WebRTC 并编译 GT](#从官方获取-webrtc-并编译-gt-1)
+* [演进计划](#演进计划)
+* [贡献指南](#贡献指南)
+  * [贡献代码](#贡献代码)
+  * [代码质量](#代码质量)
+  * [提交信息](#提交信息)
+  * [问题报告](#问题报告)
+  * [功能请求](#功能请求)
+  * [感谢您的贡献](#感谢您的贡献)
+  * [贡献者](#贡献者)
+
+<!-- TOC -->
 
 ## 工作原理
 
@@ -72,385 +94,19 @@ GT 是一个支持点对点直连（P2P）和互联网中转的反向代理开�
 └─────────────┘   └─────────────┘   └─────────────┘
 ```
 
-## 示例
-
-### HTTP 内网穿透
-
-- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:8080
-  来访问内网服务器上 80 端口服务的网页。
-
-- 服务端（公网服务器）
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1
-Sat Nov 19 20:16:33 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:16:33 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:16:33 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-- 客户端（内网服务器）
-
-```shell
-# ./release/linux-amd64-client -local http://127.0.0.1:80 -remote tcp://id1.example.com:8080 -id id1 -secret secret1
-Sat Nov 19 20:18:59 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"http://127.0.0.1:80","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":0,"RemoteTCPRandom":false,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:18:59 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Sat Nov 19 20:18:59 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:18:59 CST 2022 INF tunnel started connID=1
-```
-
-### HTTPS 解密成 HTTP 后内网穿透
-
-- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 <https://id1.example.com>
-  来访问内网服务器上 80 端口提供的 HTTP 网页。
-
-- 服务端（公网服务器）
-
-```shell
-# ./release/linux-amd64-server -addr "" -tlsAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
-Sat Nov 19 20:19:53 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"","AllowAnyClient":false,"AuthAPI":"","CertFile":"/root/openssl_crt/tls.crt","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"/root/openssl_crt/tls.key","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"443","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:19:53 CST 2022 INF Listening TLS addr=:443
-Sat Nov 19 20:19:53 CST 2022 INF acceptLoop started addr=[::]:443
-```
-
-- 客户端（内网服务器），因为使用了自签名证书，所以使用了 `-remoteCertInsecure` 选项，其它情况禁止使用此选项（中间人攻击导致加密内容被解密）
-
-```shell
-# ./release/linux-amd64-client -local http://127.0.0.1 -remote tls://id1.example.com -remoteCertInsecure -id id1 -secret secret1
-Sat Nov 19 20:20:05 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"http://127.0.0.1","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tls://id1.example.com","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":true,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":0,"RemoteTCPRandom":false,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:20:05 CST 2022 INF remote url remote=tls://id1.example.com stun=
-Sat Nov 19 20:20:05 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:20:06 CST 2022 INF tunnel started connID=1
-```
-
-### HTTPS 直接内网穿透
-
-- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 <https://id1.example.com>
-  来访问内网服务器上 443 端口提供的 HTTPS 网页。
-
-- 服务端（公网服务器）
-
-```shell
-# ./release/linux-amd64-server -addr "" -sniAddr 443 -id id1 -secret secret1
-Sat Nov 19 20:25:15 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"443","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:25:15 CST 2022 INF Listening sniAddr=:443
-Sat Nov 19 20:25:15 CST 2022 INF acceptLoop started addr=[::]:443
-```
-
-- 客户端（内网服务器）
-
-```shell
-# ./release/linux-amd64-client -local https://127.0.0.1 -remote tcp://id1.example.com:443 -id id1 -secret secret1
-Sat Nov 19 20:25:49 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"https://127.0.0.1","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:443","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":0,"RemoteTCPRandom":false,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:25:49 CST 2022 INF remote url remote=tcp://id1.example.com:443 stun=
-Sat Nov 19 20:25:49 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:25:49 CST 2022 INF tunnel started connID=1
-```
-
-### TLS 加密客户端服务端之间的 HTTP 通信
-
-- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:8080
-  来访问内网服务器上 80 端口服务的网页。同时用 TLS
-  加密客户端与服务端之间的通信。
-
-- 服务端（公网服务器）
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -tlsAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
-Sat Nov 19 20:20:59 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"/root/openssl_crt/tls.crt","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"/root/openssl_crt/tls.key","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"443","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:20:59 CST 2022 INF Listening TLS addr=:443
-Sat Nov 19 20:20:59 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:20:59 CST 2022 INF acceptLoop started addr=[::]:8080
-Sat Nov 19 20:20:59 CST 2022 INF acceptLoop started addr=[::]:443
-```
-
-- 客户端（内网服务器），因为使用了自签名证书，所以使用了 `-remoteCertInsecure` 选项，其它情况禁止使用此选项（中间人攻击导致加密内容被解密）
-
-```shell
-# ./release/linux-amd64-client -local http://127.0.0.1:80 -remote tls://id1.example.com -remoteCertInsecure -id id1 -secret secret1
-Sat Nov 19 20:26:33 CST 2022 INF linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e config={"Config":"","ID":"id1","Local":"http://127.0.0.1:80","LocalTimeout":120000000000,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tls://id1.example.com","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":true,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":0,"RemoteTCPRandom":false,"RemoteTimeout":5000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-11-19 11:07:33 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","UseLocalAsHTTPHost":false,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Sat Nov 19 20:26:33 CST 2022 INF remote url remote=tls://id1.example.com stun=
-Sat Nov 19 20:26:33 CST 2022 INF trying to connect to remote connID=1
-Sat Nov 19 20:26:33 CST 2022 INF tunnel started connID=1
-```
-
-### TCP 内网穿透
-
-- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:2222
-  来访问内网服务器上 22 端口上的 SSH 服务，如果服务端 2222 端口不可以，则由服务端选择一个随机端口。
-
-- 服务端（公网服务器）
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 1 -tcpRange 1024-65535
-Fri Dec  9 18:38:21 CST 2022 INF linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":10,"HTTPMUXHeader":"Host","Host":{"Number":null,"Regex":null,"RegexStr":null,"WithID":null},"HostNumber":1,"HostRegex":null,"HostWithID":false,"IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDuration":300000000000,"ReconnectTimes":3,"SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":["1"],"TCPRanges":["1024-65535"],"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Fri Dec  9 18:38:21 CST 2022 INF Listening addr=:8080
-Fri Dec  9 18:38:21 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-- 客户端（内网服务器）
-
-```shell
-# ./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
-Fri Dec  9 18:39:05 CST 2022 INF linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f config={"Config":"","HostPrefix":null,"ID":"id1","Local":[{"Position":0,"Value":"tcp://127.0.0.1:22"}],"LocalTimeout":null,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":[{"Position":1,"Value":2222}],"RemoteTCPRandom":[{"Position":2,"Value":true}],"RemoteTimeout":45000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Services":null,"UseLocalAsHTTPHost":null,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Fri Dec  9 18:39:05 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Fri Dec  9 18:39:05 CST 2022 INF trying to connect to remote connID=1
-Fri Dec  9 18:39:05 CST 2022 INF receive server information: tcp port 2222 opened successfully connID=1
-Fri Dec  9 18:39:05 CST 2022 INF tunnel started connID=1
-```
-
-### 客户端同时开启多个服务
-
-- 需求：有一台内网服务器和一台公网服务器，id1-1.example.com 和 id1-2.example.com 解析到公网服务器的地址。希望通过访问
-  id1-1.example.com:8080 来访问内网服务器上 80 端口上的服务，希望通过访问 id1-2.example.com:8080 来访问内网服务器上 8080
-  端口上的服务，希望通过访问 id1-1.example.com:2222 来访问内网服务器上 2222 端口上的服务，希望通过访问 id1-1.example.com:
-  2223 来访问内网服务器上 2223 端口上的服务。同时服务端限制客户端的 hostPrefix 只能由纯数字或纯字母组成。
-
-- 注意：在这种模式下客户端 local 对应的参数（remoteTCPPort，hostPrefix 等）位置要在此 local 和下一个 local 之间。
-
-- 服务端（公网服务器）
-
-```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 2 -tcpRange 1024-65535 -hostNumber 2 -hostWithID -hostRegex ^[0-9]+$ -hostRegex ^[a-zA-Z]+$
-Fri Dec  9 18:39:22 CST 2022 INF linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":10,"HTTPMUXHeader":"Host","Host":{"Number":null,"Regex":null,"RegexStr":null,"WithID":null},"HostNumber":2,"HostRegex":["^[0-9]+$","^[a-zA-Z]+$"],"HostWithID":true,"IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDuration":300000000000,"ReconnectTimes":3,"SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":["2"],"TCPRanges":["1024-65535"],"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Fri Dec  9 18:39:22 CST 2022 INF Listening addr=:8080
-Fri Dec  9 18:39:22 CST 2022 INF acceptLoop started addr=[::]:8080
-```
-
-- 客户端（内网服务器）
-
-```shell
-# ./release/linux-amd64-client -remote tcp://id1.example.com:8080 -id id1 -secret secret1 \
->     -local http://127.0.0.1:80 -useLocalAsHTTPHost -hostPrefix 1 \
->     -local http://127.0.0.1:8080 -useLocalAsHTTPHost -hostPrefix 2 \
->     -local tcp://127.0.0.1:2222 -remoteTCPPort 2222 \
->     -local tcp://127.0.0.1:2223 -remoteTCPPort 2223
-Fri Dec  9 18:40:10 CST 2022 INF linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f config={"Config":"","HostPrefix":[{"Position":2,"Value":"1"},{"Position":5,"Value":"2"}],"ID":"id1","Local":[{"Position":0,"Value":"http://127.0.0.1:80"},{"Position":3,"Value":"http://127.0.0.1:8080"},{"Position":6,"Value":"tcp://127.0.0.1:2222"},{"Position":8,"Value":"tcp://127.0.0.1:2223"}],"LocalTimeout":null,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":[{"Position":7,"Value":2222},{"Position":9,"Value":2223}],"RemoteTCPRandom":null,"RemoteTimeout":45000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Services":null,"UseLocalAsHTTPHost":[{"Position":1,"Value":true},{"Position":4,"Value":true}],"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Fri Dec  9 18:40:10 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Fri Dec  9 18:40:10 CST 2022 INF trying to connect to remote connID=1
-Fri Dec  9 18:40:10 CST 2022 INF receive server information: tcp port 2222 opened successfully connID=1
-Fri Dec  9 18:40:10 CST 2022 INF receive server information: tcp port 2223 opened successfully connID=1
-Fri Dec  9 18:40:10 CST 2022 INF tunnel started connID=1
-```
-
-上面的命令行也可以使用配置文件来启动
-
-```shell
-# ./release/linux-amd64-client -config client.yaml
-Fri Dec  9 18:41:03 CST 2022 INF linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f config={"Config":"client.yaml","HostPrefix":null,"ID":"id1","Local":null,"LocalTimeout":null,"LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDelay":5000000000,"Remote":"tcp://id1.example.com:8080","RemoteAPI":"","RemoteCert":"","RemoteCertInsecure":false,"RemoteConnections":1,"RemoteSTUN":"","RemoteTCPPort":null,"RemoteTCPRandom":null,"RemoteTimeout":45000000000,"Secret":"secret1","SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-client - 2022-12-09 05:20:39 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Services":[{"HostPrefix":"1","LocalTimeout":0,"LocalURL":{"ForceQuery":false,"Fragment":"","Host":"127.0.0.1:80","OmitHost":false,"Opaque":"","Path":"","RawFragment":"","RawPath":"","RawQuery":"","Scheme":"http","User":null},"RemoteTCPPort":0,"RemoteTCPRandom":null,"UseLocalAsHTTPHost":true},{"HostPrefix":"2","LocalTimeout":0,"LocalURL":{"ForceQuery":false,"Fragment":"","Host":"127.0.0.1:8080","OmitHost":false,"Opaque":"","Path":"","RawFragment":"","RawPath":"","RawQuery":"","Scheme":"http","User":null},"RemoteTCPPort":0,"RemoteTCPRandom":null,"UseLocalAsHTTPHost":true},{"HostPrefix":"","LocalTimeout":0,"LocalURL":{"ForceQuery":false,"Fragment":"","Host":"127.0.0.1:2222","OmitHost":false,"Opaque":"","Path":"","RawFragment":"","RawPath":"","RawQuery":"","Scheme":"tcp","User":null},"RemoteTCPPort":2222,"RemoteTCPRandom":null,"UseLocalAsHTTPHost":false},{"HostPrefix":"","LocalTimeout":0,"LocalURL":{"ForceQuery":false,"Fragment":"","Host":"127.0.0.1:2223","OmitHost":false,"Opaque":"","Path":"","RawFragment":"","RawPath":"","RawQuery":"","Scheme":"tcp","User":null},"RemoteTCPPort":2223,"RemoteTCPRandom":null,"UseLocalAsHTTPHost":false}],"UseLocalAsHTTPHost":null,"Version":"","WebRTCConnectionIdleTimeout":300000000000,"WebRTCLogLevel":"warning","WebRTCMaxPort":0,"WebRTCMinPort":0}
-Fri Dec  9 18:41:03 CST 2022 INF remote url remote=tcp://id1.example.com:8080 stun=
-Fri Dec  9 18:41:03 CST 2022 INF trying to connect to remote connID=1
-Fri Dec  9 18:41:03 CST 2022 INF receive server information: tcp port 2222 opened successfully connID=1
-Fri Dec  9 18:41:03 CST 2022 INF receive server information: tcp port 2223 opened successfully connID=1
-Fri Dec  9 18:41:03 CST 2022 INF tunnel started connID=1
-```
-
-client.yaml 文件内容：
-
-```yaml
-services:
-  - local: http://127.0.0.1:80
-    useLocalAsHTTPHost: true
-    hostPrefix: 1
-  - local: http://127.0.0.1:8080
-    useLocalAsHTTPHost: true
-    hostPrefix: 2
-  - local: tcp://127.0.0.1:2222
-    remoteTCPPort: 2222
-  - local: tcp://127.0.0.1:2223
-    remoteTCPPort: 2223
-options:
-  remote: tcp://id1.example.com:8080
-  id: id1
-  secret: secret1
-```
-
 ## 用法
-
-### 客户端命令行参数
-
-```shell
-# ./release/linux-amd64-client -h
-Usage of ./release/linux-amd64-client:
-  -config string
-        要加载的配置文件路径
-  -hostPrefix value
-        服务端将识别此 host 前缀并转发到 local
-  -id string
-        唯一的用户标识符。目前为域名的前缀。
-  -local value
-        本地服务 URL
-  -localTimeout value
-        本地连接的超时时间。支持值如“30s”、“5m”
-  -logFile string
-        保存日志文件的路径
-  -logFileMaxCount uint
-        日志文件的最大个数（默认为7）
-  -logFileMaxSize int
-        日志文件的最大大小（默认为536870912）
-  -logLevel string
-        日志级别：trace、debug、info、warn、error、fatal、panic、disable（默认为“info”）
-  -reconnectDelay duration
-        重新连接之前的延迟。支持值如“30s”、“5m”（默认为5s）
-  -remote string
-        服务端地址。支持 tcp:// 和 tls://, 默认 tcp://。
-  -remoteAPI string
-        获取服务端地址的 API
-  -remoteCert string
-        服务器证书路径
-  -remoteCertInsecure
-        允许自签名的服务器证书
-  -remoteConnections uint
-        池中最大服务器连接数。有效值为 1 到 10（默认为 3）
-  -remoteIdleConnections uint
-        池中保留的空闲服务器连接数（默认为 1）
-  -remoteSTUN string
-        远程 STUN 服务器地址
-  -remoteTCPPort value
-        远程服务器将打开的 TCP 端口
-  -remoteTCPRandom
-        是否由远程服务器选择随机 tcp 端口
-  -remoteTimeout duration
-        远程连接的超时时间。支持值如“30s”、“5m”（默认为 45s）
-  -s string
-        发送信号给客户端进程。支持的值：reload、restart、stop、kill
-  -secret string
-        用于验证 ID 的 secret
-  -sentryDSN string
-        要使用的 Sentry DSN
-  -sentryDebug
-        Sentry 调试模式，会打印调试信息，以帮助你理解 Sentry 在做什么
-  -sentryEnvironment string
-        要与事件一起发送的 Sentry 环境
-  -sentryLevel value
-        Sentry 级别：trace、debug、info、warn、error、fatal、panic（默认为“error”、“fatal”、“panic”）
-  -sentryRelease string
-        发送到 Sentry 的 release
-  -sentrySampleRate float
-        发送到 Sentry 的 sample rate : [0.0 - 1.0] (默认 1)
-  -sentryServerName string
-        发送到 Sentry 的 server name
-  -tcpForwardAddr string
-        TCP 转发的监听地址
-  -tcpForwardConnections uint
-        TCP 转发所建立的 peer connection 数量。有效值为 1 到 10（默认 3）
-  -tcpForwardHostPrefix string
-        TCP 转发的对方客户端的 HostPrefix
-  -useLocalAsHTTPHost
-        转发请求到 local 参数指定的地址时将 local 参数作为 HTTP Host
-  -version
-        显示此程序的版本
-  -webrtcConnectionIdleTimeout duration
-        WebRTC 连接的超时时间。支持值如“30s”、“5m”（默认为 5m0s）
-  -webrtcLogLevel string
-        WebRTC 日志级别：verbose、info、warning、error（默认为“warning”）
-  -webrtcMaxPort uint
-        WebRTC peer connection 的最大端口
-  -webrtcMinPort uint
-        WebRTC peer connection 的最小端口
-```
-
-### 服务端命令行参数
-
-```shell
-# ./release/linux-amd64-server -h
-Usage of ./release/linux-amd64-server:
-  -addr string
-        监听地址（默认 80）。支持像‘80’，‘:80’或‘0.0.0.0:80’这样的值
-  -allowAnyClient
-        允许任意的客户端连接服务端
-  -apiAddr string
-        api 监听地址。支持像‘80’，‘:80’或‘0.0.0.0:80’这样的值
-  -apiCertFile string
-        cert 文件路径
-  -apiKeyFile string
-        key 文件路径
-  -apiTLSVersion string
-        最低 tls 版本，支持的值： tls1.1, tls1.2, tls1.3 (默认 "tls1.2")
-  -authAPI string
-        验证用户的 ID 和 secret 的 API
-  -certFile string
-        cert 路径
-  -config string
-        配置文件路径
-  -connections uint
-        客户端隧道的最大连接数 (默认 10)
-  -hostNumber value
-        客户端可开启的基于 host 的服务数量
-  -hostRegex value
-        客户端开启的 host 前缀必须满足其中的一条规则
-  -hostWithID
-        host 前缀的形式变为 id-host
-  -httpMUXHeader string
-        HTTP 多路复用的头部（默认“Host”）
-  -id value
-        用户标识符
-  -keyFile string
-        key 路径
-  -logFile string
-        保存日志文件的路径
-  -logFileMaxCount uint
-        日志文件数量限制（默认 7）
-  -logFileMaxSize int
-        日志文件大小（默认 536870912）
-  -logLevel string
-        日志级别: trace, debug, info, warn, error, fatal, panic, disable (默认 "info")。
-  -reconnectDuration duration
-        客户端达到失败重连的最大数后不能连接服务端的时间 (默认 5m0s)
-  -reconnectTimes uint
-        客户端失败重连的最大数 (默认 3)
-  -secret value
-        用于校验 ID 的机密
-  -sentryDSN string
-        开启上报日志到 Sentry  DSN 的功能。
-  -sentryDebug
-        开启 Sentry debug 模式
-  -sentryEnvironment string
-        发送到 Sentry 的 environment
-  -sentryLevel value
-        发送到 Sentry 的日志级别: trace, debug, info, warn, error, fatal, panic (默认 ["error", "fatal", "panic"])
-  -sentryRelease string
-        发送到 Sentry 的 release
-  -sentrySampleRate float
-        发送到 Sentry 的 sample rate : [0.0 - 1.0] (默认 1)
-  -sentryServerName string
-        发送到 Sentry 的 server name
-  -sniAddr string
-        原生的 TLS 代理的监听地址。Host 来源于 Server Name Indication。支持像‘80’，‘:80’或‘0.0.0.0:80’这样的值
-  -speed uint
-        用户每秒能传输的最大字节数
-  -stunAddr string
-        STUN 服务的监听地址。支持像‘3478’，‘:3478’或‘0.0.0.0:3478’这样的值
-  -tcpNumber value
-        允许每一个用户开启的 TCP 端口数量
-  -tcpRange value
-        TCP 端口范围, 比如 1024-65535
-  -timeout duration
-        全局超时。支持像‘30s’，‘5m’这样的值（默认 90s）
-  -timeoutOnUnidirectionalTraffic
-        当流量是单向的时会发生超时
-  -tlsAddr string
-        tls 监听地址。支持像‘80’，‘:80’或‘0.0.0.0:80’这样的值
-  -tlsVersion string
-        最低 tls 版本，支持的值： tls1.1, tls1.2, tls1.3 (默认 "tls1.2")
-  -users string
-        yaml 格式的用户配置文件
-  -version
-        打印此程序的版本
-```
 
 ### 配置文件
 
-配置文件使用 yaml 格式，客户端与服务端均可以使用配置文件。[HTTP 内网穿透](#http-内网穿透)
-示例中的客户端也可以使用下面的文件（client.yaml）启动。启动命令为：`./release/linux-amd64-client -config client.yaml`
+配置文件使用 yaml 格式，客户端与服务端均可以使用配置文件。
 
-```yaml
-version: 1.0 # 保留关键字，目前暂未使用
-options:
-  local: http://127.0.0.1:80
-  remote: tcp://id1.example.com:8080
-  id: id1
-  secret: secret1
+```shell
+./release/linux-amd64-server -config server.yaml
+./release/linux-amd64-client -config client.yaml
 ```
+
+基础服务端配置可以参考 [server.yaml](example/config/server.yaml) 文件。
+基础客户端配置可以参考 [client.yaml](example/config/client.yaml) 文件。
 
 ### 服务端配置 users
 
@@ -461,17 +117,11 @@ options:
 第 i 个 id 与第 i 个 secret 相匹配。下面两种启动方式是等价的。
 
 ```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -id id2 -secret secret2
-Sat Nov 19 20:22:27 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1","id2"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1","secret2"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:22:27 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:22:27 CST 2022 INF acceptLoop started addr=[::]:8080
+./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -id id2 -secret secret2
 ```
 
 ```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -id id2 -secret secret1 -secret secret2
-Sat Nov 19 20:22:47 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1","id2"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1","secret2"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:22:47 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:22:47 CST 2022 INF acceptLoop started addr=[::]:8080
+./release/linux-amd64-server -addr 8080 -id id1 -id id2 -secret secret1 -secret secret2
 ```
 
 #### 通过 users 配置文件配置 users
@@ -495,7 +145,6 @@ users:
 options:
   apiAddr: 1.2.3.4:1234
   certFile: /path
-  host: 1.2.3.4
   keyFile: /path
   logFile: /path
   logFileMaxCount: 1234
@@ -528,16 +177,15 @@ TCP 端口的权限。
 id1:
   secret: secret1
   tcp:
-    - number: 65535
-      range: 1-65535
+    - range: 1-65535
 id2:
   secret: secret2
 ```
 
 #### 通过 config 配置文件配置 TCP
 
-通过 config 配置文件可以配置全局 TCP 和单个用户的 TCP。下面的配置文件表示用户 id1 可以开启任意数量的任意 TCP 端口，用户
-id2 可以在 1024 到 65535 的 TCP 端口之间开启 1 个 TCP 端口。
+通过 config 配置文件可以配置全局 TCP 和单个用户的 TCP。下面的配置文件表示用户 id1 可以开启任意数量在 10000 到 20000 的
+TCP 端口，用户 id2 可以在 50000 到 65535 的 TCP 端口之间开启 1 个 TCP 端口。
 
 ```yaml
 version: 1.0
@@ -545,17 +193,15 @@ users:
   id1:
     secret: secret1
     tcp:
-      - number: 65535
-        range: 1-65535
+      - range: 10000-20000
+    tcpNumber: 0
   id2:
     secret: secret2
 tcp:
-  - number: 1
-    range: 1024-65535
+  - range: 50000-65535
 options:
   apiAddr: 1.2.3.4:1234
   certFile: /path
-  host: 1.2.3.4
   keyFile: /path
   logFile: /path
   logFileMaxCount: 1234
@@ -566,20 +212,154 @@ options:
   tlsAddr: 1234
   tlsVersion: tls1.3
   users: testdata/users.yaml
+  tcpNumber: 1
 ```
 
-#### 通过命令行配置 TCP
-
-通过命令行可以配置全局 TCP。下面的命令表示同一时间内每个用户都可以在 1024 到 65535 的 TCP 端口之间开启 1 个 TCP 端口。
+### 命令行参数
 
 ```shell
-# ./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 1 -tcpRange 1024-65535
-Sat Nov 19 20:27:41 CST 2022 INF linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e config={"APIAddr":"","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":0,"HTTPMUXHeader":"Host","IDs":["id1"],"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","SNIAddr":"","STUNAddr":"","Secrets":["secret1"],"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-11-19 11:07:19 - google-webrtc 9240c2e","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":["1"],"TCPRanges":["1024-65535"],"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Sat Nov 19 20:27:41 CST 2022 INF Listening addr=:8080
-Sat Nov 19 20:27:41 CST 2022 INF acceptLoop started addr=[::]:8080
+./release/linux-amd64-server -h
+./release/linux-amd64-client -h
 ```
 
-### 服务端 API
+#### HTTP 内网穿透
+
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:8080
+  来访问内网服务器上 80 端口服务的网页。
+
+- 服务端（公网服务器）
+
+```shell
+./release/linux-amd64-server -addr 8080 -id id1 -secret secret1
+```
+
+- 客户端（内网服务器）
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote tcp://id1.example.com:8080 -id id1 -secret secret1
+```
+
+#### HTTPS 内网穿透
+
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 <https://id1.example.com>
+  来访问内网服务器上 80 端口提供的 HTTP 网页。
+
+- 服务端（公网服务器）
+
+```shell
+./release/linux-amd64-server -addr "" -tlsAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+```
+
+- 客户端（内网服务器），因为使用了自签名证书，所以使用了 `-remoteCertInsecure` 选项，其它情况禁止使用此选项（中间人攻击导致加密内容被解密）
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1 -remote tls://id1.example.com -remoteCertInsecure -id id1 -secret secret1
+```
+
+#### HTTPS SNI 内网穿透
+
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 <https://id1.example.com>
+  来访问内网服务器上 443 端口提供的 HTTPS 网页。
+
+- 服务端（公网服务器）
+
+```shell
+./release/linux-amd64-server -addr 8080 -sniAddr 443 -id id1 -secret secret1
+```
+
+- 客户端（内网服务器）
+
+```shell
+./release/linux-amd64-client -local https://127.0.0.1 -remote tcp://id1.example.com:8080 -id id1 -secret secret1
+```
+
+#### TLS 加密客户端服务端之间的通信
+
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:8080
+  来访问内网服务器上 80 端口服务的网页。同时用 TLS
+  加密客户端与服务端之间的通信。
+
+- 服务端（公网服务器）
+
+```shell
+./release/linux-amd64-server -addr 8080 -tlsAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+```
+
+- 客户端（内网服务器），因为使用了自签名证书，所以使用了 `-remoteCertInsecure` 选项，其它情况禁止使用此选项（中间人攻击导致加密内容被解密）
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote tls://id1.example.com -remoteCertInsecure -id id1 -secret secret1
+```
+
+#### TCP 内网穿透
+
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:2222
+  来访问内网服务器上 22 端口上的 SSH 服务，如果服务端 2222 端口不可以，则由服务端选择一个随机端口。
+
+- 服务端（公网服务器）
+
+```shell
+./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 1 -tcpRange 1024-65535
+```
+
+- 客户端（内网服务器）
+
+```shell
+./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
+```
+
+#### 客户端同时开启多个服务
+
+- 需求：有一台内网服务器和一台公网服务器，id1-1.example.com 和 id1-2.example.com 解析到公网服务器的地址。希望通过访问
+  id1-1.example.com:8080 来访问内网服务器上 80 端口上的服务，希望通过访问 id1-2.example.com:8080 来访问内网服务器上 8080
+  端口上的服务，希望通过访问 id1-1.example.com:2222 来访问内网服务器上 2222 端口上的服务，希望通过访问 id1-1.example.com:
+  2223 来访问内网服务器上 2223 端口上的服务。同时服务端限制客户端的 hostPrefix 只能由纯数字或纯字母组成。
+
+- 注意：在这种模式下客户端 local 对应的参数（remoteTCPPort，hostPrefix 等）位置要在此 local 和下一个 local 之间。
+
+- 服务端（公网服务器）
+
+```shell
+./release/linux-amd64-server -addr 8080 -id id1 -secret secret1 -tcpNumber 2 -tcpRange 1024-65535 -hostNumber 2 -hostWithID -hostRegex ^[0-9]+$ -hostRegex ^[a-zA-Z]+$
+```
+
+- 客户端（内网服务器）
+
+```shell
+./release/linux-amd64-client -remote tcp://id1.example.com:8080 -id id1 -secret secret1 \
+>     -local http://127.0.0.1:80 -useLocalAsHTTPHost -hostPrefix 1 \
+>     -local http://127.0.0.1:8080 -useLocalAsHTTPHost -hostPrefix 2 \
+>     -local tcp://127.0.0.1:2222 -remoteTCPPort 2222 \
+>     -local tcp://127.0.0.1:2223 -remoteTCPPort 2223
+```
+
+上面的命令行也可以使用配置文件来启动
+
+```shell
+./release/linux-amd64-client -config client.yaml
+```
+
+client.yaml 文件内容：
+
+```yaml
+services:
+  - local: http://127.0.0.1:80
+    useLocalAsHTTPHost: true
+    hostPrefix: 1
+  - local: http://127.0.0.1:8080
+    useLocalAsHTTPHost: true
+    hostPrefix: 2
+  - local: tcp://127.0.0.1:2222
+    remoteTCPPort: 2222
+  - local: tcp://127.0.0.1:2223
+    remoteTCPPort: 2223
+options:
+  remote: tcp://id1.example.com:8080
+  id: id1
+  secret: secret1
+```
+
+#### 服务端 API
 
 服务端 API 通过模拟客户端检测服务是否正常。下面的例子可以帮助你更好地理解这一点，其中，id1.example.com 解析到公网服务器的地址。当
 apiCertFile 和 apiKeyFile 选项不为空时使用 HTTPS，其他情况使用 HTTP。
@@ -587,11 +367,7 @@ apiCertFile 和 apiKeyFile 选项不为空时使用 HTTPS，其他情况使用 H
 - 服务端（公网服务器）
 
 ```shell
-# ./release/linux-amd64-server -addr 8080 -apiAddr 8081
-Fri Dec  9 18:41:46 CST 2022 INF linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f config={"APIAddr":"8081","APICertFile":"","APIKeyFile":"","APITLSMinVersion":"tls1.2","Addr":"8080","AllowAnyClient":false,"AuthAPI":"","CertFile":"","Config":"","Connections":10,"HTTPMUXHeader":"Host","Host":{"Number":null,"Regex":null,"RegexStr":null,"WithID":null},"HostNumber":1,"HostRegex":null,"HostWithID":false,"IDs":null,"KeyFile":"","LogFile":"","LogFileMaxCount":7,"LogFileMaxSize":536870912,"LogLevel":"info","ReconnectDuration":300000000000,"ReconnectTimes":3,"SNIAddr":"","STUNAddr":"","Secrets":null,"SentryDSN":"","SentryDebug":false,"SentryEnvironment":"","SentryLevel":null,"SentryRelease":"linux-amd64-server - 2022-12-09 05:20:24 - dev 88d322f","SentrySampleRate":1,"SentryServerName":"","Speed":0,"TCPNumbers":null,"TCPRanges":null,"TCPs":null,"TLSAddr":"","TLSMinVersion":"tls1.2","Timeout":90000000000,"TimeoutOnUnidirectionalTraffic":false,"Users":null,"Version":""}
-Fri Dec  9 18:41:46 CST 2022 WRN working on -allowAnyClient mode, because no user is configured
-Fri Dec  9 18:41:46 CST 2022 INF Listening addr=:8080
-Fri Dec  9 18:41:46 CST 2022 INF acceptLoop started addr=[::]:8080
+./release/linux-amd64-server -addr 8080 -apiAddr 8081
 ```
 
 - 用户
@@ -652,11 +428,34 @@ $ ps aux
  2976   0.0  0.4 408712832  66112 s005  S+    5:01PM   1:06.51 ./frpc -c ./frpc.ini
 ```
 
+## 运行
+
+### Docker 容器运行
+
+更多容器镜像信息可以从<https://github.com/ao-space/gt/pkgs/container/gt>获取。
+
+```shell
+docker pull ghcr.io/ao-space/gt:server-dev
+
+docker pull ghcr.io/ao-space/gt:client-dev
+```
+
 ## 编译
+
+### 在 Ubuntu/Debian 上编译
+
+#### 安装依赖
+
+```shell
+apt-get update
+apt-get install make git gn ninja-build python3 python3-pip libgtk-3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu -y
+```
+
+#### 获取代码并编译
 
 你可以选择从镜像或者官方获取 WebRTC 并编译 GT：
 
-### 从 ISCAS 镜像获取 WebRTC 并编译 GT
+##### 从 ISCAS 镜像获取 WebRTC 并编译 GT
 
 1. 获取代码
 
@@ -667,15 +466,13 @@ $ ps aux
 
 2. 编译
 
-      在 Linux 上编译：
-
       ```shell
       make release
       ```
 
-      编译后的可执行文件在 release 目录下。
+   编译后的可执行文件在 release 目录下。
 
-### 从官方获取 WebRTC 并编译 GT
+##### 从官方获取 WebRTC 并编译 GT
 
 1. 获取代码
 
@@ -692,17 +489,69 @@ $ ps aux
       git clone https://webrtc.googlesource.com/src
       ```
 
-      然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
+   然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
 
 3. 编译
-
-      在 Linux 上编译：
 
       ```shell
       WITH_OFFICIAL_WEBRTC=1 make release
       ```
 
-      编译后的可执行文件在 release 目录下。
+   编译后的可执行文件在 release 目录下。
+
+### 在 Ubuntu/Debian 上通过 Docker 编译
+
+#### 安装依赖
+
+[安装 Docker](https://docs.docker.com/engine/install/)
+
+#### 获取代码并编译
+
+你可以选择从镜像或者官方获取 WebRTC 并编译 GT：
+
+##### 从 ISCAS 镜像获取 WebRTC 并编译 GT
+
+1. 获取代码
+
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
+
+2. 编译
+
+      ```shell
+      make docker_release_linux_amd64 # docker_release_linux_arm64
+      ```
+
+   编译后的可执行文件在 release 目录下。
+
+##### 从官方获取 WebRTC 并编译 GT
+
+1. 获取代码
+
+      ```shell
+      git clone <url>
+      cd <folder>
+      ```
+
+2. 从官方获取 WebRTC
+
+      ```shell
+      mkdir -p dep/_google-webrtc
+      cd dep/_google-webrtc
+      git clone https://webrtc.googlesource.com/src
+      ```
+
+   然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
+
+3. 编译
+
+      ```shell
+      WITH_OFFICIAL_WEBRTC=1 make docker_release_linux_amd64 # docker_release_linux_arm64
+      ```
+
+   编译后的可执行文件在 release 目录下。
 
 ## 演进计划
 

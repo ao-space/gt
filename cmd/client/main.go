@@ -52,37 +52,34 @@ func main() {
 	osSig := make(chan os.Signal, 1)
 	signal.Notify(osSig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 
-	for {
-		select {
-		case sig := <-osSig:
-			c.Logger.Info().Str("signal", sig.String()).Msg("received os signal")
-			switch sig {
-			case syscall.SIGHUP:
-				// reload the config
-				err := c.ReloadServices()
-				c.Logger.Info().Err(err).Msg("reload services done")
-			case syscall.SIGTERM:
-				return
-			case syscall.SIGQUIT:
-				// restart, start a new process and then shutdown gracefully
-				err := runCmd(os.Args)
-				if err != nil {
-					c.Logger.Error().Err(err).Msg("failed to start new process")
-					continue
-				}
-				// yield control to the new process
-				// will use api to wait for connected response of new process before shutdown
-				c.Logger.Info().Msg("wait 5s to shutdown gracefully")
-				time.Sleep(5 * time.Second)
-				fallthrough
-			default:
-				c.Logger.Info().Msg("wait 30s to stop immediately")
-				time.AfterFunc(30*time.Second, func() {
-					os.Exit(1)
-				})
-				c.Shutdown()
-				os.Exit(0)
+	for sig := range osSig {
+		c.Logger.Info().Str("signal", sig.String()).Msg("received os signal")
+		switch sig {
+		case syscall.SIGHUP:
+			// reload the config
+			err := c.ReloadServices()
+			c.Logger.Info().Err(err).Msg("reload services done")
+		case syscall.SIGTERM:
+			return
+		case syscall.SIGQUIT:
+			// restart, start a new process and then shutdown gracefully
+			err := runCmd(os.Args)
+			if err != nil {
+				c.Logger.Error().Err(err).Msg("failed to start new process")
+				continue
 			}
+			// yield control to the new process
+			// will use api to wait for connected response of new process before shutdown
+			c.Logger.Info().Msg("wait 5s to shutdown gracefully")
+			time.Sleep(5 * time.Second)
+			fallthrough
+		default:
+			c.Logger.Info().Msg("wait 30s to stop immediately")
+			time.AfterFunc(30*time.Second, func() {
+				os.Exit(1)
+			})
+			c.Shutdown()
+			os.Exit(0)
 		}
 	}
 }

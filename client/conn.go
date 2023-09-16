@@ -245,31 +245,19 @@ func (c *conn) readLoop(connID uint) {
 			c.Logger.Info().Msg("client reload wait group done")
 			continue
 		case connection.ErrorSignal:
-			peekBytes, err = c.Reader.Peek(2)
+			err = handleError(c)
 			if err != nil {
 				return
 			}
-			errCode := uint16(peekBytes[1]) | uint16(peekBytes[0])<<8
-			c.Logger.Error().Err(connection.Error(errCode)).Msg("read error signal")
 			if c.client.reloading.Load() {
 				c.client.reloadWaitGroup.Done()
 			}
 			return
 		case connection.InfoSignal:
-			peekBytes, err = c.Reader.Peek(2)
+			err = handleInfo(c)
 			if err != nil {
 				return
 			}
-			infoCode := uint16(peekBytes[1]) | uint16(peekBytes[0])<<8
-			_, err = c.Reader.Discard(2)
-			if err != nil {
-				return
-			}
-			info, err := connection.Info(infoCode).ReadInfo(c.Reader)
-			if err != nil {
-				return
-			}
-			c.Logger.Info().Msgf("receive server information: %s", info)
 			continue
 		}
 		lastPing = 0
@@ -501,7 +489,7 @@ func (c *conn) processData(taskID uint32, r *bufio.LimitedReader) (readErr, writ
 }
 
 func (c *conn) processP2P(id uint32, r *bufio.LimitedReader) {
-	var t = &peerTask{}
+	t := &peerTask{}
 	t.id = id
 	t.tunnel = c
 	t.apiConn = api.NewConn(id, "", c)
