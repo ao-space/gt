@@ -46,6 +46,20 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
+            STUNLogLevel
+            <UsageTooltip :usage-text="ServerConfig.usage['STUNLogLevel']" />
+          </template>
+          <el-select v-model="localSetting.STUNLogLevel" placeholder="Select STUN log level">
+            <el-option label="trace" value="trace"></el-option>
+            <el-option label="debug" value="debug"></el-option>
+            <el-option label="info" value="info"></el-option>
+            <el-option label="warn" value="warn"></el-option>
+            <el-option label="error" value="error"></el-option>
+            <el-option label="disable" value="disable"></el-option>
+          </el-select>
+        </el-descriptions-item>
+        <el-descriptions-item>
+          <template #label>
             SNIAddr
             <UsageTooltip :usage-text="ServerConfig.usage['SNIAddr']" />
           </template>
@@ -61,6 +75,13 @@
           <el-form-item prop="HTTPMUXHeader">
             <el-input v-model="localSetting.HTTPMUXHeader" />
           </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item>
+          <template #label>
+            MaxHandShakeOptions
+            <UsageTooltip :usage-text="ServerConfig.usage['LogFileMaxCount']" />
+          </template>
+          <el-input-number v-model="localSetting.MaxHandShakeOptions" :min="0" />
         </el-descriptions-item>
       </el-descriptions>
     </div>

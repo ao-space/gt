@@ -10,21 +10,27 @@
             LogFile
             <UsageTooltip :usage-text="ClientConfig.usage['LogFile']" />
           </template>
-          <el-input v-model="localSetting.LogFile"></el-input>
+          <el-form-item prop="LogFile">
+            <el-input v-model="localSetting.LogFile"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
             LogFileMaxSize
             <UsageTooltip :usage-text="ClientConfig.usage['LogFileMaxSize']" />
           </template>
-          <el-input-number v-model="localSetting.LogFileMaxSize" :min="0" />
+          <el-form-item prop="LogFileMaxSize">
+            <el-input-number v-model="localSetting.LogFileMaxSize" :min="0" />
+          </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
             LogFileMaxCount
             <UsageTooltip :usage-text="ClientConfig.usage['LogFileMaxCount']" />
           </template>
-          <el-input-number v-model="localSetting.LogFileMaxCount" :min="0" />
+          <el-form-item prop="LogFileMaxCount">
+            <el-input-number v-model="localSetting.LogFileMaxCount" :min="0" />
+          </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>

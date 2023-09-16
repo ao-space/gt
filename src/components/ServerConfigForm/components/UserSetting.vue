@@ -57,11 +57,12 @@
 </template>
 <script setup name="UserSetting" lang="ts">
 import { FormInstance, FormRules } from "element-plus";
-import { reactive, ref, watch, watchEffect } from "vue";
+import { reactive, ref, watch } from "vue";
 import { ServerConfig } from "../interface";
 import TCPSetting from "./TCPSetting.vue";
 import HostSetting from "./HostSetting.vue";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
+import cloneDeep from "lodash/cloneDeep";
 
 const emit = defineEmits<{
   (e: "update:setting", index: number, setting: ServerConfig.UserSetting): void;
@@ -77,18 +78,27 @@ interface UserSettingProps {
 const props = withDefaults(defineProps<UserSettingProps>(), {
   setting: () => ServerConfig.getDefaultUserSetting()
 });
-const localSetting = reactive<ServerConfig.UserSetting>({ ...props.setting });
+//use deep clone to avoid changing props
+const localSetting = reactive<ServerConfig.UserSetting>(cloneDeep(props.setting));
+
+//use shallow clone to avoid sync in the current component
 const tcpSetting = reactive<ServerConfig.TCP[]>(localSetting.TCPs);
 const hostSetting = reactive<ServerConfig.Host>(localSetting.Host);
 
-//Sync with parent: props.setting -> localSetting, tcpSetting, hostSetting
-watchEffect(() => {
-  Object.assign(localSetting, props.setting);
-  tcpSetting.splice(0, tcpSetting.length, ...localSetting.TCPs);
-  hostSetting.Number = localSetting.Host.Number;
-  hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...localSetting.Host.RegexStr);
-  hostSetting.WithID = localSetting.Host.WithID;
-});
+//Sync with parent: props.setting -> localSetting (tcpSetting, hostSetting)
+watch(
+  () => props.setting,
+  () => {
+    localSetting.ID = props.setting.ID;
+    localSetting.Secret = props.setting.Secret;
+    localSetting.Speed = props.setting.Speed;
+    localSetting.Connections = props.setting.Connections;
+    tcpSetting.splice(0, tcpSetting.length, ...props.setting.TCPs);
+    hostSetting.Number = props.setting.Host.Number;
+    hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...props.setting.Host.RegexStr);
+    hostSetting.WithID = props.setting.Host.WithID;
+  }
+);
 
 //Sync with child: tcpSetting -> localSetting.TCPs
 const updateTCPSetting = (setting: ServerConfig.TCP[]) => {
@@ -101,25 +111,7 @@ const updateHostSetting = (setting: ServerConfig.Host) => {
   hostSetting.WithID = setting.WithID;
 };
 
-//Sync: tcpSetting -> localSetting.TCPs
-watch(
-  () => tcpSetting,
-  () => {
-    localSetting.TCPs.splice(0, localSetting.TCPs.length, ...tcpSetting);
-  },
-  { deep: true }
-);
-//Sync: hostSetting -> localSetting.Host
-watch(
-  () => hostSetting,
-  () => {
-    localSetting.Host.Number = hostSetting.Number;
-    localSetting.Host.RegexStr = hostSetting.RegexStr;
-    localSetting.Host.WithID = hostSetting.WithID;
-  },
-  { deep: true }
-);
-//Sync with parent: localSetting -> emit("update:setting")
+//Sync with parent: localSetting(tcpSetting,hostSetting) -> emit("update:setting")
 watch(
   () => localSetting,
   () => {
@@ -130,6 +122,8 @@ watch(
 
 //Form Related
 const userSettingRef = ref<FormInstance>();
+const tcpSettingRef = ref<InstanceType<typeof TCPSetting> | null>(null);
+const hostSettingRef = ref<InstanceType<typeof HostSetting> | null>(null);
 const rules = reactive<FormRules<ServerConfig.UserSetting>>({
   ID: [
     {
@@ -145,18 +139,25 @@ const rules = reactive<FormRules<ServerConfig.UserSetting>>({
 });
 
 const validateForm = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    if (userSettingRef.value) {
-      userSettingRef.value.validate(valid => {
-        if (valid) {
-          resolve();
-        } else {
-          reject(new Error("User Setting validation failed, please check your input"));
-        }
-      });
-    } else {
-      reject(new Error("User Setting is not ready"));
-    }
+  const validations = [
+    tcpSettingRef.value?.validateForm(),
+    hostSettingRef.value?.validateForm(),
+    new Promise<void>((resolve, reject) => {
+      if (userSettingRef.value) {
+        userSettingRef.value.validate(valid => {
+          if (valid) {
+            resolve();
+          } else {
+            reject(new Error("User Setting validation failed, please check your input"));
+          }
+        });
+      } else {
+        reject(new Error("User Setting is not ready!"));
+      }
+    })
+  ];
+  return Promise.all(validations).then(() => {
+    console.log("UserSetting validation passed!");
   });
 };
 

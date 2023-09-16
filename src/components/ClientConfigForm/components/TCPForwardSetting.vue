@@ -10,14 +10,18 @@
             TcpForwardAddr
             <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardAddr']" />
           </template>
-          <el-input v-model="localSetting.TCPForwardAddr"></el-input>
+          <el-form-item prop="TCPForwardAddr">
+            <el-input v-model="localSetting.TCPForwardAddr"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
             TcpForwardHostPrefix
             <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardHostPrefix']" />
           </template>
-          <el-input v-model="localSetting.TCPForwardHostPrefix"></el-input>
+          <el-form-item prop="TCPForwardHostPrefix">
+            <el-input v-model="localSetting.TCPForwardHostPrefix"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
@@ -35,6 +39,7 @@ import { reactive, ref, watchEffect } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { FormInstance, FormRules } from "element-plus";
+import { validatorAddr } from "@/utils/eleValidate";
 
 interface TCPForwardSettingProps {
   setting: ClientConfig.TCPForwardSetting;
@@ -58,7 +63,9 @@ watchEffect(() => {
 
 //Form Related
 const TCPForwardSettingRef = ref<FormInstance>();
-const rules = reactive<FormRules<ClientConfig.TCPForwardSetting>>({});
+const rules = reactive<FormRules<ClientConfig.TCPForwardSetting>>({
+  TCPForwardAddr: [{ validator: validatorAddr, trigger: "blur" }]
+});
 
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {

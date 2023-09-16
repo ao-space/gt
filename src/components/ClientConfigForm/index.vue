@@ -26,7 +26,7 @@
 
 <script setup lang="ts" name="ClientConfigForm">
 import { ElMessage, ElMessageBox } from "element-plus";
-import { markRaw, Ref, reactive, ref, watchEffect, onMounted, computed, nextTick } from "vue";
+import { markRaw, Ref, reactive, ref, watchEffect, onMounted, computed } from "vue";
 import { ClientConfig } from "./interface";
 import Anchor, { Tab } from "@/components/Anchor/index.vue";
 import GeneralSetting from "./components/GeneralSetting.vue";
@@ -74,11 +74,12 @@ watchEffect(() => {
 });
 
 const services = reactive<ClientConfig.Service[]>([{ ...ClientConfig.defaultServiceSetting }]);
+const uuids = reactive<string[]>([uuidv4()]); //record the uuid of the service setting
 
 const addService = () => {
   services.push({ ...ClientConfig.defaultServiceSetting });
   serviceSettingRefs.push(ref<InstanceType<typeof ServiceSetting> | null>(null));
-  adjustView();
+  uuids.push(uuidv4());
 };
 const removeService = (index: number) => {
   if (services.length === 1) {
@@ -87,19 +88,7 @@ const removeService = (index: number) => {
   } else {
     services.splice(index, 1);
     serviceSettingRefs.splice(index, 1);
-    adjustView();
-  }
-};
-
-//adjust the view when the service setting is added or removed
-const adjustView = () => {
-  //Need the el-main element to be set to overflow: auto
-  const elMain = document.querySelector(".el-main");
-  if (elMain) {
-    const currentScrollPosition = elMain.scrollTop;
-    nextTick(() => {
-      elMain.scrollTop = currentScrollPosition;
-    });
+    uuids.splice(index, 1);
   }
 };
 
@@ -219,7 +208,7 @@ const dynamicTabs = computed<dynamicTabType<ClientConfig.Service>[]>(() => {
   return services.map((service, index) => ({
     title: `Service ${index + 1} Setting`,
     name: `Service${index + 1}Setting`,
-    uuid: uuidv4(),
+    uuid: uuids[index],
     component: markRaw(ServiceSetting),
     setting: service,
     updateSetting: updateServiceSetting,
@@ -245,7 +234,10 @@ const updateData = (data: Config.Client.ResConfig) => {
   Object.assign(tcpForwardSetting, mapClientTCPForwardSetting(data));
   Object.assign(logSetting, mapClientLogSetting(data));
   services.splice(0, services.length, ...mapClientServices(data));
-  serviceSettingRefs.splice(0, serviceSettingRefs.length);
+  for (let i = 0; i < services.length; i++) {
+    serviceSettingRefs.push(ref<InstanceType<typeof ServiceSetting> | null>(null));
+    uuids.push(uuidv4());
+  }
   if (services.length === 0) {
     addService();
   }

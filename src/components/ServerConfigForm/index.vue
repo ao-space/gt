@@ -51,6 +51,7 @@ import {
   mapServerTCPSetting,
   mapServerUserSetting
 } from "@/utils/map";
+import cloneDeep from "lodash/cloneDeep";
 
 //Global Setting
 const tcps = reactive<ServerConfig.TCP[]>([]);
@@ -60,24 +61,27 @@ const host = reactive<ServerConfig.Host>({ ...ServerConfig.getDefaultHostSetting
 //userList is used for child component -- UserSetting
 const users = reactive<Record<string, ServerConfig.User>>({});
 const userList = reactive<ServerConfig.UserSetting[]>([{ ...ServerConfig.getDefaultUserSetting() }]);
+const uuids = reactive<string[]>([uuidv4()]); // record the uuid of each user
 
 // the sync from userList to users is happened in submit function,
 // to avoid the id conflict
 watch(
-  users,
+  () => users,
   newUsers => {
     userList.splice(0, userList.length);
     userSettingRefs.splice(0, userSettingRefs.length);
+    uuids.splice(0, uuids.length);
     Object.keys(newUsers).forEach(key => {
       userList.push({
         ID: key,
         Secret: newUsers[key].Secret,
-        TCPs: newUsers[key].TCPs,
-        Host: newUsers[key].Host,
+        TCPs: cloneDeep(newUsers[key].TCPs),
+        Host: cloneDeep(newUsers[key].Host),
         Speed: newUsers[key].Speed,
         Connections: newUsers[key].Connections
       });
       userSettingRefs.push(ref<InstanceType<typeof UserSetting> | null>(null));
+      uuids.push(uuidv4());
     });
   },
   { deep: true }
@@ -88,6 +92,7 @@ watch(
 const generalSetting = reactive<ServerConfig.GeneralSetting>({ ...ServerConfig.defaultGeneralSetting });
 const generalSettingProps = reactive<ServerConfig.GeneralSettingProps>({
   ...generalSetting,
+  //use shallow clone to avoid sync in the current component
   TCPs: tcps, //global Setting
   Host: host //global Setting
 });
@@ -156,7 +161,14 @@ watchEffect(() => {
 
 //Sync with child component
 const updateGeneralSetting = (newSetting: ServerConfig.GeneralSettingProps) => {
-  Object.assign(generalSettingProps, newSetting);
+  console.log("updateGeneralSetting");
+  generalSetting.UserPath = newSetting.UserPath;
+  generalSetting.AuthAPI = newSetting.AuthAPI;
+  tcps.splice(0, tcps.length, ...newSetting.TCPs);
+  host.Number = newSetting.Host.Number;
+  host.RegexStr.splice(0, host.RegexStr.length, ...newSetting.Host.RegexStr);
+  host.WithID = newSetting.Host.WithID;
+  // Object.assign(generalSettingProps, newSetting);
 };
 const updateNetworkSetting = (newSetting: ServerConfig.NetworkSetting) => {
   Object.assign(netWorkSetting, newSetting);
@@ -191,6 +203,7 @@ const userSettingRefs = reactive<Ref<InstanceType<typeof UserSetting> | null>[]>
 const addUser = () => {
   userList.push({ ...ServerConfig.getDefaultUserSetting() });
   userSettingRefs.push(ref<InstanceType<typeof UserSetting> | null>(null));
+  uuids.push(uuidv4());
 };
 const removeUser = (index: number) => {
   if (userList.length === 1) {
@@ -199,10 +212,17 @@ const removeUser = (index: number) => {
   }
   userList.splice(index, 1);
   userSettingRefs.splice(index, 1);
+  uuids.splice(index, 1);
 };
 
 const updateUserSetting = (index: number, newSetting: ServerConfig.UserSetting) => {
-  Object.assign(userList[index], newSetting);
+  userList[index].Connections = newSetting.Connections;
+  userList[index].Host = newSetting.Host;
+  userList[index].ID = newSetting.ID;
+  userList[index].Secret = newSetting.Secret;
+  userList[index].Speed = newSetting.Speed;
+  userList[index].TCPs.splice(0, userList[index].TCPs.length, ...newSetting.TCPs);
+  // Object.assign(userList[index], newSetting);
 };
 
 interface staticTabsType<T> {
@@ -294,7 +314,7 @@ const dynamicTabs = computed<dynamicTabType<ServerConfig.UserSetting>[]>(() => {
   return userList.map((user, index) => ({
     title: `User ${index + 1} Setting`,
     name: `User${index + 1}Setting`,
-    uuid: uuidv4(),
+    uuid: uuids[index],
     component: markRaw(UserSetting),
     setting: userList[index],
     updateSetting: updateUserSetting,
@@ -323,9 +343,7 @@ const updateData = (data: Config.Server.ResConfig) => {
   Object.assign(sentrySetting, mapServerSentrySetting(data));
   Object.assign(host, mapServerHostSetting(data));
   tcps.splice(0, tcps.length, ...mapServerTCPSetting(data));
-  Object.keys(users).forEach(key => {
-    delete users[key];
-  });
+  clearUsers();
   Object.assign(users, mapServerUserSetting(data));
 };
 

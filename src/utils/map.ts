@@ -97,7 +97,7 @@ export const mapClientServices = (data: Config.Client.ResConfig) => {
  * @returns {string} - The human-readable format of the duration.
  */
 const humanizeDuration = (value: string): string => {
-  if (!value) return "";
+  if (!value) return "0s";
   const regex = /^(?:\d+(?:ns|µ?s|ms|[smh]))+$/;
   if (regex.test(value)) return value;
   const units = [
@@ -160,7 +160,7 @@ export const mapServerHostSetting = (data: Config.Server.ResConfig): ServerConfi
     };
   } else {
     return {
-      Number: data.config.Host.Number,
+      Number: data.config.Host.Number || 0,
       RegexStr: data.config.Host.RegexStr,
       WithID: data.config.Host.WithID
     };
@@ -185,7 +185,8 @@ export const mapServerUserSetting = (data: Config.Server.ResConfig): ServerConfi
         Connections: user.Connections || 0,
         Host: {
           ...user.Host,
-          RegexStr: user.Host.RegexStr || []
+          RegexStr: user.Host.RegexStr || [],
+          Number: user.Host.Number || 0
         }
       };
       return acc;
@@ -213,8 +214,10 @@ export const mapServerNetworkSetting = (data: Config.Server.ResConfig): ServerCo
   TLSAddr: data.config.TLSAddr,
   TLSMinVersion: data.config.TLSMinVersion,
   STUNAddr: data.config.STUNAddr,
+  STUNLogLevel: data.config.STUNLogLevel,
   SNIAddr: data.config.SNIAddr,
-  HTTPMUXHeader: data.config.HTTPMUXHeader
+  HTTPMUXHeader: data.config.HTTPMUXHeader,
+  MaxHandShakeOptions: data.config.MaxHandShakeOptions
 });
 
 /**

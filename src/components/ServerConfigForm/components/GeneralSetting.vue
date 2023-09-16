@@ -40,10 +40,11 @@
 <script setup lang="ts" name="GeneralSetting">
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { ServerConfig } from "../interface";
-import { reactive, ref, watch, watchEffect } from "vue";
+import { reactive, ref, watch } from "vue";
 import { FormInstance, FormRules } from "element-plus";
 import TCPSetting from "./TCPSetting.vue";
 import HostSetting from "./HostSetting.vue";
+import cloneDeep from "lodash/cloneDeep";
 
 interface GeneralSettingProps {
   setting: ServerConfig.GeneralSettingProps;
@@ -52,48 +53,32 @@ interface GeneralSettingProps {
 const props = withDefaults(defineProps<GeneralSettingProps>(), {
   setting: () => ServerConfig.getDefaultGeneralSettingProps()
 });
-const localSetting = reactive<ServerConfig.GeneralSettingProps>({
-  ...props.setting,
-  Host: {
-    ...props.setting.Host,
-    RegexStr: props.setting.Host.RegexStr || []
-  }
-});
-const tcpSetting = reactive<ServerConfig.TCP[]>([...localSetting.TCPs]);
-const hostSetting = reactive<ServerConfig.Host>({
-  Number: localSetting.Host.Number,
-  RegexStr: [...localSetting.Host.RegexStr],
-  WithID: localSetting.Host.WithID
-});
 
-//Sync with parent: props.setting -> localSetting
-watchEffect(() => {
-  Object.assign(localSetting, props.setting);
-  tcpSetting.splice(0, tcpSetting.length, ...props.setting.TCPs);
-  Object.assign(hostSetting, props.setting.Host);
-});
+//use deep clone to avoid changing props
+const localSetting = reactive<ServerConfig.GeneralSettingProps>(cloneDeep(props.setting));
 
-//Sync tcpSetting and hostSetting -> localSetting
+//use shallow clone to avoid sync in the current component
+const tcpSetting = reactive<ServerConfig.TCP[]>(localSetting.TCPs);
+const hostSetting = reactive<ServerConfig.Host>(localSetting.Host);
+
+//Sync with parent: props.setting -> localSetting(tcpSetting, hostSetting)
 watch(
-  () => tcpSetting,
-  newSetting => {
-    localSetting.TCPs.splice(0, localSetting.TCPs.length, ...newSetting);
-  },
-  { deep: true }
-);
-watch(
-  () => hostSetting,
+  () => props.setting,
   () => {
-    localSetting.Host.Number = hostSetting.Number;
-    localSetting.Host.RegexStr.splice(0, localSetting.Host.RegexStr.length, ...hostSetting.RegexStr);
-    localSetting.Host.WithID = hostSetting.WithID;
+    localSetting.UserPath = props.setting.UserPath;
+    localSetting.AuthAPI = props.setting.AuthAPI;
+
+    tcpSetting.splice(0, tcpSetting.length, ...props.setting.TCPs);
+    hostSetting.Number = props.setting.Host.Number;
+    hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...props.setting.Host.RegexStr);
+    hostSetting.WithID = props.setting.Host.WithID;
   },
   { deep: true }
 );
 
 const emit = defineEmits(["update:setting"]);
 
-//Sync with parent: localSetting -> emit("update:setting")
+//Sync with parent: localSetting(tcpSetting, hostSetting) -> emit("update:setting")
 watch(
   () => localSetting,
   () => {

@@ -13,7 +13,9 @@
             HostPrefix
             <UsageTooltip :usage-text="ClientConfig.usage['HostPrefix']" />
           </template>
-          <el-input v-model="localSetting.HostPrefix"></el-input>
+          <el-form-item prop="HostPrefix">
+            <el-input v-model="localSetting.HostPrefix"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
@@ -34,7 +36,9 @@
             LocalURL
             <UsageTooltip :usage-text="ClientConfig.usage['LocalURL']" />
           </template>
-          <el-input v-model="localSetting.LocalURL"></el-input>
+          <el-form-item prop="LocalURL">
+            <el-input v-model="localSetting.LocalURL"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
@@ -61,7 +65,7 @@ import { reactive, ref, watch, watchEffect } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { FormInstance, FormRules } from "element-plus";
-import { validatorTimeFormat } from "@/utils/eleValidate";
+import { validatorLocalURL, validatorTimeFormat } from "@/utils/eleValidate";
 
 interface ServiceSettingProps {
   setting: ClientConfig.Service;
@@ -97,22 +101,43 @@ watch(
 //Form Related
 const serviceSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.Service>>({
+  LocalURL: [
+    { validator: validatorLocalURL, trigger: "blur" },
+    { required: true, message: "LocalURL is required", trigger: "blur" }
+  ],
   LocalTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }]
 });
 
-const validateForm = (): Promise<void> => {
+const checkTCPSetting = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    if (serviceSettingRef.value) {
-      serviceSettingRef.value.validate(valid => {
-        if (valid) {
-          resolve();
-        } else {
-          reject(new Error("Service Setting validation failed, please check your input"));
-        }
-      });
-    } else {
-      reject(new Error("Service Setting is not ready"));
+    if (localSetting.LocalURL.startsWith("tcp://")) {
+      if (!localSetting.RemoteTCPPort && !localSetting.RemoteTCPRandom) {
+        reject(new Error("RemoteTCPPort or RemoteTCPRandom option should be set when LocalURL begin with tcp://"));
+      }
     }
+    resolve();
+  });
+};
+
+const validateForm = (): Promise<void> => {
+  const validations = [
+    checkTCPSetting(),
+    new Promise<void>((resolve, reject) => {
+      if (serviceSettingRef.value) {
+        serviceSettingRef.value.validate(valid => {
+          if (valid) {
+            resolve();
+          } else {
+            reject(new Error("Service Setting validation failed, please check your input"));
+          }
+        });
+      } else {
+        reject(new Error("Service Setting is not ready"));
+      }
+    })
+  ];
+  return Promise.all(validations).then(() => {
+    console.log("ServiceSetting validation passed!");
   });
 };
 

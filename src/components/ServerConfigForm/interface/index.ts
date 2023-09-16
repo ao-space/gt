@@ -43,8 +43,10 @@ export namespace ServerConfig {
     TLSAddr: string;
     TLSMinVersion: string;
     STUNAddr: string;
+    STUNLogLevel: string;
     SNIAddr: string;
     HTTPMUXHeader: string;
+    MaxHandShakeOptions: number;
   }
   export interface SecuritySetting {
     CertFile: string;
@@ -119,8 +121,10 @@ export namespace ServerConfig {
     TLSAddr: "",
     TLSMinVersion: "",
     STUNAddr: "",
+    STUNLogLevel: "",
     SNIAddr: "",
-    HTTPMUXHeader: ""
+    HTTPMUXHeader: "",
+    MaxHandShakeOptions: 0
   };
   export const defaultSecuritySetting: SecuritySetting = {
     CertFile: "",
@@ -195,16 +199,24 @@ export namespace ServerConfig {
     HostNumber: "The number of host-based services that the user can start",
     HostRegex: "The host prefix started by user must conform to one of these rules",
     HostWithID: "The prefix of host will become the form of id-host",
+
     HTTPMUXHeader: "The http multiplexing header to be used",
+    MAXHandShakeOptions: "The max number of hand shake options",
+
     Timeout: "The timeout of connections. Supports values like '30s', '5m'",
     TimeoutOnUnidirectionalTraffic: "Timeout will happens when traffic is unidirectional",
+
     APIAddr: "The address to listen on for internal api service. Supports values like: '8080', ':8080' or '0.0.0.0:8080'",
     APICertFile: "The api TLS certificate file path",
     APIKeyFile: "The path to key file",
     APITLSMinVersion: "The tls min version. Supports values: tls1.1, tls1.2, tls1.3",
+
     STUNAddr: "The address to listen on for STUN service. Supports values like: '3478', ':3478' or '0.0.0.0:3478'",
+    STUNLogLevel: "Log level: trace, debug, info, warn, error, disable",
+
     SNIAddr:
       "The address to listen on for raw tls proxy. Host comes from Server Name Indication. Supports values like: '443', ':443' or '0.0.0.0:443'",
+
     SentryDSN: "Sentry DSN to use",
     SentryLevel: 'Sentry levels: trace, debug, info, warn, error, fatal, panic (default ["error", "fatal", "panic"])',
     SentrySampleRate: "Sentry sample rate for event submission: [0.0 - 1.0]",
@@ -212,6 +224,7 @@ export namespace ServerConfig {
     SentryEnvironment: "Sentry environment to be sent with events",
     SentryServerName: "Sentry server name to be reported",
     SentryDebug: "Sentry debug mode, the debug information is printed to help you understand what sentry is doing",
+
     LogFile: "Path to save the log file",
     LogFileMaxSize: "Max size of the log files",
     LogFileMaxCount: "Max count of the log files",

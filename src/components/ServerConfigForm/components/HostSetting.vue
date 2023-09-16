@@ -9,7 +9,7 @@
             <UsageTooltip :usage-text="ServerConfig.usage['HostNumber']" />
           </template>
           <el-form-item prop="Number" :rules="rules.Number">
-            <el-input-number v-model="form.Number" />
+            <el-input-number v-model="form.Number" :min="0" />
           </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
@@ -101,7 +101,7 @@ const form = reactive<formType>({
 watch(
   () => props.setting,
   newSetting => {
-    if (JSON.stringify(form) === JSON.stringify(newSetting)) return;
+    if (isSettingEqual(form, newSetting)) return;
     form.Number = newSetting.Number;
     if (newSetting.RegexStr) {
       form.tableData = newSetting.RegexStr.map(item => ({ RegexStr: item, isEdit: false }));
@@ -112,6 +112,14 @@ watch(
   },
   { deep: true }
 );
+function isSettingEqual(form: formType, setting: ServerConfig.Host): boolean {
+  return (
+    form.Number === setting.Number &&
+    form.WithID === setting.WithID &&
+    form.tableData.length === setting.RegexStr.length &&
+    form.tableData.every((item, index) => item.RegexStr === setting.RegexStr[index])
+  );
+}
 
 const emit = defineEmits(["update:setting"]);
 let prevFormState = JSON.stringify(form);

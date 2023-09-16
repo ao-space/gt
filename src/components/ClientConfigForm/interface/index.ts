@@ -97,7 +97,7 @@ export namespace ClientConfig {
     RemoteTCPPort: 0,
     RemoteTCPRandom: false,
     LocalURL: "",
-    LocalTimeout: "",
+    LocalTimeout: "0s",
     UseLocalAsHTTPHost: false
   };
 

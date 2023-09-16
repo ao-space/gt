@@ -91,11 +91,18 @@ const form = reactive<{ tableData: tableDataType[] }>({
 watch(
   () => props.setting,
   newSetting => {
-    if (JSON.stringify(form.tableData) === JSON.stringify(newSetting)) return;
+    if (isSettingEqual(form.tableData, newSetting)) return;
     form.tableData.splice(0, form.tableData.length, ...newSetting.map(({ Range, Number }) => ({ Range, Number, isEdit: false })));
   },
   { deep: true }
 );
+function isSettingEqual(tableData: tableDataType[], setting: ServerConfig.TCP[]): boolean {
+  if (tableData.length !== setting.length) return false;
+  for (let i = 0; i < tableData.length; i++) {
+    if (tableData[i].Range !== setting[i].Range || tableData[i].Number !== setting[i].Number) return false;
+  }
+  return true;
+}
 
 const emit = defineEmits(["update:setting"]);
 let prevFormState = JSON.stringify(form);

@@ -50,13 +50,15 @@
             Remote
             <UsageTooltip :usage-text="ClientConfig.usage['Remote']" />
           </template>
-          <el-input v-model="inputRemote">
-            <template #prepend>
-              <el-select v-model="selectRemote">
-                <el-option v-for="option in remoteOptions" :key="option" :label="option" :value="option" />
-              </el-select>
-            </template>
-          </el-input>
+          <el-form-item prop="Remote">
+            <el-input v-model="inputRemote">
+              <template #prepend>
+                <el-select v-model="selectRemote">
+                  <el-option v-for="option in remoteOptions" :key="option" :label="option" :value="option" />
+                </el-select>
+              </template>
+            </el-input>
+          </el-form-item>
         </el-descriptions-item>
         <!-- RemoteSTUN -->
         <el-descriptions-item>
@@ -64,7 +66,9 @@
             RemoteSTUN
             <UsageTooltip :usage-text="ClientConfig.usage['RemoteSTUN']" />
           </template>
-          <el-input v-model="localSetting.RemoteSTUN"></el-input>
+          <el-form-item prop="RemoteSTUN">
+            <el-input v-model="localSetting.RemoteSTUN"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <!-- RemoteAPI -->
         <el-descriptions-item>
@@ -72,7 +76,9 @@
             RemoteAPI
             <UsageTooltip :usage-text="ClientConfig.usage['RemoteAPI']" />
           </template>
-          <el-input v-model="localSetting.RemoteAPI"></el-input>
+          <el-form-item prop="RemoteAPI">
+            <el-input v-model="localSetting.RemoteAPI"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <!-- RemoteCert -->
         <el-descriptions-item>
@@ -80,7 +86,9 @@
             RemoteCert
             <UsageTooltip :usage-text="ClientConfig.usage['RemoteCert']" />
           </template>
-          <el-input v-model="localSetting.RemoteCert"></el-input>
+          <el-form-item prop="RemoteCert">
+            <el-input v-model="localSetting.RemoteCert"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <!-- RemoteCertInsecure -->
         <el-descriptions-item>

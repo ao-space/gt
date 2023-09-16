@@ -10,7 +10,9 @@
             SentryDSN
             <UsageTooltip :usage-text="ClientConfig.usage['SentryDSN']" />
           </template>
-          <el-input v-model="localSetting.SentryDSN"></el-input>
+          <el-form-item prop="SentryDSN">
+            <el-input v-model="localSetting.SentryDSN"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <!-- SentryServerName -->
         <el-descriptions-item>
@@ -18,7 +20,9 @@
             SentryServerName
             <UsageTooltip :usage-text="ClientConfig.usage['SentryServerName']" />
           </template>
-          <el-input v-model="localSetting.SentryServerName"></el-input>
+          <el-form-item prop="SentryServerName">
+            <el-input v-model="localSetting.SentryServerName"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <!-- SentryLevel -->
         <el-descriptions-item>
@@ -55,7 +59,9 @@
             SentryRelease
             <UsageTooltip :usage-text="ClientConfig.usage['SentryRelease']" />
           </template>
-          <el-input v-model="localSetting.SentryRelease"></el-input>
+          <el-form-item prop="SentryRelease">
+            <el-input v-model="localSetting.SentryRelease"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <!-- SentryEnvironment -->
         <el-descriptions-item>
@@ -63,7 +69,9 @@
             SentryEnvironment
             <UsageTooltip :usage-text="ClientConfig.usage['SentryEnvironment']" />
           </template>
-          <el-input v-model="localSetting.SentryEnvironment"></el-input>
+          <el-form-item prop="SentryEnvironment">
+            <el-input v-model="localSetting.SentryEnvironment"></el-input>
+          </el-form-item>
         </el-descriptions-item>
         <!-- SentryDebug -->
         <el-descriptions-item>
