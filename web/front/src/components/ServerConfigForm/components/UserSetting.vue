@@ -7,6 +7,7 @@
           <el-button v-if="isLast" type="primary" @click="emit('addUser')">Add User</el-button>
           <el-button type="danger" @click="emit('removeUser', index)">Delete</el-button>
         </template>
+        <!-- ID -->
         <el-descriptions-item>
           <template #label>
             ID
@@ -16,6 +17,7 @@
             <el-input v-model="localSetting.ID"></el-input>
           </el-form-item>
         </el-descriptions-item>
+        <!-- Secret -->
         <el-descriptions-item>
           <template #label>
             Secret
@@ -25,6 +27,7 @@
             <el-input v-model="localSetting.Secret" type="password" show-password></el-input>
           </el-form-item>
         </el-descriptions-item>
+        <!-- Speed -->
         <el-descriptions-item>
           <template #label>
             Speed
@@ -34,6 +37,7 @@
             <el-input-number v-model="localSetting.Speed" />
           </el-form-item>
         </el-descriptions-item>
+        <!-- Connections -->
         <el-descriptions-item>
           <template #label>
             Connections
@@ -41,6 +45,16 @@
           </template>
           <el-form-item prop="Connections">
             <el-input-number v-model="localSetting.Connections" />
+          </el-form-item>
+        </el-descriptions-item>
+        <!-- TCP Number -->
+        <el-descriptions-item>
+          <template #label>
+            TCPNumber
+            <UsageTooltip :usage-text="ServerConfig.usage['TCPNumber']" />
+          </template>
+          <el-form-item prop="TCPNumber">
+            <el-input-number v-model="localSetting.TCPNumber" :min="0" />
           </el-form-item>
         </el-descriptions-item>
       </el-descriptions>
@@ -93,6 +107,7 @@ watch(
     localSetting.Secret = props.setting.Secret;
     localSetting.Speed = props.setting.Speed;
     localSetting.Connections = props.setting.Connections;
+    localSetting.TCPNumber = props.setting.TCPNumber;
     tcpSetting.splice(0, tcpSetting.length, ...props.setting.TCPs);
     hostSetting.Number = props.setting.Host.Number;
     hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...props.setting.Host.RegexStr);

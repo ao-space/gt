@@ -140,8 +140,7 @@ export const mapServerTCPSetting = (data: Config.Server.ResConfig): ServerConfig
     return [];
   } else {
     return data.config.TCPs.map(tcp => ({
-      Range: tcp.Range,
-      Number: tcp.Number
+      Range: tcp.Range
     }));
   }
 };
@@ -181,6 +180,7 @@ export const mapServerUserSetting = (data: Config.Server.ResConfig): ServerConfi
       acc[key] = {
         ...user,
         TCPs: user.TCPs || [],
+        TCPNumber: user.TCPNumber || 0,
         Speed: user.Speed || 0,
         Connections: user.Connections || 0,
         Host: {
@@ -201,7 +201,8 @@ export const mapServerUserSetting = (data: Config.Server.ResConfig): ServerConfi
  */
 export const mapServerGeneralSetting = (data: Config.Server.ResConfig): ServerConfig.GeneralSetting => ({
   UserPath: data.config.UserPath,
-  AuthAPI: data.config.AuthAPI
+  AuthAPI: data.config.AuthAPI,
+  TCPNumber: data.config.TCPNumber
 });
 
 /**

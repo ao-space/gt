@@ -24,6 +24,16 @@
             <el-input v-model="localSetting.AuthAPI"></el-input>
           </el-form-item>
         </el-descriptions-item>
+        <!-- TCP Number -->
+        <el-descriptions-item>
+          <template #label>
+            TCPNumber
+            <UsageTooltip :usage-text="ServerConfig.usage['TCPNumber']" />
+          </template>
+          <el-form-item prop="TCPNumber">
+            <el-input-number v-model="localSetting.TCPNumber" :min="0" />
+          </el-form-item>
+        </el-descriptions-item>
       </el-descriptions>
       <el-row :gutter="10" style="width: 100%">
         <el-col :span="12">
@@ -67,6 +77,7 @@ watch(
   () => {
     localSetting.UserPath = props.setting.UserPath;
     localSetting.AuthAPI = props.setting.AuthAPI;
+    localSetting.TCPNumber = props.setting.TCPNumber;
 
     tcpSetting.splice(0, tcpSetting.length, ...props.setting.TCPs);
     hostSetting.Number = props.setting.Host.Number;

@@ -76,6 +76,7 @@ watch(
         ID: key,
         Secret: newUsers[key].Secret,
         TCPs: cloneDeep(newUsers[key].TCPs),
+        TCPNumber: newUsers[key].TCPNumber,
         Host: cloneDeep(newUsers[key].Host),
         Speed: newUsers[key].Speed,
         Connections: newUsers[key].Connections
@@ -110,6 +111,7 @@ watch(
   newSetting => {
     generalSetting.UserPath = newSetting.UserPath;
     generalSetting.AuthAPI = newSetting.AuthAPI;
+    generalSetting.TCPNumber = newSetting.TCPNumber;
   },
   { deep: true }
 );
@@ -162,8 +164,9 @@ watchEffect(() => {
 //Sync with child component
 const updateGeneralSetting = (newSetting: ServerConfig.GeneralSettingProps) => {
   console.log("updateGeneralSetting");
-  generalSetting.UserPath = newSetting.UserPath;
-  generalSetting.AuthAPI = newSetting.AuthAPI;
+  generalSettingProps.UserPath = newSetting.UserPath;
+  generalSettingProps.AuthAPI = newSetting.AuthAPI;
+  generalSettingProps.TCPNumber = newSetting.TCPNumber;
   tcps.splice(0, tcps.length, ...newSetting.TCPs);
   host.Number = newSetting.Host.Number;
   host.RegexStr.splice(0, host.RegexStr.length, ...newSetting.Host.RegexStr);
@@ -222,6 +225,7 @@ const updateUserSetting = (index: number, newSetting: ServerConfig.UserSetting) 
   userList[index].Secret = newSetting.Secret;
   userList[index].Speed = newSetting.Speed;
   userList[index].TCPs.splice(0, userList[index].TCPs.length, ...newSetting.TCPs);
+  userList[index].TCPNumber = newSetting.TCPNumber;
   // Object.assign(userList[index], newSetting);
 };
 
@@ -364,6 +368,7 @@ const updateUsersFormUserList = () => {
     users[user.ID] = {
       Secret: user.Secret,
       TCPs: user.TCPs,
+      TCPNumber: user.TCPNumber,
       Host: user.Host,
       Speed: user.Speed,
       Connections: user.Connections

@@ -19,20 +19,6 @@
             </el-form-item>
           </template>
         </el-table-column>
-        <el-table-column prop="Number">
-          <template #header>
-            <div>
-              TCPNumbers
-              <UsageTooltip :usage-text="ServerConfig.usage['TCPNumbers']" />
-            </div>
-          </template>
-          <template #default="scope">
-            <el-form-item :prop="`tableData[${scope.$index}].Number`" :rules="rules.Number">
-              <el-input v-if="scope.row.isEdit" v-model.number="scope.row.Number" />
-              <span v-else>{{ scope.row.Number }}</span>
-            </el-form-item>
-          </template>
-        </el-table-column>
         <el-table-column fixed="right">
           <template #header>
             <div>Operation</div>
@@ -55,7 +41,7 @@ import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { ServerConfig } from "../interface";
 import { reactive, ref, watch, watchEffect } from "vue";
 import { ElMessage, FormInstance, FormRules } from "element-plus";
-import { validatorPositiveInteger, validatorRange } from "@/utils/eleValidate";
+import { validatorRange } from "@/utils/eleValidate";
 
 interface TCPSettingProps {
   setting: ServerConfig.TCP[];
@@ -65,26 +51,16 @@ const props = defineProps<TCPSettingProps>();
 //Form Related
 const tcpSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.TCP>>({
-  Range: [{ required: true, validator: validatorRange, message: "Please input a valid TCPRange", trigger: "blur" }],
-  Number: [
-    {
-      required: true,
-      type: "number",
-      validator: validatorPositiveInteger,
-      message: "Please input a valid TCPNumber",
-      trigger: "blur"
-    }
-  ]
+  Range: [{ required: true, validator: validatorRange, message: "Please input a valid TCPRange", trigger: "blur" }]
 });
 
 interface tableDataType {
   Range: string;
-  Number: number;
   isEdit: boolean;
 }
 
 const form = reactive<{ tableData: tableDataType[] }>({
-  tableData: props.setting.map(({ Range, Number }) => ({ Range, Number, isEdit: false }))
+  tableData: props.setting.map(({ Range }) => ({ Range, isEdit: false }))
 });
 
 //Sync with parent: props.setting -> form.tableData
@@ -92,14 +68,14 @@ watch(
   () => props.setting,
   newSetting => {
     if (isSettingEqual(form.tableData, newSetting)) return;
-    form.tableData.splice(0, form.tableData.length, ...newSetting.map(({ Range, Number }) => ({ Range, Number, isEdit: false })));
+    form.tableData.splice(0, form.tableData.length, ...newSetting.map(({ Range }) => ({ Range, Number, isEdit: false })));
   },
   { deep: true }
 );
 function isSettingEqual(tableData: tableDataType[], setting: ServerConfig.TCP[]): boolean {
   if (tableData.length !== setting.length) return false;
   for (let i = 0; i < tableData.length; i++) {
-    if (tableData[i].Range !== setting[i].Range || tableData[i].Number !== setting[i].Number) return false;
+    if (tableData[i].Range !== setting[i].Range) return false;
   }
   return true;
 }
@@ -117,7 +93,7 @@ watchEffect(() => {
     }
     emit(
       "update:setting",
-      form.tableData.map(item => ({ Range: item.Range, Number: item.Number }))
+      form.tableData.map(item => ({ Range: item.Range }))
     );
     prevFormState = currentFormState;
   }
@@ -127,7 +103,6 @@ watchEffect(() => {
 const addRow = () => {
   form.tableData.push({
     Range: "",
-    Number: 0,
     isEdit: true
   });
 };

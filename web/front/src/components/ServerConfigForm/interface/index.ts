@@ -6,7 +6,6 @@ export namespace ServerConfig {
   }
   export interface TCP {
     Range: string;
-    Number: number;
   }
   export interface Users {
     [key: string]: User;
@@ -14,6 +13,7 @@ export namespace ServerConfig {
   export interface User {
     Secret: string;
     TCPs: TCP[];
+    TCPNumber: number;
     Speed: number;
     Connections: number;
     Host: Host;
@@ -31,11 +31,13 @@ export namespace ServerConfig {
   export interface GeneralSetting {
     UserPath: string;
     AuthAPI: string;
+    TCPNumber: number;
   }
   export interface GeneralSettingProps {
     UserPath: string;
     AuthAPI: string;
     TCPs: TCP[];
+    TCPNumber: number;
     Host: Host;
   }
   export interface NetworkSetting {
@@ -101,18 +103,19 @@ export namespace ServerConfig {
     };
   }
   export const defaultTCPSetting: TCP = {
-    Range: "",
-    Number: 0
+    Range: ""
   };
   export const defaultGeneralSetting: GeneralSetting = {
     UserPath: "",
-    AuthAPI: ""
+    AuthAPI: "",
+    TCPNumber: 0
   };
   export function getDefaultGeneralSettingProps(): GeneralSettingProps {
     return {
       UserPath: "",
       AuthAPI: "",
       TCPs: [],
+      TCPNumber: 0,
       Host: getDefaultHostSetting()
     };
   }
@@ -166,6 +169,7 @@ export namespace ServerConfig {
       ID: "",
       Secret: "",
       TCPs: [],
+      TCPNumber: 0,
       Speed: 0,
       Connections: 0,
       Host: getDefaultHostSetting()
@@ -191,7 +195,7 @@ export namespace ServerConfig {
     AuthAPI: "The API to authenticate user with id and secret",
     AllowAnyClient: "Allow any client to connect to the server",
     TCPRanges: "The tcp port range, like 1024-65535",
-    TCPNumbers: "The number of tcp ports allowed to be opened for each id",
+    TCPNumber: "The number of tcp ports allowed to be opened for each id",
     Speed: "The max number of bytes the client can transfer per second",
     Connections: "The max number of tunnel connections for a client",
     ReconnectTimes: "The max number of times the client fails to reconnect",
@@ -201,7 +205,7 @@ export namespace ServerConfig {
     HostWithID: "The prefix of host will become the form of id-host",
 
     HTTPMUXHeader: "The http multiplexing header to be used",
-    MAXHandShakeOptions: "The max number of hand shake options",
+    MaxHandShakeOptions: "The max number of hand shake options",
 
     Timeout: "The timeout of connections. Supports values like '30s', '5m'",
     TimeoutOnUnidirectionalTraffic: "Timeout will happens when traffic is unidirectional",

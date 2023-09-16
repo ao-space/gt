@@ -73,12 +73,14 @@ export namespace Connection {
   export enum Status {
     Running = 0,
     Idle = 1,
-    Wait = 2
+    Wait = 2,
+    Connecting = 3
   }
   export const StatusMap: { [key in Status]: string } = {
     [Status.Running]: "Running",
     [Status.Idle]: "Idle",
-    [Status.Wait]: "Wait"
+    [Status.Wait]: "Wait",
+    [Status.Connecting]: "Connecting"
   };
   export interface LocalAddr {
     ip: string;

@@ -79,7 +79,7 @@
         <el-descriptions-item>
           <template #label>
             MaxHandShakeOptions
-            <UsageTooltip :usage-text="ServerConfig.usage['LogFileMaxCount']" />
+            <UsageTooltip :usage-text="ServerConfig.usage['MaxHandShakeOptions']" />
           </template>
           <el-input-number v-model="localSetting.MaxHandShakeOptions" :min="0" />
         </el-descriptions-item>

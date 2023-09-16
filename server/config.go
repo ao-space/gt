@@ -50,7 +50,7 @@ type Options struct {
 	AuthAPI           string               `yaml:"authAPI,omitempty" json:",omitempty" usage:"The API to authenticate user with id and secret"`
 	AllowAnyClient    bool                 `yaml:"allowAnyClient,omitempty" json:",omitempty" usage:"Allow any client to connect to the server"`
 	TCPRanges         config.Slice[string] `arg:"tcpRange" yaml:"-" json:"-" usage:"The tcp port range, like 1024-65535"`
-	TCPNumber         uint16               `arg:"tcpNumber" yaml:"-" json:"-" usage:"The number of tcp ports allowed to be opened for each id"`
+	TCPNumber         uint16               `arg:"tcpNumber" yaml:"tcpNumber,omitempty" json:",omitemptyt " usage:"The number of tcp ports allowed to be opened for each id"`
 	Speed             uint32               `yaml:"speed,omitempty" json:",omitempty" usage:"The max number of bytes the client can transfer per second"`
 	Connections       uint32               `yaml:"connections,omitempty" json:",omitempty" usage:"The max number of tunnel connections for a client"`
 	ReconnectTimes    uint32               `yaml:"reconnectTimes,omitempty" json:",omitempty" usage:"The max number of times the client fails to reconnect"`
