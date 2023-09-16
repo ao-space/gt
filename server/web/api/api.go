@@ -30,6 +30,16 @@ func Login(s *server.Server) gin.HandlerFunc {
 	}
 }
 
+// GetMenu returns the permission menu based on the role of the user
+func GetMenu(s *server.Server) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		menu := service.GetMenu(s)
+		response.SuccessWithData(menu, ctx)
+
+	}
+}
+
+// GetServerInfo returns system info ( OS, CPU, Memory, Disk )
 func GetServerInfo(ctx *gin.Context) {
 	serverInfo, err := util.GetServerInfo()
 	if err != nil {
@@ -38,14 +48,30 @@ func GetServerInfo(ctx *gin.Context) {
 	}
 	response.SuccessWithData(gin.H{"serverInfo": serverInfo}, ctx)
 }
+
+// GetConnectionInfo returns connection info ( client pool, external )
+func GetConnectionInfo(s *server.Server) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		serverPool, external, err := service.GetConnectionInfo(s)
+		if err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		response.SuccessWithData(gin.H{"serverPool": serverPool, "external": external}, ctx)
+	}
+}
+
+// GetRunningConfig returns the running config
 func GetRunningConfig(s *server.Server) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var cfg = s.Config()
-		s.Logger.Info().Msg("Running CONFIG:" + cfg.Config)
+		s.Logger.Info().Msg("Running Config:" + cfg.Config)
 		response.SuccessWithData(gin.H{"config": cfg}, ctx)
 	}
 }
 
+// GetConfigFromFile returns the config from file,
+// If failed, try to fetch running config
 func GetConfigFromFile(s *server.Server) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cfg, err := service.GetConfigFromFile(s)
@@ -59,6 +85,8 @@ func GetConfigFromFile(s *server.Server) gin.HandlerFunc {
 	}
 }
 
+// SaveConfigToFile saves the config to file,
+// If the config file is not specified, save to default config file
 func SaveConfigToFile(s *server.Server) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var cfg server.Config
@@ -67,7 +95,7 @@ func SaveConfigToFile(s *server.Server) gin.HandlerFunc {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
-		s.Logger.Info().Msg("Saving CONFIG in:" + cfg.Config)
+		s.Logger.Info().Msg("Saving Config in:" + cfg.Config)
 		if err := ctx.ShouldBindJSON(&cfg); err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			return
@@ -96,23 +124,4 @@ func inheritImmutableConfigFields(original *server.Config, new *server.Config) (
 	new.Admin = original.Admin
 	new.Password = original.Password
 	return
-}
-
-func GetMenu(s *server.Server) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		menu := service.GetMenu(s)
-		response.SuccessWithData(menu, ctx)
-
-	}
-}
-
-func GetConnectionInfo(s *server.Server) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		serverPool, external, err := service.GetConnectionInfo(s)
-		if err != nil {
-			response.FailWithMessage(err.Error(), ctx)
-			return
-		}
-		response.SuccessWithData(gin.H{"serverPool": serverPool, "external": external}, ctx)
-	}
 }

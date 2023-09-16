@@ -12,6 +12,8 @@ func ConvertToNetAddrString(addr net.Addr) string {
 	return addr.IP + ":" + strconv.Itoa(int(addr.Port))
 }
 
+// FilterOutMatchingConnections filters out connections that are in the filter list(usually pool connections)
+// And return the external connections
 func FilterOutMatchingConnections(source []net.ConnectionStat, filter []client.PoolInfo) []net.ConnectionStat {
 	var filteredConns []net.ConnectionStat
 
@@ -31,35 +33,8 @@ func FilterOutMatchingConnections(source []net.ConnectionStat, filter []client.P
 	return filteredConns
 }
 
-func SimplifyConnections(conns []net.ConnectionStat) []request.SimplifiedConnection {
-	var simplifiedConns []request.SimplifiedConnection
-
-	for _, conn := range conns {
-		simplifiedConns = append(simplifiedConns, request.SimplifiedConnection{
-			Family: conn.Family,
-			Type:   conn.Type,
-			Laddr:  conn.Laddr,
-			Raddr:  conn.Raddr,
-			Status: conn.Status,
-		})
-	}
-
-	return simplifiedConns
-}
-
-func SwitchToPoolInfo(conns []server.ConnectionInfo) []client.PoolInfo {
-	var poolInfos []client.PoolInfo
-
-	for _, conn := range conns {
-		poolInfos = append(poolInfos, client.PoolInfo{
-			LocalAddr:  conn.LocalAddr,
-			RemoteAddr: conn.RemoteAddr,
-		})
-	}
-
-	return poolInfos
-}
-
+// SelectedMatchingConnections selects connections that are in the filter list(usually pool connections)
+// And return the selected connections with more information
 func SelectedMatchingConnections(source []net.ConnectionStat, filter []server.ConnectionInfo) map[string][]net.ConnectionStat {
 	filteredConns := make(map[string][]net.ConnectionStat)
 
@@ -79,6 +54,24 @@ func SelectedMatchingConnections(source []net.ConnectionStat, filter []server.Co
 	return filteredConns
 }
 
+// Formatter
+
+func SimplifyConnections(conns []net.ConnectionStat) []request.SimplifiedConnection {
+	var simplifiedConns []request.SimplifiedConnection
+
+	for _, conn := range conns {
+		simplifiedConns = append(simplifiedConns, request.SimplifiedConnection{
+			Family: conn.Family,
+			Type:   conn.Type,
+			Laddr:  conn.Laddr,
+			Raddr:  conn.Raddr,
+			Status: conn.Status,
+		})
+	}
+
+	return simplifiedConns
+}
+
 func SimplifyConnectionsWithID(conns map[string][]net.ConnectionStat) []request.SimplifiedConnectionWithID {
 	var simplifiedConns []request.SimplifiedConnectionWithID
 
@@ -96,4 +89,17 @@ func SimplifyConnectionsWithID(conns map[string][]net.ConnectionStat) []request.
 	}
 
 	return simplifiedConns
+}
+
+func SwitchToPoolInfo(conns []server.ConnectionInfo) []client.PoolInfo {
+	var poolInfos []client.PoolInfo
+
+	for _, conn := range conns {
+		poolInfos = append(poolInfos, client.PoolInfo{
+			LocalAddr:  conn.LocalAddr,
+			RemoteAddr: conn.RemoteAddr,
+		})
+	}
+
+	return poolInfos
 }

@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/server"
 	"github.com/isrc-cas/gt/server/web/api"
+	"github.com/isrc-cas/gt/util"
 	"github.com/isrc-cas/gt/web/server/middleware"
 	"io"
 	"net/http"
@@ -21,10 +23,15 @@ type webServer struct {
 	http.Server
 }
 
-func NewWebServer(s *server.Server) {
-	addr := s.Config().WebAddr + ":" + strconv.Itoa(int(s.Config().WebPort))
+func NewWebServer(s *server.Server) (err error) {
+	err = checkConfig(s)
+	if err != nil {
+		return
+	}
 
+	addr := s.Config().WebAddr + ":" + strconv.Itoa(int(s.Config().WebPort))
 	s.Logger.Info().Msg("start web server on " + addr)
+
 	f, _ := os.Create("Web_Server.log")
 	gin.DefaultWriter = io.MultiWriter(f)
 
@@ -42,8 +49,26 @@ func NewWebServer(s *server.Server) {
 	return
 
 }
+func checkConfig(s *server.Server) (err error) {
+	if s.Config().WebAddr == "" {
+		return errors.New("option webAddr must be set")
+	}
+	if s.Config().WebPort <= 0 {
+		return errors.New("option webPort must be set")
+	}
+	if s.Config().Admin == "" {
+		return errors.New("option admin must be set")
+	}
+	if s.Config().Password == "" {
+		return errors.New("option password must be set")
+	}
+	if s.Config().SigningKey == "" {
+		s.Config().SigningKey = util.RandomString(predef.DefaultSigningKeySize)
+	}
 
-// TODO : Connection and Config and Server
+	return
+}
+
 func setRoutes(s *server.Server, r *gin.Engine) {
 	PublicGroup := r.Group("/")
 	{

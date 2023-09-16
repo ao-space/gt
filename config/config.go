@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -136,6 +137,10 @@ func registerFlags(flagSetName string, options interface{}) (flagSet *flag.FlagS
 				continue
 			}
 		}
+
+		// 用这种方式可以处理 yaml:"xxx,omitempty" 的情况
+		name = strings.Split(name, ",")[0]
+
 		name2FieldIndex[name] = i
 		usage := fieldType.Tag.Get("usage")
 

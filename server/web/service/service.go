@@ -20,6 +20,7 @@ func VerifyUser(user request.User, s *server.Server) (err error) {
 		return errors.New("username or password is wrong, please try again")
 	}
 }
+
 func GenerateToken(signingKey string, user request.User) (token string, err error) {
 	j := util.NewJWT(signingKey)
 	claims := j.CreateClaims(user.Username, "gt-server")
@@ -28,35 +29,6 @@ func GenerateToken(signingKey string, user request.User) (token string, err erro
 		return "", err
 	}
 	return token, nil
-}
-
-func GetConfigFromFile(s *server.Server) (cfg server.Config, err error) {
-	fullPath := s.Config().Options.Config
-	if fullPath == "" {
-		return
-	}
-	err = config.Yaml2Interface(fullPath, &cfg)
-	if err != nil {
-		return
-	}
-	return
-}
-
-func SaveConfigToFile(cfg *server.Config) (fullpath string, err error) {
-	yamlData, err := yaml.Marshal(&cfg)
-	if err != nil {
-		return
-	}
-	if cfg.Config == "" {
-		fullpath = cfg.Config
-	} else {
-		fullpath = filepath.Join(util.GetAppDir(), "server.yaml")
-	}
-	err = util.WriteYamlToFile(fullpath, yamlData)
-	if err != nil {
-		return
-	}
-	return
 }
 
 func GetMenu(s *server.Server) (menu []request.Menu) {
@@ -100,10 +72,11 @@ func GetMenu(s *server.Server) (menu []request.Menu) {
 				IsHide:      false,
 				IsFull:      false,
 				IsAffix:     false,
-				IsKeepAlive: false,
+				IsKeepAlive: true,
 			},
 		},
 	}
+	//pprof
 	if s.Config().EnablePprof {
 		pprofLink := fmt.Sprintf("http://%s:%d/debug/pprof/", s.Config().WebAddr, s.Config().WebPort)
 
@@ -125,6 +98,7 @@ func GetMenu(s *server.Server) (menu []request.Menu) {
 	return
 }
 
+// GetConnectionInfo returns the connection info (both in pool and external) of the server
 func GetConnectionInfo(s *server.Server) (serverPool []request.SimplifiedConnectionWithID, external []request.SimplifiedConnection, err error) {
 	pid := int32(os.Getpid())
 	conns, err := net.ConnectionsPid("all", pid)
@@ -137,5 +111,34 @@ func GetConnectionInfo(s *server.Server) (serverPool []request.SimplifiedConnect
 
 	serverPool = util.SimplifyConnectionsWithID(poolsInfo)
 	external = util.SimplifyConnections(externalConnection)
+	return
+}
+
+func GetConfigFromFile(s *server.Server) (cfg server.Config, err error) {
+	fullPath := s.Config().Options.Config
+	if fullPath == "" {
+		return
+	}
+	err = config.Yaml2Interface(fullPath, &cfg)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func SaveConfigToFile(cfg *server.Config) (fullpath string, err error) {
+	yamlData, err := yaml.Marshal(&cfg)
+	if err != nil {
+		return
+	}
+	if cfg.Config != "" {
+		fullpath = cfg.Config
+	} else {
+		fullpath = filepath.Join(util.GetAppDir(), "server.yaml")
+	}
+	err = util.WriteYamlToFile(fullpath, yamlData)
+	if err != nil {
+		return
+	}
 	return
 }

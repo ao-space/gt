@@ -23,6 +23,7 @@ func VerifyUser(user request.User, c *client.Client) (err error) {
 		return errors.New("username or password is wrong, please try again")
 	}
 }
+
 func GenerateToken(signingKey string, user request.User) (token string, err error) {
 	j := util.NewJWT(signingKey)
 	claims := j.CreateClaims(user.Username, "gt-client")
@@ -31,6 +32,72 @@ func GenerateToken(signingKey string, user request.User) (token string, err erro
 		return "", err
 	}
 	return token, nil
+}
+
+func GetMenu(c *client.Client) (menu []request.Menu) {
+	menu = []request.Menu{
+		//Home
+		{
+			Path:      "/home/index",
+			Name:      "home",
+			Component: "/home/index",
+			Meta: request.MetaProps{
+				Icon:        "HomeFilled",
+				Title:       "Home",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     true,
+				IsKeepAlive: false,
+			},
+		},
+		//Connection
+		{
+			Path:      "/connection",
+			Name:      "connection",
+			Component: "/connection/index",
+			Meta: request.MetaProps{
+				Icon:        "Connection",
+				Title:       "Connection Status",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: false,
+			},
+		},
+		//Client Config
+		{
+			Path:      "/config/client",
+			Name:      "client",
+			Component: "/config/ClientConfig/index",
+			Meta: request.MetaProps{
+				Icon:        "Setting",
+				Title:       "Client",
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: true,
+			},
+		},
+	}
+	//pprof
+	if c.Config().EnablePprof {
+		pprofLink := fmt.Sprintf("http://%s:%d/debug/pprof", c.Config().WebAddr, c.Config().WebPort)
+		menu = append(menu, request.Menu{
+			Path:      "/pprof",
+			Name:      "pprof",
+			Component: "/pprof/index",
+			Meta: request.MetaProps{
+				Icon:        "link",
+				Title:       "pprof",
+				IsLink:      pprofLink,
+				IsHide:      false,
+				IsFull:      false,
+				IsAffix:     false,
+				IsKeepAlive: false,
+			},
+		})
+	}
+	return
 }
 
 func GetConnectionPoolStatus(c *client.Client) map[uint]client.Status {
@@ -113,70 +180,5 @@ func SendSignal(signal string) (err error) {
 		return
 	}
 	err = cmd.Process.Release()
-	return
-}
-
-func GetMenu(c *client.Client) (menu []request.Menu) {
-	menu = []request.Menu{
-		//Home
-		{
-			Path:      "/home/index",
-			Name:      "home",
-			Component: "/home/index",
-			Meta: request.MetaProps{
-				Icon:        "HomeFilled",
-				Title:       "Home",
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     true,
-				IsKeepAlive: false,
-			},
-		},
-		//Connection
-		{
-			Path:      "/connection",
-			Name:      "connection",
-			Component: "/connection/index",
-			Meta: request.MetaProps{
-				Icon:        "Connection",
-				Title:       "Connection Status",
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     false,
-				IsKeepAlive: false,
-			},
-		},
-		//Client Config
-		{
-			Path:      "/config/client",
-			Name:      "client",
-			Component: "/config/ClientConfig/index",
-			Meta: request.MetaProps{
-				Icon:        "Setting",
-				Title:       "Client",
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     false,
-				IsKeepAlive: false,
-			},
-		},
-	}
-	if c.Config().EnablePprof {
-		pprofLink := fmt.Sprintf("http://%s:%d/debug/pprof", c.Config().WebAddr, c.Config().WebPort)
-		menu = append(menu, request.Menu{
-			Path:      "/pprof",
-			Name:      "pprof",
-			Component: "/pprof/index",
-			Meta: request.MetaProps{
-				Icon:        "link",
-				Title:       "pprof",
-				IsLink:      pprofLink,
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     false,
-				IsKeepAlive: false,
-			},
-		})
-	}
 	return
 }

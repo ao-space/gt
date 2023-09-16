@@ -26,19 +26,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func runCmd(args []string) (err error) {
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
-	}
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
-	err = cmd.Process.Release()
-	return
-}
-
 func main() {
 	c, err := client.New(os.Args, nil)
 	if err != nil {
@@ -50,7 +37,10 @@ func main() {
 		c.Logger.Fatal().Err(err).Msg("failed to start")
 	}
 
-	startWebServer(c)
+	err = startWebServer(c)
+	if err != nil {
+		c.Logger.Fatal().Err(err).Msg("failed to start web server")
+	}
 
 	osSig := make(chan os.Signal, 1)
 	signal.Notify(osSig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
@@ -62,25 +52,19 @@ func main() {
 			switch sig {
 			case syscall.SIGHUP:
 				// reload the config
-				err := c.ReloadServices()
+				err = c.ReloadServices()
 				c.Logger.Info().Err(err).Msg("reload services done")
 			case syscall.SIGTERM:
 				return
 			case syscall.SIGQUIT:
 				// restart, start a new process and then shutdown gracefully
 
-				if c.Config().EnableWebServer {
-					// stop web server
-					c.Logger.Info().Msg("try to stop web server")
-					err := web.ShutdownWebServer()
-					if err != nil {
-						c.Logger.Error().Err(err).Msg("failed to stop web server")
-						continue
-					}
-					c.Logger.Info().Msg("web server stopped")
+				err = shutdownWebServer(c)
+				if err != nil {
+					c.Logger.Error().Err(err).Msg("failed to shutdown web server")
+					continue
 				}
-
-				err := runCmd(os.Args)
+				err = runCmd(os.Args)
 				if err != nil {
 					c.Logger.Error().Err(err).Msg("failed to start new process")
 					continue
@@ -101,8 +85,37 @@ func main() {
 	}
 }
 
-func startWebServer(c *client.Client) {
-	if c.Config().EnableWebServer {
-		web.NewWebServer(c)
+func runCmd(args []string) (err error) {
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
 	}
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+	err = cmd.Process.Release()
+	return
+}
+func startWebServer(c *client.Client) (err error) {
+	if c.Config().EnableWebServer {
+		err = web.NewWebServer(c)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func shutdownWebServer(c *client.Client) (err error) {
+	if c.Config().EnableWebServer {
+		// stop web server
+		c.Logger.Info().Msg("try to stop web server")
+		err = web.ShutdownWebServer()
+		if err != nil {
+			return
+		}
+		c.Logger.Info().Msg("web server stopped")
+	}
+	return
 }

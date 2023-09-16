@@ -16,6 +16,21 @@ const (
 	GB = 1024 * MB
 )
 
+func GetServerInfo() (server *request.Server, err error) {
+	var s request.Server
+	s.Os = initOS()
+	if s.Cpu, err = initCPU(); err != nil {
+		return nil, err
+	}
+	if s.Ram, err = initRAM(); err != nil {
+		return nil, err
+	}
+	if s.Disk, err = initDisk(); err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
 func initOS() (o request.Os) {
 	o.GOOS = runtime.GOOS
 	o.NumCPU = runtime.NumCPU()
@@ -61,18 +76,4 @@ func initDisk() (d request.Disk, err error) {
 		d.UsedPercent = int(u.UsedPercent)
 	}
 	return d, nil
-}
-func GetServerInfo() (server *request.Server, err error) {
-	var s request.Server
-	s.Os = initOS()
-	if s.Cpu, err = initCPU(); err != nil {
-		return nil, err
-	}
-	if s.Ram, err = initRAM(); err != nil {
-		return nil, err
-	}
-	if s.Disk, err = initDisk(); err != nil {
-		return nil, err
-	}
-	return &s, nil
 }

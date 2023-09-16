@@ -36,7 +36,10 @@ func main() {
 		s.Logger.Fatal().Err(err).Msg("failed to start")
 	}
 
-	startWebServer(s)
+	err = startWebServer(s)
+	if err != nil {
+		s.Logger.Fatal().Err(err).Msg("failed to start web server")
+	}
 
 	osSig := make(chan os.Signal, 1)
 	signal.Notify(osSig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
@@ -47,11 +50,25 @@ func main() {
 		time.AfterFunc(3*time.Minute, func() {
 			os.Exit(0)
 		})
+		shutdownWebServer(s)
 		s.Shutdown()
 	}
 }
-func startWebServer(s *server.Server) {
+
+func startWebServer(s *server.Server) (err error) {
 	if s.Config().EnableWebServer {
-		web.NewWebServer(s)
+		err = web.NewWebServer(s)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+func shutdownWebServer(s *server.Server) {
+	if s.Config().EnableWebServer {
+		err := web.ShutdownWebServer()
+		if err != nil {
+			s.Logger.Error().Err(err).Msg("failed to shutdown web server")
+		}
 	}
 }

@@ -6,6 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/isrc-cas/gt/client"
 	"github.com/isrc-cas/gt/client/web/api"
+	"github.com/isrc-cas/gt/predef"
+	"github.com/isrc-cas/gt/util"
 	"github.com/isrc-cas/gt/web/server/middleware"
 	"io"
 	"net/http"
@@ -21,10 +23,16 @@ type webServer struct {
 	http.Server
 }
 
-func NewWebServer(c *client.Client) {
-	addr := c.Config().WebAddr + ":" + strconv.Itoa(int(c.Config().WebPort))
+func NewWebServer(c *client.Client) (err error) {
 
+	err = checkConfig(c)
+	if err != nil {
+		return
+	}
+
+	addr := c.Config().WebAddr + ":" + strconv.Itoa(int(c.Config().WebPort))
 	c.Logger.Info().Msg("start web server on " + addr)
+
 	f, _ := os.Create("Web_Client.log")
 	gin.DefaultWriter = io.MultiWriter(f)
 
@@ -41,11 +49,33 @@ func NewWebServer(c *client.Client) {
 	startWebServer(c)
 	return
 }
+
+func checkConfig(c *client.Client) (err error) {
+	if c.Config().WebAddr == "" {
+		return errors.New("option webAddr must be set")
+	}
+	if c.Config().WebPort <= 0 {
+		return errors.New("option webPort must be set")
+	}
+	if c.Config().Admin == "" {
+		return errors.New("option admin must be set")
+	}
+	if c.Config().Password == "" {
+		return errors.New("option password must be set")
+	}
+	if c.Config().SigningKey == "" {
+		c.Config().SigningKey = util.RandomString(predef.DefaultSigningKeySize)
+	}
+
+	return nil
+}
+
 func setRoutes(c *client.Client, r *gin.Engine) {
 	PublicGroup := r.Group("/")
 	{
 		PublicGroup.POST("/api/login", api.Login(c))
 	}
+
 	apiGroup := r.Group("/api")
 	apiGroup.Use(middleware.JWTAuthMiddleware(c.Config().SigningKey))
 	{
@@ -61,8 +91,8 @@ func setRoutes(c *client.Client, r *gin.Engine) {
 			serverGroup.GET("/info", api.GetServerInfo)
 			serverGroup.PUT("/reload", api.ReloadServices)
 			serverGroup.PUT("/restart", api.Restart)
-			serverGroup.PUT("/stop", api.Stop)
-			serverGroup.PUT("/kill", api.Kill)
+			//serverGroup.PUT("/stop", api.Stop)
+			//serverGroup.PUT("/kill", api.Kill)
 		}
 
 		connectionGroup := apiGroup.Group("/connection")
@@ -78,7 +108,6 @@ func setRoutes(c *client.Client, r *gin.Engine) {
 
 	if c.Config().EnablePprof {
 		pprofGroup := r.Group("/debug/pprof")
-		//pprofGroup.Use(middleware.JWTAuthMiddleware(c.Config().SigningKey))
 		{
 			pprofGroup.GET("/", gin.WrapF(pprof.Index))
 			pprofGroup.GET("/cmdline", gin.WrapF(pprof.Cmdline))
@@ -115,9 +144,7 @@ func startWebServer(c *client.Client) {
 // to avoid the port being occupied.
 func ShutdownWebServer() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer func() {
-		cancel()
-	}()
+	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
 		return err

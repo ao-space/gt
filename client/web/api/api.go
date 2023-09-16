@@ -30,6 +30,15 @@ func Login(c *client.Client) gin.HandlerFunc {
 	}
 }
 
+// GetMenu returns the permission menu based on the role of the user
+func GetMenu(c *client.Client) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		menu := service.GetMenu(c)
+		response.SuccessWithData(menu, ctx)
+	}
+}
+
+// GetServerInfo returns system info ( OS, CPU, Memory, Disk )
 func GetServerInfo(ctx *gin.Context) {
 	serverInfo, err := util.GetServerInfo()
 	if err != nil {
@@ -38,6 +47,22 @@ func GetServerInfo(ctx *gin.Context) {
 	}
 	response.SuccessWithData(gin.H{"serverInfo": serverInfo}, ctx)
 }
+
+// GetConnectionInfo returns connection info ( pool, external )
+func GetConnectionInfo(c *client.Client) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		poolStatus := service.GetConnectionPoolStatus(c)
+		conn, err := service.GetConnectionInfo(c)
+		if err != nil {
+			c.Logger.Error().Msg(err.Error())
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
+		response.SuccessWithData(gin.H{"clientPool": poolStatus, "external": conn}, ctx)
+	}
+}
+
+// GetConfig returns the current config
 func GetRunningConfig(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var cfg = c.Config()
@@ -45,6 +70,9 @@ func GetRunningConfig(c *client.Client) gin.HandlerFunc {
 		response.SuccessWithData(gin.H{"config": cfg}, ctx)
 	}
 }
+
+// GetConfigFromFile returns the config from file,
+// if failed, try to fetch running config
 func GetConfigFromFile(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cfg, err := service.GetConfigFromFile(c)
@@ -58,6 +86,8 @@ func GetConfigFromFile(c *client.Client) gin.HandlerFunc {
 	}
 }
 
+// SaveConfigToFile save config to file,
+// If the config file is not specified, save to the default path
 func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var cfg client.Config
@@ -97,8 +127,8 @@ func inheritImmutableConfigFields(original *client.Config, new *client.Config) (
 	return
 }
 
-// ServerGroup api
-
+// ReloadServices reloads the services in the config file
+// without restarting the current process
 func ReloadServices(ctx *gin.Context) {
 	err := service.SendSignal("reload")
 	if err != nil {
@@ -109,7 +139,8 @@ func ReloadServices(ctx *gin.Context) {
 }
 
 // Restart for a brand-new config process,
-// not only restart the services
+// not only reload the services,
+// but also restart the process to load the brand-new config(mainly for options part)
 func Restart(ctx *gin.Context) {
 	err := service.SendSignal("restart")
 	if err != nil {
@@ -118,39 +149,21 @@ func Restart(ctx *gin.Context) {
 	}
 	response.Success(ctx)
 }
-func Stop(ctx *gin.Context) {
-	err := service.SendSignal("stop")
-	if err != nil {
-		response.FailWithMessage(err.Error(), ctx)
-		return
-	}
-	response.Success(ctx)
-}
-func Kill(ctx *gin.Context) {
-	err := service.SendSignal("kill")
-	if err != nil {
-		response.FailWithMessage(err.Error(), ctx)
-		return
-	}
-	response.Success(ctx)
-}
 
-func GetConnectionInfo(c *client.Client) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		poolStatus := service.GetConnectionPoolStatus(c)
-		conn, err := service.GetConnectionInfo(c)
-		if err != nil {
-			c.Logger.Error().Msg(err.Error())
-			response.FailWithMessage(err.Error(), ctx)
-			return
-		}
-		response.SuccessWithData(gin.H{"clientPool": poolStatus, "external": conn}, ctx)
-	}
-}
+//func Stop(ctx *gin.Context) {
+//	err := service.SendSignal("stop")
+//	if err != nil {
+//		response.FailWithMessage(err.Error(), ctx)
+//		return
+//	}
+//	response.Success(ctx)
+//}
 
-func GetMenu(c *client.Client) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		menu := service.GetMenu(c)
-		response.SuccessWithData(menu, ctx)
-	}
-}
+//func Kill(ctx *gin.Context) {
+//	err := service.SendSignal("kill")
+//	if err != nil {
+//		response.FailWithMessage(err.Error(), ctx)
+//		return
+//	}
+//	response.Success(ctx)
+//}

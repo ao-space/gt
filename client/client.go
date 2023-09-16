@@ -328,14 +328,11 @@ func (c *Client) Start() (err error) {
 	//make sure even if there is  no service,
 	//web server still can start for config
 	if err != nil {
+		//filter out no service error
 		if err != errNoService || (err == errNoService && !c.Config().EnableWebServer) {
-			c.Logger.Info().Msg("-------------------")
-			c.Logger.Error().Err(err).Msg("failed to parse services")
-			c.Logger.Info().Msg("-------------------")
 			return
 		}
 	}
-	c.Logger.Info().Msg("parsed services")
 
 	var dialer dialer
 	if len(c.Config().Remote) > 0 {
@@ -381,12 +378,7 @@ func (c *Client) Start() (err error) {
 	} else if c.Config().RemoteIdleConnections > c.Config().RemoteConnections {
 		c.Config().RemoteIdleConnections = c.Config().RemoteConnections
 	}
-	c.Logger.Info().Msg("New IdleManager")
 	c.idleManager = newIdleManager(c.Config().RemoteIdleConnections)
-	if c.idleManager == nil {
-		c.Logger.Warn().Msg("IdleManager is nil")
-	}
-	c.Logger.Info().Msg("New IdleManager done")
 
 	for i := uint(1); i <= c.Config().RemoteConnections; i++ {
 		go c.connectLoop(dialer, i)
@@ -418,10 +410,6 @@ func (c *Client) Config() *Config {
 }
 
 func (c *Client) GetConnectionPoolStatus() (status map[uint]Status) {
-	if c.idleManager == nil {
-		c.Logger.Warn().Msg("idleManager is nil")
-		return nil
-	}
 	return c.idleManager.GetConnectionStatus()
 }
 
@@ -603,13 +591,10 @@ var errNoService = errors.New("no service is configured")
 func (c *Client) parseServices() (err error) {
 	services, err := parseServices(c.Config())
 	if err != nil {
-		c.Logger.Info().Msg("!!!!!!!!!!!!!!!!!!!111")
-		c.Logger.Error().Err(err).Msg("failed to parse services")
 		return
 	}
-	// services 不能为空
+	// services 不能为空除非启动了 web 服务
 	if len(services) == 0 {
-		c.Logger.Info().Msg("!!!!!!!!!!!!!!!!!!!111")
 		err = errNoService
 		return
 	}
@@ -676,7 +661,6 @@ func parseServices(config *Config) (result services, err error) {
 	for i := 0; i < len(result); i++ {
 		if result[i].LocalURL.URL == nil {
 			err = errors.New("local url (-local option) cannot be empty")
-			return
 		}
 
 		// 设置默认值
@@ -718,7 +702,7 @@ func parseServices(config *Config) (result services, err error) {
 				return
 			}
 		default:
-			err = fmt.Errorf("local url (-local option) '%s' must begin with http://, https:// or tcp://", config.Local[i].Value)
+			err = fmt.Errorf("local url (-local option) '%s' must begin with http://, https:// or tcp://", result[i].LocalURL.String())
 			return
 		}
 

@@ -443,7 +443,7 @@ func (s *Server) authWithAPI(id string, secret string) (hostPrefixes map[string]
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Request-Id", strconv.FormatInt(time.Now().Unix(), 10))
 	client := http.Client{
-		Timeout: s.config.Timeout,
+		Timeout: s.config.Timeout.Duration,
 	}
 	resp, err := client.Do(req)
 	if err != nil {

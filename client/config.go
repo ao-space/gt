@@ -40,15 +40,15 @@ type Options struct {
 	Config                string          `arg:"config" yaml:"-" json:"-" usage:"The config file path to load"`
 	ID                    string          `yaml:"id" usage:"The unique id used to connect to server. Now it's the prefix of the domain."`
 	Secret                string          `yaml:"secret" json:",omitempty" usage:"The secret used to verify the id"`
-	ReconnectDelay        config.Duration `yaml:"reconnectDelay" json:",omitempty" usage:"The delay before reconnect. Supports values like '30s', '5m'"`
-	Remote                string          `yaml:"remote" json:",omitempty" usage:"The remote server url. Supports tcp:// and tls://, default tcp://"`
-	RemoteSTUN            string          `yaml:"remoteSTUN" json:",omitempty" usage:"The remote STUN server address"`
-	RemoteAPI             string          `yaml:"remoteAPI" json:",omitempty" usage:"The API to get remote server url"`
-	RemoteCert            string          `yaml:"remoteCert" json:",omitempty" usage:"The path to remote cert"`
-	RemoteCertInsecure    bool            `yaml:"remoteCertInsecure" json:",omitempty" usage:"Accept self-signed SSL certs from remote"`
-	RemoteConnections     uint            `yaml:"remoteConnections" json:",omitempty" usage:"The max number of server connections in the pool. Valid value is 1 to 10"`
-	RemoteIdleConnections uint            `yaml:"remoteIdleConnections" json:",omitempty" usage:"The number of idle server connections kept in the pool"`
-	RemoteTimeout         config.Duration `yaml:"remoteTimeout" json:",omitempty" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
+	ReconnectDelay        config.Duration `yaml:"reconnectDelay,omitempty" json:",omitempty" usage:"The delay before reconnect. Supports values like '30s', '5m'"`
+	Remote                string          `yaml:"remote,omitempty" json:",omitempty" usage:"The remote server url. Supports tcp:// and tls://, default tcp://"`
+	RemoteSTUN            string          `yaml:"remoteSTUN,omitempty" json:",omitempty" usage:"The remote STUN server address"`
+	RemoteAPI             string          `yaml:"remoteAPI,omitempty" json:",omitempty" usage:"The API to get remote server url"`
+	RemoteCert            string          `yaml:"remoteCert,omitempty" json:",omitempty" usage:"The path to remote cert"`
+	RemoteCertInsecure    bool            `yaml:"remoteCertInsecure,omitempty" json:",omitempty" usage:"Accept self-signed SSL certs from remote"`
+	RemoteConnections     uint            `yaml:"remoteConnections,omitempty" json:",omitempty" usage:"The max number of server connections in the pool. Valid value is 1 to 10"`
+	RemoteIdleConnections uint            `yaml:"remoteIdleConnections,omitempty" json:",omitempty" usage:"The number of idle server connections kept in the pool"`
+	RemoteTimeout         config.Duration `yaml:"remoteTimeout,omitempty" json:",omitempty" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
 
 	HostPrefix         config.PositionSlice[string]        `yaml:"-" json:"-" arg:"hostPrefix"  usage:"The server will recognize this host prefix and forward data to local"`
 	RemoteTCPPort      config.PositionSlice[uint16]        `yaml:"-" json:"-" arg:"remoteTCPPort" usage:"The TCP port that the remote server will open"`
@@ -57,36 +57,36 @@ type Options struct {
 	LocalTimeout       config.PositionSlice[time.Duration] `yaml:"-" json:"-" arg:"localTimeout" usage:"The timeout of local connections. Supports values like '30s', '5m'"`
 	UseLocalAsHTTPHost config.PositionSlice[bool]          `yaml:"-" json:"-" arg:"useLocalAsHTTPHost" usage:"Use the local address as host"`
 
-	SentryDSN         string               `yaml:"sentryDSN" json:",omitempty" usage:"Sentry DSN to use"`
-	SentryLevel       config.Slice[string] `yaml:"sentryLevel" json:",omitempty" usage:"Sentry levels: trace, debug, info, warn, error, fatal, panic (default [\"error\", \"fatal\", \"panic\"])"`
-	SentrySampleRate  float64              `yaml:"sentrySampleRate" json:",omitempty" usage:"Sentry sample rate for event submission: [0.0 - 1.0]"`
-	SentryRelease     string               `yaml:"sentryRelease" json:",omitempty" usage:"Sentry release to be sent with events"`
-	SentryEnvironment string               `yaml:"sentryEnvironment" json:",omitempty" usage:"Sentry environment to be sent with events"`
-	SentryServerName  string               `yaml:"sentryServerName" json:",omitempty" usage:"Sentry server name to be reported"`
-	SentryDebug       bool                 `yaml:"sentryDebug" json:",omitempty" usage:"Sentry debug mode, the debug information is printed to help you understand what sentry is doing"`
+	SentryDSN         string               `yaml:"sentryDSN,omitempty" json:",omitempty" usage:"Sentry DSN to use"`
+	SentryLevel       config.Slice[string] `yaml:"sentryLevel,omitempty" json:",omitempty" usage:"Sentry levels: trace, debug, info, warn, error, fatal, panic (default [\"error\", \"fatal\", \"panic\"])"`
+	SentrySampleRate  float64              `yaml:"sentrySampleRate,omitempty" json:",omitempty" usage:"Sentry sample rate for event submission: [0.0 - 1.0]"`
+	SentryRelease     string               `yaml:"sentryRelease,omitempty" json:",omitempty" usage:"Sentry release to be sent with events"`
+	SentryEnvironment string               `yaml:"sentryEnvironment,omitempty" json:",omitempty" usage:"Sentry environment to be sent with events"`
+	SentryServerName  string               `yaml:"sentryServerName,omitempty" json:",omitempty" usage:"Sentry server name to be reported"`
+	SentryDebug       bool                 `yaml:"sentryDebug,omitempty" json:",omitempty" usage:"Sentry debug mode, the debug information is printed to help you understand what sentry is doing"`
 
-	WebRTCConnectionIdleTimeout config.Duration `yaml:"webrtcConnectionIdleTimeout" usage:"The timeout of WebRTC connection. Supports values like '30s', '5m'"`
-	WebRTCLogLevel              string          `yaml:"webrtcLogLevel" json:",omitempty" usage:"WebRTC log level: verbose, info, warning, error"`
-	WebRTCMinPort               uint16          `yaml:"webrtcMinPort" json:",omitempty" usage:"The min port of WebRTC peer connection"`
-	WebRTCMaxPort               uint16          `yaml:"webrtcMaxPort" json:",omitempty" usage:"The max port of WebRTC peer connection"`
+	WebRTCConnectionIdleTimeout config.Duration `yaml:"webrtcConnectionIdleTimeout,omitempty" usage:"The timeout of WebRTC connection. Supports values like '30s', '5m'"`
+	WebRTCLogLevel              string          `yaml:"webrtcLogLevel,omitempty" json:",omitempty" usage:"WebRTC log level: verbose, info, warning, error"`
+	WebRTCMinPort               uint16          `yaml:"webrtcMinPort,omitempty" json:",omitempty" usage:"The min port of WebRTC peer connection"`
+	WebRTCMaxPort               uint16          `yaml:"webrtcMaxPort,omitempty" json:",omitempty" usage:"The max port of WebRTC peer connection"`
 
-	TCPForwardAddr        string `yaml:"tcpForwardAddr" json:",omitempty" usage:"The address of TCP forward"`
-	TCPForwardHostPrefix  string `yaml:"tcpForwardHostPrefix" json:",omitempty" usage:"The host prefix of TCP forward"`
-	TCPForwardConnections uint   `yaml:"tcpForwardConnections" json:",omitempty" usage:"The max number of TCP forward peer connections in the pool. Valid value is 1 to 10"`
+	TCPForwardAddr        string `yaml:"tcpForwardAddr,omitempty" json:",omitempty" usage:"The address of TCP forward"`
+	TCPForwardHostPrefix  string `yaml:"tcpForwardHostPrefix,omitempty" json:",omitempty" usage:"The host prefix of TCP forward"`
+	TCPForwardConnections uint   `yaml:"tcpForwardConnections,omitempty" json:",omitempty" usage:"The max number of TCP forward peer connections in the pool. Valid value is 1 to 10"`
 
-	LogFile         string `yaml:"logFile" json:",omitempty" usage:"Path to save the log file"`
-	LogFileMaxSize  int64  `yaml:"logFileMaxSize" json:",omitempty" usage:"Max size of the log files"`
-	LogFileMaxCount uint   `yaml:"logFileMaxCount" json:",omitempty" usage:"Max count of the log files"`
-	LogLevel        string `yaml:"logLevel" json:",omitempty" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
-	Version         bool   `arg:"version" yaml:"-" json:"-" usage:"Show the version of this program"`
+	LogFile         string `yaml:"logFile,omitempty" json:",omitempty" usage:"Path to save the log file"`
+	LogFileMaxSize  int64  `yaml:"logFileMaxSize,omitempty" json:",omitempty" usage:"Max size of the log files"`
+	LogFileMaxCount uint   `yaml:"logFileMaxCount,omitempty" json:",omitempty" usage:"Max count of the log files"`
+	LogLevel        string `yaml:"logLevel,omitempty" json:",omitempty" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
+	Version         bool   `arg:"version,omitempty" yaml:"-" json:"-" usage:"Show the version of this program"`
 
-	EnableWebServer bool   `arg:"web"  yaml:"web" json:"-" usage:"Enable web server"`
-	WebAddr         string `arg:"webAddr"  yaml:"webAddr" json:"-" usage:"Web server address"`
-	WebPort         uint16 `arg:"webPort" yaml:"webPort" json:"-" usage:"Web server port"`
-	EnablePprof     bool   `arg:"pprof"  yaml:"pprof" json:"-" usage:"Enable pprof in web server"`
-	SigningKey      string `arg:"signingKey" yaml:"signingKey" json:"-" usage:"JWT signing key for web server"`
-	Admin           string `arg:"admin" yaml:"admin" json:"-" usage:"Admin username use for login in web server"`
-	Password        string `arg:"password" yaml:"password" json:"-" usage:"Admin password use for login in web server"`
+	EnableWebServer bool   `arg:"web"  yaml:"web,omitempty" json:"-" usage:"Enable web server"`
+	WebAddr         string `arg:"webAddr"  yaml:"webAddr,omitempty" json:"-" usage:"Web server address"`
+	WebPort         uint16 `arg:"webPort" yaml:"webPort,omitempty" json:"-" usage:"Web server port"`
+	EnablePprof     bool   `arg:"pprof"  yaml:"pprof,omitempty" json:"-" usage:"Enable pprof in web server"`
+	SigningKey      string `arg:"signingKey" yaml:"signingKey,omitempty" json:"-" usage:"JWT signing key for web server"`
+	Admin           string `arg:"admin" yaml:"admin,omitempty" json:"-" usage:"Admin username use for login in web server"`
+	Password        string `arg:"password" yaml:"password,omitempty" json:"-" usage:"Admin password use for login in web server"`
 
 	Signal string `arg:"s" yaml:"-" json:"-" usage:"Send signal to client processes. Supports values: reload, restart, stop, kill"`
 }
@@ -145,6 +145,9 @@ func (c *clientURL) UnmarshalJSON(data []byte) error {
 }
 
 func (c clientURL) MarshalJSON() ([]byte, error) {
+	if c.URL == nil {
+		return json.Marshal(nil)
+	}
 	return json.Marshal(c.URL.String())
 }
 

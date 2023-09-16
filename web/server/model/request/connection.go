@@ -10,6 +10,8 @@ type SimplifiedConnection struct {
 	Raddr  net.Addr `json:"remoteaddr"`
 	Status string   `json:"status"`
 }
+
+// SimplifiedConnectionWithID mainly used for web server to identify pool connection
 type SimplifiedConnectionWithID struct {
 	ID     string   `json:"id"`
 	Family uint32   `json:"family"`
