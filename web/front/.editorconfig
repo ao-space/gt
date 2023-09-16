@@ -1,0 +1,16 @@
+# @see: http://editorconfig.org
+
+root = true
+
+[*] # Applies to all files
+charset = utf-8 # set encoding
+end_of_line = lf # control characters at the end of line (lf | crlf | cr)
+insert_final_newline = true # insert a new line at the end of file
+indent_style = space # set indent style (space | tab)
+indent_size = 2 # set indent size
+max_line_length = 130 # set max line length
+
+[*.md] # Applies to all files which extension is md
+max_line_length = off # turn off max line length
+trim_trailing_whitespace = false # turn off trim trailing whitespace
+
