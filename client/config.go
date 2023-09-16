@@ -50,7 +50,7 @@ type Options struct {
 	RemoteIdleConnections uint     `yaml:"remoteIdleConnections" json:",omitempty" usage:"The number of idle server connections kept in the pool"`
 	RemoteTimeout         Duration `yaml:"remoteTimeout" json:",omitempty" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
 
-	HostPrefix         config.PositionSlice[string]   `yaml:"hostPrefix" usage:"The server will recognize this host prefix and forward data to local"`
+	HostPrefix         config.PositionSlice[string]   `yaml:"-" arg:"hostPrefix" usage:"The server will recognize this host prefix and forward data to local"`
 	RemoteTCPPort      config.PositionSlice[uint16]   `yaml:"-" json:"-" arg:"remoteTCPPort" usage:"The TCP port that the remote server will open"`
 	RemoteTCPRandom    config.PositionSlice[bool]     `yaml:"-" json:"-" arg:"remoteTCPRandom" usage:"Whether to choose a random tcp port by the remote server"`
 	Local              config.PositionSlice[string]   `yaml:"-" json:"-" arg:"local" usage:"The local service url"`
@@ -80,7 +80,6 @@ type Options struct {
 	LogLevel        string `yaml:"logLevel" json:",omitempty" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
 	Version         bool   `arg:"version" yaml:"-" json:"-" usage:"Show the version of this program"`
 
-	//TODO: add -
 	EnableWebServer bool   `arg:"web"  yaml:"web" json:"-" usage:"Enable web server"`
 	WebAddr         string `arg:"webAddr"  yaml:"webAddr" json:"-" usage:"Web server address"`
 	WebPort         uint16 `arg:"webPort" yaml:"webPort" json:"-" usage:"Web server port"`
@@ -129,7 +128,7 @@ func (c *clientURL) UnmarshalYAML(value *yaml.Node) (err error) {
 	return
 }
 func (c *clientURL) MarshalYAML() (interface{}, error) {
-	return c.URL.String(),nil
+	return c.URL.String(), nil
 }
 
 func (c *clientURL) UnmarshalJSON(data []byte) error {

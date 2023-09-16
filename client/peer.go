@@ -56,7 +56,7 @@ type peerTask struct {
 }
 
 func (pt *peerTask) OnSignalingChange(state webrtc.SignalingState) {
-	pt.Logger.Debug().Msgf("signaling state change to %s", state.String())
+	pt.Logger.Info().Str("state", state.String()).Msg("signaling state changed")
 }
 
 func (pt *peerTask) OnDataChannel(dataChannelWithoutCallback *webrtc.DataChannelWithoutCallback) {
@@ -79,15 +79,15 @@ func (pt *peerTask) OnNegotiationNeeded() {
 }
 
 func (pt *peerTask) OnICEConnectionChange(state webrtc.ICEConnectionState) {
-	pt.Logger.Debug().Msgf("ice connection state change to %s", state.String())
+	pt.Logger.Info().Str("state", state.String()).Msg("ice connection state changed")
 }
 
 func (pt *peerTask) OnStandardizedICEConnectionChange(state webrtc.ICEConnectionState) {
-	pt.Logger.Debug().Msgf("standardized ice connection state change to %s", state.String())
+	pt.Logger.Info().Str("state", state.String()).Msg("standardized ice connection state changed")
 }
 
 func (pt *peerTask) OnConnectionChange(state webrtc.PeerConnectionState) {
-	pt.Logger.Debug().Msgf("peer connection state change to %s", state.String())
+	pt.Logger.Info().Str("state", state.String()).Msg("peer connection state changed")
 	switch state {
 	case webrtc.PeerConnectionStateConnected:
 		pt.timer.Stop()
@@ -97,13 +97,14 @@ func (pt *peerTask) OnConnectionChange(state webrtc.PeerConnectionState) {
 }
 
 func (pt *peerTask) OnICEGatheringChange(state webrtc.ICEGatheringState) {
-	pt.Logger.Debug().Msgf("ice gathering state change to %s", state.String())
+	pt.Logger.Info().Str("state", state.String()).Msg("ice gathering state changed")
 	if state == webrtc.ICEGatheringStateComplete {
-		close(pt.candidateOutChan)
+		pt.candidateOutChan <- ""
 	}
 }
 
 func (pt *peerTask) OnICECandidate(iceCandidate *webrtc.ICECandidate) {
+	pt.Logger.Info().Interface("candidate", iceCandidate).Msg("OnICECandidate")
 	iceCandidateBytes, err := json.Marshal(iceCandidate)
 	if err != nil {
 		pt.Logger.Error().Err(err).Msg("failed to marshal ice candidate")
@@ -347,7 +348,7 @@ outLoop:
 	for {
 		select {
 		case candidate, ok := <-pt.candidateOutChan:
-			if !ok {
+			if !ok || len(candidate) == 0 {
 				break outLoop
 			}
 			n := uint16(len(candidate))
@@ -419,7 +420,7 @@ func (pt *peerTask) getOffer(_ *http.Request, writer http.ResponseWriter) {
 		pt.Logger.Error().Err(err).Msg("failed to create only data channel")
 		return
 	}
-	pt.Logger.Debug().
+	pt.Logger.Info().
 		Int("id", dataChannelUnused.ID).
 		Str("label", dataChannelUnused.Label).
 		Str("state", dataChannelUnused.State().String()).
@@ -578,7 +579,7 @@ func (dco *dataChannelObserver) OnOpen() {
 }
 
 func (dco *dataChannelObserver) OnStateChange(state webrtc.DataState) {
-	dco.peerTask.Logger.Debug().Msgf("data channel state change to %s", state.String())
+	dco.peerTask.Logger.Info().Str("state", state.String()).Msg("data channel state changed")
 	switch state {
 	case webrtc.DataStateOpen:
 		dco.channelID = dco.peerTask.channelID.Add(1) // 回调函数是单线程调用的，on open 先于 on message，所以这里不需要同步措施

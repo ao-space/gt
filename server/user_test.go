@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/isrc-cas/gt/config"
-	"github.com/isrc-cas/gt/util"
 )
 
 func TestUser(t *testing.T) {
@@ -32,9 +31,7 @@ func TestUser(t *testing.T) {
 		"-secret", "secret1-overwrite-overwrite",
 		"-id", "id5",
 		"-secret", "secret5",
-		"-tcpNumber", "7",
 		"-tcpRange", "7-7",
-		"-tcpNumber", "8",
 		"-tcpRange", "8-8",
 		"-tcpNumber", "11", // 测试优先级是否高于 config 配置文件
 		"-tcpRange", "1-1",
@@ -68,40 +65,12 @@ func TestUser(t *testing.T) {
 	}
 
 	expectedResult := users{}
-	globalTCPs := []tcp{
-		{
-			Range:  "1-1",
-			Number: 11,
-			PortRange: util.PortRange{
-				Min: 1,
-				Max: 1,
-			},
-		},
-		{
-			Range:  "2-2",
-			Number: 2,
-			PortRange: util.PortRange{
-				Min: 2,
-				Max: 2,
-			},
-		},
-		{
-			Range:  "7-7",
-			Number: 7,
-			PortRange: util.PortRange{
-				Min: 7,
-				Max: 7,
-			},
-		},
-		{
-			Range:  "8-8",
-			Number: 8,
-			PortRange: util.PortRange{
-				Min: 8,
-				Max: 8,
-			},
-		},
-	}
+	manager := portsManager{ports: map[uint16]struct{}{
+		1: {},
+		2: {},
+		7: {},
+		8: {},
+	}}
 	globalHostRegexStr := config.Slice[string]{
 		"^a$",
 		"^b$",
@@ -117,32 +86,14 @@ func TestUser(t *testing.T) {
 	}
 	expectedResult.Store("id1", user{
 		Secret: "secret1-overwrite-overwrite",
-		TCPs:   globalTCPs,
 		Host: host{
 			RegexStr: &globalHostRegexStr,
 			Regex:    &globalHostRegex,
 		},
+		portsManager: &manager,
 	})
 	expectedResult.Store("id2", user{
 		Secret: "secret2-overwrite",
-		TCPs: []tcp{
-			{
-				Range:  "5-5",
-				Number: 5,
-				PortRange: util.PortRange{
-					Min: 5,
-					Max: 5,
-				},
-			},
-			{
-				Range:  "6-6",
-				Number: 6,
-				PortRange: util.PortRange{
-					Min: 6,
-					Max: 6,
-				},
-			},
-		},
 		Host: host{
 			RegexStr: &config.Slice[string]{},
 			Regex: func() *[]*regexp.Regexp {
@@ -150,27 +101,13 @@ func TestUser(t *testing.T) {
 				return &result
 			}(),
 		},
+		portsManager: &portsManager{ports: map[uint16]struct{}{
+			5: {},
+			6: {},
+		}},
 	})
 	expectedResult.Store("id3", user{
 		Secret: "secret3",
-		TCPs: []tcp{
-			{
-				Range:  "3-3",
-				Number: 3,
-				PortRange: util.PortRange{
-					Min: 3,
-					Max: 3,
-				},
-			},
-			{
-				Range:  "4-4",
-				Number: 4,
-				PortRange: util.PortRange{
-					Min: 4,
-					Max: 4,
-				},
-			},
-		},
 		Host: host{
 			RegexStr: &config.Slice[string]{
 				"^c$",
@@ -191,28 +128,33 @@ func TestUser(t *testing.T) {
 				return &result
 			}(),
 		},
+		portsManager: &portsManager{ports: map[uint16]struct{}{
+			3: {},
+			4: {},
+		}},
 	})
 	expectedResult.Store("id4", user{
 		Secret: "secret4",
-		TCPs:   globalTCPs,
 		Host: host{
 			RegexStr: &globalHostRegexStr,
 			Regex:    &globalHostRegex,
 		},
+		portsManager: &manager,
 	})
 	expectedResult.Store("id5", user{
 		Secret: "secret5",
-		TCPs:   globalTCPs,
 		Host: host{
 			RegexStr: &globalHostRegexStr,
 			Regex:    &globalHostRegex,
 		},
+		portsManager: &manager,
 	})
 	expectedResult.Range(func(key, value1 interface{}) bool {
 		value2, ok := s.users.Load(key)
 		if !ok {
 			t.Fatalf("%q does not exist", key)
 		}
+		t.Logf("user %s", key)
 		user1 := value1.(user)
 		user2 := value2.(user)
 
@@ -220,18 +162,11 @@ func TestUser(t *testing.T) {
 			t.Fatalf("user secret does not match\n%+v\n%+v", user1.Secret, user2.Secret)
 		}
 
-		if len(user1.TCPs) != len(user2.TCPs) {
+		if len(user1.portsManager.ports) != len(user2.portsManager.ports) {
 			t.Fatal("user TCPs length does not match")
 		}
-		for _, tcp1 := range user1.TCPs {
-			contains := false
-			for _, tcp2 := range user2.TCPs {
-				if reflect.DeepEqual(&tcp1, &tcp2) {
-					contains = true
-					break
-				}
-			}
-			if !contains {
+		for tcp1 := range user1.portsManager.ports {
+			if _, ok := user2.portsManager.ports[tcp1]; !ok {
 				t.Fatalf("TCPs item does not match")
 			}
 		}

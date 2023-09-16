@@ -17,11 +17,9 @@ id1:
 id2:
   secret: secret2-overwrite
   tcp: # 测试优先级是否高于 config 配置文件
-    - number: 5
-      range: 5-5
-    - number: 6
-      range: 6-6
+    - range: 5-5
+    - range: 6-6
   host:
-    regex: [] # 设置为空而非默认值
+    regex: [ ] # 设置为空而非默认值
 id4:
   secret: secret4
