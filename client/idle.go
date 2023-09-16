@@ -24,6 +24,7 @@ const (
 	running Status = iota
 	idle
 	wait
+	connecting
 )
 
 type Status int
@@ -34,6 +35,7 @@ type idleManager struct {
 	statusCond *sync.Cond
 	min        uint
 	close      atomic.Bool
+	initMtx    sync.Mutex
 }
 
 func (m *idleManager) String() string {
@@ -61,14 +63,14 @@ func newIdleManager(min uint) *idleManager {
 	return m
 }
 
-func (m *idleManager) InitIdle(id uint) (exit bool) {
+func (m *idleManager) Init(id uint) (exit bool) {
 	m.statusMtx.Lock()
 	defer m.statusMtx.Unlock()
 
-	if v, ok := m.status[id]; ok && v == idle {
+	if v, ok := m.status[id]; ok && v == connecting {
 		return false
 	}
-	m.status[id] = idle
+	m.status[id] = connecting
 	var n uint
 	for _, s := range m.status {
 		switch s {
@@ -78,7 +80,7 @@ func (m *idleManager) InitIdle(id uint) (exit bool) {
 			n++
 		}
 	}
-	if n <= m.min {
+	if n < m.min {
 		return false
 	}
 
@@ -162,22 +164,6 @@ func (m *idleManager) SetRunningWithTaskCount(id uint, taskCount uint32) {
 	m.statusMtx.Unlock()
 }
 
-func (m *idleManager) SetRunning(id uint) {
-	m.statusMtx.RLock()
-	s := m.status[id]
-	m.statusMtx.RUnlock()
-	if s == running {
-		return
-	}
-
-	m.statusMtx.Lock()
-	if m.status[id] != running {
-		m.status[id] = running
-		defer m.statusCond.Signal()
-	}
-	m.statusMtx.Unlock()
-}
-
 func (m *idleManager) SetIdle(id uint) {
 	m.statusMtx.Lock()
 	m.status[id] = idle
@@ -206,7 +192,7 @@ func (m *idleManager) WaitIdle(id uint) {
 			m.statusCond.Wait()
 			continue
 		}
-		m.status[id] = idle
+		m.status[id] = connecting
 		return
 	}
 }

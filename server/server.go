@@ -17,9 +17,11 @@ package server
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/netip"
@@ -33,19 +35,22 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/isrc-cas/gt/config"
 	"github.com/isrc-cas/gt/logger"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/server/api"
 	"github.com/isrc-cas/gt/server/sync"
+	"github.com/isrc-cas/gt/util"
 	"github.com/pion/logging"
-	"github.com/pion/turn/v2"
+	"github.com/pion/turn/v3"
 )
 
 // Server is a network agent server.
 type Server struct {
 	config       Config
 	users        users
+	portsManager portsManager
 	Logger       logger.Logger
 	id2Client    sync.Map
 	closing      uint32
@@ -60,7 +65,7 @@ type Server struct {
 	apiListener  net.Listener
 	authUser     func(id string, secret string) (user, error)
 	removeClient func(id string)
-	turnServer   *turn.Server
+	stunServer   *turn.Server
 	turnListener net.PacketConn
 
 	// 重连限制
@@ -178,7 +183,8 @@ func (s *Server) acceptLoop(l net.Listener, handle func(*conn)) {
 			if atomic.LoadUint32(&s.closing) > 0 {
 				return
 			}
-			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+			var ne net.Error
+			if errors.As(err, &ne) && ne.Timeout() {
 				if tempDelay == 0 {
 					tempDelay = 5 * time.Millisecond
 				} else {
@@ -201,7 +207,7 @@ func (s *Server) acceptLoop(l net.Listener, handle func(*conn)) {
 
 // Start runs the server.
 func (s *Server) Start() (err error) {
-	s.Logger.Info().Interface("config", &s.config).Msg(predef.Version)
+	s.Logger.Info().Msg(predef.Version)
 
 	err = s.users.mergeUsers(s.config.Users, nil, nil)
 	if err != nil {
@@ -231,7 +237,7 @@ func (s *Server) Start() (err error) {
 	}
 
 	if len(s.config.AuthAPI) > 0 {
-		s.authUser = s.authUserWithAPI
+		s.authUser = nil
 		s.removeClient = s.removeClientOnly
 	} else if s.users.empty() {
 		s.Logger.Warn().Msg("working on -allowAnyClient mode, because no user is configured")
@@ -306,6 +312,7 @@ func (s *Server) Start() (err error) {
 			return
 		}
 	}
+	s.Logger.Info().Msg(spew.Sdump(s.config))
 	return
 }
 
@@ -359,8 +366,8 @@ func (s *Server) startSTUNServer() (err error) {
 		},
 	})
 
-	s.Logger.Info().Str("addr", s.turnListener.LocalAddr().String()).Msg("Listening TURN")
-	s.turnServer = server
+	s.Logger.Info().Str("addr", s.turnListener.LocalAddr().String()).Msg("Listening STUN")
+	s.stunServer = server
 	return
 }
 
@@ -429,13 +436,24 @@ func (s *Server) startAPIServer() (err error) {
 	return nil
 }
 
-func (s *Server) authWithAPI(id string, secret string) (hostPrefixes map[string]struct{}, ok bool, err error) {
+type authParam struct {
+	NetworkClientId  string   `json:"networkClientId"`
+	NetworkSecretKey string   `json:"networkSecretKey"`
+	AppletTokens     []string `json:"appletTokens"`
+}
+
+func (s *Server) authWithAPI(id string, secret string, prefixes []string) (hostPrefixes map[string]struct{}, ok bool, err error) {
 	var bs bytes.Buffer
-	_, _ = bs.WriteString(`{"networkClientId": "`)
-	_, _ = bs.WriteString(id)
-	_, _ = bs.WriteString(`", "networkSecretKey": "`)
-	_, _ = bs.WriteString(secret)
-	_, _ = bs.WriteString(`"}`)
+	encoder := json.NewEncoder(&bs)
+	p := &authParam{
+		NetworkClientId:  id,
+		NetworkSecretKey: secret,
+		AppletTokens:     prefixes,
+	}
+	err = encoder.Encode(p)
+	if err != nil {
+		return
+	}
 	req, err := http.NewRequest("POST", s.config.AuthAPI, &bs)
 	if err != nil {
 		return
@@ -465,7 +483,7 @@ func (s *Server) authWithAPI(id string, secret string) (hostPrefixes map[string]
 		_, err = jsonparser.ArrayEach(r, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			hostPrefixes[string(value)] = struct{}{}
 		}, "appletTokens")
-		if err == jsonparser.KeyPathNotFoundError {
+		if errors.Is(err, jsonparser.KeyPathNotFoundError) {
 			err = nil
 		}
 	}
@@ -482,8 +500,8 @@ func (s *Server) Close() {
 	if s.apiServer != nil {
 		event.AnErr("api", s.apiServer.Close())
 	}
-	if s.turnServer != nil {
-		event.AnErr("turn", s.turnServer.Close())
+	if s.stunServer != nil {
+		event.AnErr("turn", s.stunServer.Close())
 	}
 	if s.listener != nil {
 		event.AnErr("listener", s.listener.Close())
@@ -518,8 +536,8 @@ func (s *Server) Shutdown() {
 	if s.apiServer != nil {
 		event.AnErr("api", s.apiServer.Close())
 	}
-	if s.turnServer != nil {
-		event.AnErr("turn", s.turnServer.Close())
+	if s.stunServer != nil {
+		event.AnErr("turn", s.stunServer.Close())
 	}
 	if s.listener != nil {
 		event.AnErr("listener", s.listener.Close())
@@ -647,12 +665,7 @@ func (s *Server) authUserWithConfig(id string, secret string) (u user, err error
 	u, err = s.users.auth(id, secret)
 	if err != nil {
 		if s.apiServer != nil && s.apiServer.Auth(id, secret) {
-			u = user{
-				TCPs:        s.config.TCPs,
-				Speed:       s.config.Speed,
-				Connections: s.config.Connections,
-				Host:        s.config.Host,
-			}
+			u = s.newTempUserForAPIServer()
 			err = nil
 			return
 		}
@@ -660,23 +673,28 @@ func (s *Server) authUserWithConfig(id string, secret string) (u user, err error
 	return
 }
 
-func (s *Server) authUserWithAPI(id string, secret string) (u user, err error) {
+func (s *Server) newTempUserForAPIServer() user {
+	return user{
+		TCPNumber:    &s.config.TCPNumber,
+		Speed:        s.config.Speed,
+		Connections:  s.config.Connections,
+		Host:         s.config.Host,
+		portsManager: &s.portsManager,
+	}
+}
+
+func (s *Server) authUserWithAPI(id string, secret string, prefixes []string) (u user, err error) {
 	if len(id) < 1 || len(secret) < 1 {
 		err = ErrInvalidUser
 		return
 	}
-	hostPrefixes, ok, err := s.authWithAPI(id, secret)
+	hostPrefixes, ok, err := s.authWithAPI(id, secret, prefixes)
 	if err != nil {
 		return
 	}
 	if !ok {
 		if s.apiServer != nil && s.apiServer.Auth(id, secret) {
-			u = user{
-				TCPs:        s.config.TCPs,
-				Speed:       s.config.Speed,
-				Connections: s.config.Connections,
-				Host:        s.config.Host,
-			}
+			u = s.newTempUserForAPIServer()
 			err = nil
 			return
 		}
@@ -684,10 +702,11 @@ func (s *Server) authUserWithAPI(id string, secret string) (u user, err error) {
 		return
 	}
 	u = user{
-		TCPs:        s.config.TCPs,
-		Speed:       s.config.Speed,
-		Connections: s.config.Connections,
-		Host:        s.config.Host,
+		TCPNumber:    &s.config.TCPNumber,
+		Speed:        s.config.Speed,
+		Connections:  s.config.Connections,
+		Host:         s.config.Host,
+		portsManager: &s.portsManager,
 	}
 	u.Host.Prefixes = hostPrefixes
 	return
@@ -695,24 +714,20 @@ func (s *Server) authUserWithAPI(id string, secret string) (u user, err error) {
 
 func (s *Server) authUserOrCreateUser(id, secret string) (u user, err error) {
 	if s.apiServer != nil && s.apiServer.Auth(id, secret) {
-		u = user{
-			TCPs:        s.config.TCPs,
-			Speed:       s.config.Speed,
-			Connections: s.config.Connections,
-			Host:        s.config.Host,
-		}
+		u = s.newTempUserForAPIServer()
 		err = nil
 		return
 	}
 
 	value, _ := s.users.LoadOrCreate(id, func() interface{} {
 		return user{
-			Secret:      secret,
-			TCPs:        append([]tcp(nil), s.config.TCPs...),
-			Speed:       s.config.Speed,
-			Connections: s.config.Connections,
-			Host:        s.config.Host,
-			temp:        true,
+			Secret:       secret,
+			TCPNumber:    &s.config.TCPNumber,
+			Speed:        s.config.Speed,
+			Connections:  s.config.Connections,
+			Host:         s.config.Host,
+			temp:         true,
+			portsManager: &s.portsManager,
 		}
 	})
 	var ok bool
@@ -747,58 +762,71 @@ func (s *Server) removeClientAndTempUser(id string) {
 
 // tcp 相关配置，命令行的优先级高于配置文件
 func (s *Server) parseTCPs() (err error) {
-	// 合并 tcp
-	tcpMap := make(map[string]uint16)
-	for i := 0; i < len(s.config.TCPs); i++ {
-		tcp := &s.config.TCPs[i]
-		tcpMap[tcp.Range] = tcp.Number
-	}
-	if len(s.config.TCPNumbers) != len(s.config.TCPRanges) {
-		err = errors.New("the number of tcpNumber does not match the number of tcpRange")
-		return
-	}
-	for i := 0; i < len(s.config.TCPNumbers); i++ {
-		number, err := strconv.ParseUint(s.config.TCPNumbers[i], 10, 16)
+	ports := make(map[uint16]struct{}, 65536)
+	all := make(map[uint16]struct{}, 65536)
+	for _, tcp := range s.config.TCPs {
+		pr, err := util.NewPortRangeFromString(tcp.Range)
 		if err != nil {
 			return err
 		}
-		tcpMap[s.config.TCPRanges[i]] = uint16(number)
-	}
-	s.config.TCPs = nil
-	for range1, number := range tcpMap {
-		s.config.TCPs = append(s.config.TCPs, tcp{
-			Range:  range1,
-			Number: number,
-		})
+		for i := pr.Min; i <= pr.Max; i++ {
+			ports[i] = struct{}{}
+			all[i] = struct{}{}
+			if i == math.MaxUint16 {
+				break
+			}
+		}
 	}
 
-	// 处理全局 tcp
-	for i := 0; i < len(s.config.TCPs); i++ {
-		err = s.config.TCPs[i].parseRange()
+	for _, tcp := range s.config.TCPRanges {
+		pr, err := util.NewPortRangeFromString(tcp)
 		if err != nil {
 			return err
 		}
+		for i := pr.Min; i <= pr.Max; i++ {
+			ports[i] = struct{}{}
+			all[i] = struct{}{}
+			if i == math.MaxUint16 {
+				break
+			}
+		}
 	}
+
+	s.portsManager.ports = ports
 
 	// 处理用户 tcp
 	s.users.Range(func(key, value interface{}) bool {
 		u := value.(user)
-		if len(u.TCPs) == 0 { // 如果用户没有设置则使用全局的
-			u.TCPs = append([]tcp(nil), s.config.TCPs...)
+		if u.TCPNumber == nil {
+			u.TCPNumber = &s.config.TCPNumber
 		}
-		for i := range u.TCPs {
-			err = u.TCPs[i].parseRange()
-			if err != nil {
-				return false
+		if len(u.TCPs) == 0 { // 如果用户没有设置则使用全局的
+			u.portsManager = &s.portsManager
+		} else {
+			ports := make(map[uint16]struct{})
+			for _, tcp := range u.TCPs {
+				var pr util.PortRange
+				pr, err = util.NewPortRangeFromString(tcp.Range)
+				if err != nil {
+					return false
+				}
+				for i := pr.Min; i <= pr.Max; i++ {
+					if _, ok := all[i]; ok {
+						err = fmt.Errorf("tcp port %d is used by global", i)
+						return false
+					}
+					ports[i] = struct{}{}
+					all[i] = struct{}{}
+					if i == math.MaxUint16 {
+						break
+					}
+				}
 			}
+			u.portsManager = &portsManager{ports: ports}
 		}
 		s.users.Store(key, u)
 		return true
 	})
-	if err != nil {
-		return
-	}
-
 	return
 }
 
@@ -839,11 +867,6 @@ func (s *Server) parseHost() (err error) {
 	// 提前将用户的参数设置为用户设置的值或全局的值，避免在热点代码中重复判断
 	s.users.Range(func(key, value interface{}) bool {
 		u := value.(user)
-
-		// tcp
-		if len(u.TCPs) <= 0 {
-			u.TCPs = append([]tcp(nil), s.config.TCPs...)
-		}
 
 		// speed
 		if u.Speed <= 0 {
@@ -921,8 +944,8 @@ func (s *Server) GetAPIListenerAddrPort() (addrPort netip.AddrPort) {
 	return
 }
 
-// GetTURNListenerAddrPort 获取 turn listener 地址，返回值可能为空
-func (s *Server) GetTURNListenerAddrPort() (addrPort netip.AddrPort) {
+// GetSTUNListenerAddrPort 获取 turn listener 地址，返回值可能为空
+func (s *Server) GetSTUNListenerAddrPort() (addrPort netip.AddrPort) {
 	if s.turnListener == nil {
 		return
 	}

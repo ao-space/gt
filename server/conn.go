@@ -320,43 +320,91 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 		return
 	}
 
-	// 验证 id secret
-	u, err := c.server.authUser(idStr, secretStr)
-	if err != nil {
-		// 使用局部锁而不是全局锁可以明显提高并发性能，但少数情况下会降低限制效果
-		c.server.reconnectRWMutex.Lock()
-		reconnectTimes := c.server.reconnect[remoteIP]
-		reconnectTimes++
-		c.server.reconnect[remoteIP] = reconnectTimes
-		c.server.reconnectRWMutex.Unlock()
+	var options options
+	var u user
+	if c.server.authUser != nil {
+		// 验证 id secret
+		u, err = c.server.authUser(idStr, secretStr)
+		if err != nil {
+			// 使用局部锁而不是全局锁可以明显提高并发性能，但少数情况下会降低限制效果
+			c.server.reconnectRWMutex.Lock()
+			reconnectTimes := c.server.reconnect[remoteIP]
+			reconnectTimes++
+			c.server.reconnect[remoteIP] = reconnectTimes
+			c.server.reconnectRWMutex.Unlock()
 
-		// ReconnectDuration 为 0 表示不进行限制解除
-		if c.server.config.ReconnectDuration.Duration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
-			time.AfterFunc(c.server.config.ReconnectDuration.Duration, func() {
-				c.server.reconnectRWMutex.Lock()
-				c.server.reconnect[remoteIP] = 0
-				c.server.reconnectRWMutex.Unlock()
-				c.Logger.Debug().Msgf("release blocked IP: '%v'", remoteIP)
-			})
+			// ReconnectDuration 为 0 表示不进行限制解除
+			if c.server.config.ReconnectDuration.Duration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
+				time.AfterFunc(c.server.config.ReconnectDuration.Duration, func() {
+					c.server.reconnectRWMutex.Lock()
+					c.server.reconnect[remoteIP] = 0
+					c.server.reconnectRWMutex.Unlock()
+					c.Logger.Info().Msgf("release blocked IP: '%v'", remoteIP)
+				})
+			}
+
+			e := c.SendErrorSignalInvalidIDAndSecret()
+			c.Logger.Info().Err(err).Str("id", idStr).AnErr("respErr", e).Msg("invalid id and secret")
+			return
 		}
 
-		e := c.SendErrorSignalInvalidIDAndSecret()
-		c.Logger.Info().Err(err).AnErr("respErr", e).Msg("invalid id and secret")
-		return
-	}
+		options, err = c.parseOptions(reader, idStr, u)
+		if err != nil {
+			c.Logger.Info().Err(err).Msg("failed to parse options")
+			return
+		}
+	} else {
+		u = user{
+			TCPNumber:   &c.server.config.TCPNumber,
+			Speed:       c.server.config.Speed,
+			Connections: c.server.config.Connections,
+			Host:        c.server.config.Host,
+		}
+		options, err = c.parseOptions(reader, idStr, u)
+		if err != nil {
+			c.Logger.Info().Err(err).Msg("failed to parse options")
+			return
+		}
+		prefixes := make([]string, 0, len(options.ids))
+		for s := range options.ids {
+			prefixes = append(prefixes, s)
+		}
+		u, err = c.server.authUserWithAPI(idStr, secretStr, prefixes)
+		if err != nil {
+			// 使用局部锁而不是全局锁可以明显提高并发性能，但少数情况下会降低限制效果
+			c.server.reconnectRWMutex.Lock()
+			reconnectTimes := c.server.reconnect[remoteIP]
+			reconnectTimes++
+			c.server.reconnect[remoteIP] = reconnectTimes
+			c.server.reconnectRWMutex.Unlock()
 
-	options, err := c.parseOptions(reader, idStr, u)
-	if err != nil {
-		c.Logger.Info().Err(err).Msg("failed to parse options")
-		return
-	}
-	if len(u.Host.Prefixes) > 0 {
-		for id := range options.ids {
-			if _, ok := u.Host.Prefixes[id]; !ok {
-				c.Logger.Info().Err(err).
-					AnErr("sendSignalError", c.SendErrorSignalHostRegexMismatch()).
-					Msg("invalid host prefixes")
-				return
+			// ReconnectDuration 为 0 表示不进行限制解除
+			if c.server.config.ReconnectDuration.Duration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
+				time.AfterFunc(c.server.config.ReconnectDuration.Duration, func() {
+					c.server.reconnectRWMutex.Lock()
+					c.server.reconnect[remoteIP] = 0
+					c.server.reconnectRWMutex.Unlock()
+					c.Logger.Debug().Msgf("release blocked IP: '%v'", remoteIP)
+				})
+			}
+
+			e := c.SendErrorSignalInvalidIDAndSecret()
+			c.Logger.Info().Err(err).Str("id", idStr).AnErr("respErr", e).Msg("invalid id and secret")
+			return
+		}
+		if len(u.Host.Prefixes) > 0 {
+			for id := range options.ids {
+				if _, ok := u.Host.Prefixes[id]; !ok {
+					c.Logger.Info().Str("id", idStr).Str("prefix", id).Msg("prefix not exists on platform")
+					delete(options.ids, id)
+				}
+			}
+		} else {
+			for id := range options.ids {
+				if id != idStr {
+					c.Logger.Info().Str("id", idStr).Str("prefix", id).Msg("prefix not exists on platform")
+					delete(options.ids, id)
+				}
 			}
 		}
 	}
@@ -369,7 +417,7 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 	for i := 0; i < 5; i++ {
 		cli, exists = c.server.getOrCreateClient(idStr, newClient)
 		if !exists {
-			cli.init(idStr, u)
+			cli.init(idStr, u, c.server)
 		}
 
 		ok, err = cli.addTunnel(c, r, options)
@@ -386,10 +434,6 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 		return
 	}
 
-	//err = c.processTCPOptions(cli, options)
-	//if err != nil {
-	//	return
-	//}
 	if !r {
 		atomic.AddUint64(&c.server.tunneling, 1)
 		err = c.SendReadySignal()
@@ -520,6 +564,7 @@ func (c *conn) parseOptions(reader *bufio.Reader, idStr string, u user) (options
 	ids := make(hostPrefixOptions)
 	ports := make(map[uint16]openTCPOption)
 	num := *u.Host.Number
+	tcpNum := *u.TCPNumber
 	for leftOptions := 1; leftOptions > 0; leftOptions-- {
 		if optionsCount+1 > c.server.config.MaxHandShakeOptions {
 			c.Logger.Error().
@@ -568,6 +613,12 @@ func (c *conn) parseOptions(reader *bufio.Reader, idStr string, u user) (options
 			ids[idStr] = hostPrefixOption{serviceIndex: serviceIndex, tls: tls}
 			serviceIndex++
 		case bytes.Equal(option, predef.OpenTCPPort):
+			if tcpNum != 0 && uint16(len(ports))+1 > tcpNum {
+				err = connection.ErrTCPNumberLimited
+				e := c.SendErrorSignalTCPNumberLimited()
+				c.Logger.Error().Err(err).AnErr("SendError", e).Msg("client has reached the max number of tcp ports")
+				return options, err
+			}
 			var random byte
 			random, err = reader.ReadByte()
 			if err != nil {
@@ -964,62 +1015,58 @@ type clientWithServiceIndex struct {
 	serviceIndex uint16
 }
 
-func (c *conn) processTCPOptions(cli *client, o options) (err error) {
-	for _, portOption := range o.ports {
-		err = cli.validateTcpPortOption(portOption.port, portOption.random)
+func (c *conn) processTCPOptions(o options, cli *client) (err error) {
+	var success []uint16
+	defer func() {
 		if err != nil {
-			c.Logger.Error().AnErr("SendError", c.SendErrorSignalFailedToOpenTCPPort()).Err(err).Msg("failed to validate tcp options")
-			return
+			for _, si := range success {
+				cli.deleteTCPListener(si)
+			}
 		}
-	}
+	}()
 	for si, portOption := range o.ports {
 		v, ok := cli.tcpListeners.LoadOrCreate(si, func() interface{} {
 			return &tcpListener{
 				port: portOption,
 			}
 		})
-		if ok {
-			vl := v.(*tcpListener)
-			// other tunnel goroutine is working on this service
-			if vl.l.Load() == nil {
-				continue
-			}
-			l := *vl.l.Load()
-			port := l.Addr().(*net.TCPAddr).Port
-			if port == int(portOption.port) {
-				err = c.SendInfoTCPPortOpened(uint16(port))
-				if err != nil {
-					c.Logger.Error().Err(err).Msg("failed to send Info signal")
-					return err
-				}
-				continue
-			} else if portOption.random {
-				err = c.SendInfoTCPPortOpened(uint16(port))
-				if err != nil {
-					c.Logger.Error().Err(err).Msg("failed to send Info signal")
-					return err
+		vl := v.(*tcpListener)
+		if ok && vl.l != nil {
+			port := vl.l.Addr().(*net.TCPAddr).Port
+			if port == int(portOption.port) || portOption.random {
+				if err := c.SendInfoTCPPortOpened(si, uint16(port)); err != nil {
+					c.Logger.Error().Err(err).Msg("failed to send InfoTCPPortOpened signal")
 				}
 				continue
 			} else {
-				_ = vl.Close()
+				if vl.l != nil {
+					port := uint16(vl.l.Addr().(*net.TCPAddr).Port)
+					cli.logger.Info().
+						Uint16("serviceIndex", si).
+						Uint16("port", port).
+						Msg("close associated tcp listener")
+					cli.portsManager.portsMtx.Lock()
+					cli.portsManager.ports[port] = struct{}{}
+					cli.portsManager.portsMtx.Unlock()
+					_ = vl.l.Close()
+				}
 			}
 		}
 
-		openedPort, err := cli.openTCPPort(si, v.(*tcpListener), c)
-		if err != nil {
+		var openedPort uint16
+		openedPort, err = cli.openTCPPort(si, vl, c)
+		if err == nil {
+			success = append(success, si)
+		} else {
 			c.Logger.Error().Err(err).
 				Uint16("port", portOption.port).
 				Bool("random", portOption.random).
+				AnErr("respErr", c.SendErrorSignalFailedToOpenTCPPort(si)).
 				Msg("failed to open tcp port")
-			if err := c.SendErrorSignalFailedToOpenTCPPort(); err != nil {
-				c.Logger.Error().Err(err).Msg("failed to send FailedToOpenTCPPort signal")
-			}
 			return err
 		}
-		err = c.SendInfoTCPPortOpened(openedPort)
-		if err != nil {
-			c.Logger.Error().Err(err).Msg("failed to send Info signal")
-			return err
+		if err := c.SendInfoTCPPortOpened(si, openedPort); err != nil {
+			c.Logger.Error().Err(err).Msg("failed to send InfoTCPPortOpened signal")
 		}
 	}
 
@@ -1034,11 +1081,7 @@ func (c *conn) processTCPOptions(cli *client, o options) (err error) {
 		return true
 	})
 	for _, si := range oldServiceIndexes {
-		value, loaded := cli.tcpListeners.LoadAndDelete(si)
-		if loaded {
-			listener := value.(*tcpListener)
-			_ = listener.Close()
-		}
+		cli.deleteTCPListener(si)
 	}
 	return
 }

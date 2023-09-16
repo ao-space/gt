@@ -37,6 +37,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/isrc-cas/gt/client/api"
 	"github.com/isrc-cas/gt/client/webrtc"
 	"github.com/isrc-cas/gt/config"
@@ -267,7 +268,7 @@ func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
 	}
 	stunAddr, err := jsonparser.GetString(r, "stunAddress")
 	if err != nil {
-		if err != jsonparser.KeyPathNotFoundError {
+		if !errors.Is(err, jsonparser.KeyPathNotFoundError) {
 			return
 		}
 	}
@@ -285,7 +286,7 @@ func (d *dialer) tlsDial() (conn net.Conn, err error) {
 
 // Start runs the client agent.
 func (c *Client) Start() (err error) {
-	c.Logger.Info().Interface("config", c.Config()).Msg(predef.Version)
+	c.Logger.Info().Msg(predef.Version)
 
 	var level webrtc.LoggingSeverity
 	switch c.Config().WebRTCLogLevel {
@@ -380,6 +381,9 @@ func (c *Client) Start() (err error) {
 	}
 	c.idleManager = newIdleManager(c.Config().RemoteIdleConnections)
 
+	conf4Log := *c.Config()
+	conf4Log.Secret = "******"
+	c.Logger.Info().Msg(spew.Sdump(conf4Log))
 	for i := uint(1); i <= c.Config().RemoteConnections; i++ {
 		go c.connectLoop(dialer, i)
 		c.waitTunnelsShutdown.Add(1)
@@ -502,16 +506,21 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 		}
 	}()
 
-	exit := c.idleManager.InitIdle(connID)
+	c.idleManager.initMtx.Lock()
+	exit := c.idleManager.Init(connID)
 	if !exit {
 		c.Logger.Info().Uint("connID", connID).Msg("trying to connect to remote")
 		conn, err := c.initConn(d, connID)
 		if err == nil {
+			c.idleManager.SetIdle(connID)
+			c.idleManager.initMtx.Unlock()
 			conn.readLoop(connID)
 		} else {
+			c.idleManager.initMtx.Unlock()
 			c.Logger.Error().Err(err).Uint("connID", connID).Msg("failed to connect to remote")
 		}
 	} else {
+		c.idleManager.initMtx.Unlock()
 		c.Logger.Info().Uint("connID", connID).Msg("wait to connect to remote")
 	}
 
@@ -792,6 +801,10 @@ func (c *Client) ReloadServices() (err error) {
 	defer pool.BytesPool.Put(buf)
 	i := copy(buf, connection.ServicesBytes)
 	n := gen(conf, services, buf[i:])
+
+	conf4Log := conf
+	conf4Log.Secret = "******"
+	c.Logger.Info().Str("config", "reloading").Msg(spew.Sdump(conf4Log))
 
 	c.initConnMtx.Lock()
 	defer c.initConnMtx.Unlock()
