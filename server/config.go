@@ -97,6 +97,8 @@ type Options struct {
 	SigningKey      string `arg:"signingKey" yaml:"signingKey,omitempty" json:"-" usage:"JWT signing key for web server"`
 	Admin           string `arg:"admin" yaml:"admin,omitempty" json:"-" usage:"Admin username use for login in web server"`
 	Password        string `arg:"password" yaml:"password,omitempty" json:"-" usage:"Admin password use for login in web server"`
+
+	Signal string `arg:"s" yaml:"-" json:"-" usage:"Send signal to client processes. Supports values: restart, stop, kill"`
 }
 
 func defaultConfig() Config {

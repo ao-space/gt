@@ -65,7 +65,7 @@ func GetConnectionInfo(s *server.Server) gin.HandlerFunc {
 func GetRunningConfig(s *server.Server) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var cfg = s.Config()
-		s.Logger.Info().Msg("Running Config:" + cfg.Config)
+		s.Logger.Info().Msg("get running config")
 		response.SuccessWithData(gin.H{"config": cfg}, ctx)
 	}
 }
@@ -95,17 +95,17 @@ func SaveConfigToFile(s *server.Server) gin.HandlerFunc {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
-		s.Logger.Info().Msg("Saving Config in:" + cfg.Config)
 		if err := ctx.ShouldBindJSON(&cfg); err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
 		fullPath, err := service.SaveConfigToFile(&cfg)
+		s.Logger.Info().Msg("save config in:" + cfg.Options.Config)
 		if err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
-		response.SuccessWithMessage("config saved to "+fullPath, ctx)
+		response.SuccessWithMessage("save config to "+fullPath, ctx)
 	}
 }
 
@@ -124,4 +124,31 @@ func inheritImmutableConfigFields(original *server.Config, new *server.Config) (
 	new.Admin = original.Admin
 	new.Password = original.Password
 	return
+}
+
+func Restart(ctx *gin.Context) {
+	err := util.SendSignal("restart")
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.Success(ctx)
+}
+
+func Stop(ctx *gin.Context) {
+	err := util.SendSignal("stop")
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.Success(ctx)
+}
+
+func Kill(ctx *gin.Context) {
+	err := util.SendSignal("kill")
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.Success(ctx)
 }

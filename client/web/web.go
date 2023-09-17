@@ -9,10 +9,12 @@ import (
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/util"
 	"github.com/isrc-cas/gt/web/server/middleware"
+	webUtil "github.com/isrc-cas/gt/web/server/util"
 	"io"
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -33,7 +35,8 @@ func NewWebServer(c *client.Client) (err error) {
 	addr := c.Config().WebAddr + ":" + strconv.Itoa(int(c.Config().WebPort))
 	c.Logger.Info().Msg("start web server on " + addr)
 
-	f, _ := os.Create("Web_Client.log")
+	fullPath := filepath.Join(webUtil.GetAppDir(), "web_client.log")
+	f, _ := os.Create(fullPath)
 	gin.DefaultWriter = io.MultiWriter(f)
 
 	r := gin.Default()
@@ -91,8 +94,8 @@ func setRoutes(c *client.Client, r *gin.Engine) {
 			serverGroup.GET("/info", api.GetServerInfo)
 			serverGroup.PUT("/reload", api.ReloadServices)
 			serverGroup.PUT("/restart", api.Restart)
-			//serverGroup.PUT("/stop", api.Stop)
-			//serverGroup.PUT("/kill", api.Kill)
+			serverGroup.PUT("/stop", api.Stop)
+			serverGroup.PUT("/kill", api.Kill)
 		}
 
 		connectionGroup := apiGroup.Group("/connection")

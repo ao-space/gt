@@ -160,7 +160,7 @@ export const mapServerHostSetting = (data: Config.Server.ResConfig): ServerConfi
   } else {
     return {
       Number: data.config.Host.Number || 0,
-      RegexStr: data.config.Host.RegexStr,
+      RegexStr: data.config.Host.RegexStr || [],
       WithID: data.config.Host.WithID
     };
   }

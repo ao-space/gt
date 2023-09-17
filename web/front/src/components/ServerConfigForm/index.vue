@@ -20,6 +20,7 @@
   <el-button type="primary" @click="submit">Submit</el-button>
   <el-button type="primary" @click="getFromFile">Get From File</el-button>
   <el-button type="primary" @click="getFromRunning">Get From Running</el-button>
+  <el-button type="primary" @click="restartSystem">Restart System</el-button>
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">
@@ -38,6 +39,7 @@ import SentrySetting from "@/components/ClientConfigForm/components/SentrySettin
 import LogSetting from "@/components/ClientConfigForm/components/LogSetting.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getRunningServerConfigApi, getServerConfigFromFileApi, saveServerConfigApi } from "@/api/modules/serverConfig";
+import { restartServerApi } from "@/api/modules/server";
 import { Config } from "@/api/interface";
 import {
   mapServerGeneralSetting,
@@ -460,6 +462,28 @@ const getFromRunning = async () => {
       }
     }
   });
+};
+const restartSystem = async () => {
+  ElMessageBox.confirm("Are you sure you want to restart the System?", "Restart Server", {
+    confirmButtonText: "Confirm",
+    cancelButtonText: "Cancel",
+    type: "info"
+  })
+    .then(async () => {
+      try {
+        await restartServerApi();
+        ElMessage.success("Operation Success!");
+      } catch (e) {
+        if (e instanceof Error) {
+          ElMessage.error(e.message);
+        } else {
+          ElMessage.error("Failed to Restart System!");
+        }
+      }
+    })
+    .catch(() => {
+      ElMessage.info("Cancel Restart System Operation!");
+    });
 };
 
 onMounted(() => {

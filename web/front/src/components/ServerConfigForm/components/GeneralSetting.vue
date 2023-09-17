@@ -81,7 +81,7 @@ watch(
 
     tcpSetting.splice(0, tcpSetting.length, ...props.setting.TCPs);
     hostSetting.Number = props.setting.Host.Number;
-    hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...props.setting.Host.RegexStr);
+    hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...props.setting.Host?.RegexStr);
     hostSetting.WithID = props.setting.Host.WithID;
   },
   { deep: true }

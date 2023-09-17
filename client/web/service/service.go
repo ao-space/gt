@@ -11,9 +11,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"syscall"
 )
 
 func VerifyUser(user request.User, c *client.Client) (err error) {
@@ -138,47 +136,19 @@ func GetConfigFromFile(c *client.Client) (cfg client.Config, err error) {
 func SaveConfigToFile(cfg *client.Config) (fullPath string, err error) {
 
 	// switch config type to yaml
-	yamlData, err := yaml.Marshal(&cfg)
+	yamlData, err := yaml.Marshal(cfg)
 	if err != nil {
 		return
 	}
 	if cfg.Config != "" {
-		fullPath = cfg.Config
+		fullPath = cfg.Options.Config
 	} else {
 		fullPath = filepath.Join(util.GetAppDir(), "client.yaml")
+		cfg.Options.Config = fullPath
 	}
 	err = util.WriteYamlToFile(fullPath, yamlData)
 	if err != nil {
 		return
 	}
-	return
-}
-
-// SendSignal will create a new process to restart the services
-func SendSignal(signal string) (err error) {
-	execPath, err := os.Executable()
-	if err != nil {
-		return
-	}
-	var cmd *exec.Cmd
-	switch signal {
-	case "reload":
-		cmd = exec.Command(execPath, "-s", "reload")
-	case "restart":
-		cmd = exec.Command(execPath, "-s", "restart")
-	case "stop":
-		cmd = exec.Command(execPath, "-s", "stop")
-	case "kill":
-		cmd = exec.Command(execPath, "-s", "kill")
-	default:
-		err = errors.New("unknown signal")
-		return
-	}
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	err = cmd.Start()
-	if err != nil {
-		return
-	}
-	err = cmd.Process.Release()
 	return
 }

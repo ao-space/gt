@@ -152,12 +152,12 @@ func (c clientURL) MarshalJSON() ([]byte, error) {
 }
 
 type service struct {
-	HostPrefix         string          `yaml:"hostPrefix"`
-	RemoteTCPPort      uint16          `yaml:"remoteTCPPort"`
-	RemoteTCPRandom    *bool           `yaml:"remoteTCPRandom"`
-	LocalURL           clientURL       `yaml:"local"`
-	LocalTimeout       config.Duration `yaml:"localTimeout"`
-	UseLocalAsHTTPHost bool            `yaml:"useLocalAsHTTPHost"`
+	HostPrefix         string          `yaml:"hostPrefix,omitempty" json:",omitempty"`
+	RemoteTCPPort      uint16          `yaml:"remoteTCPPort,omitempty" json:",omitempty"`
+	RemoteTCPRandom    *bool           `yaml:"remoteTCPRandom,omitempty" json:",omitempty"`
+	LocalURL           clientURL       `yaml:"local,omitempty" json:",omitempty"`
+	LocalTimeout       config.Duration `yaml:"localTimeout,omitempty" json:",omitempty"`
+	UseLocalAsHTTPHost bool            `yaml:"useLocalAsHTTPHost,omitempty" json:",omitempty"`
 }
 
 func (s *service) String() string {

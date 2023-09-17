@@ -62,11 +62,11 @@ func GetConnectionInfo(c *client.Client) gin.HandlerFunc {
 	}
 }
 
-// GetConfig returns the current config
+// GetRunningConfig GetConfig returns the current config
 func GetRunningConfig(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var cfg = c.Config()
-		c.Logger.Info().Msg("Running CONFIG:" + cfg.Config)
+		c.Logger.Info().Msg("get running config")
 		response.SuccessWithData(gin.H{"config": cfg}, ctx)
 	}
 }
@@ -96,17 +96,17 @@ func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
-		c.Logger.Info().Msg("SaveConfig in :" + cfg.Config)
 		if err := ctx.ShouldBindJSON(&cfg); err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
 		fullPath, err := service.SaveConfigToFile(&cfg)
+		c.Logger.Info().Msg("save config in :" + cfg.Options.Config)
 		if err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
-		response.SuccessWithMessage("save config in"+fullPath, ctx)
+		response.SuccessWithMessage("save config to "+fullPath, ctx)
 	}
 }
 
@@ -116,7 +116,7 @@ func inheritImmutableConfigFields(original *client.Config, new *client.Config) (
 		err = errors.New("original config is nil")
 		return
 	}
-	new.Config = original.Config
+	new.Options.Config = original.Options.Config
 	new.EnableWebServer = original.EnableWebServer
 	new.WebAddr = original.WebAddr
 	new.WebPort = original.WebPort
@@ -130,7 +130,7 @@ func inheritImmutableConfigFields(original *client.Config, new *client.Config) (
 // ReloadServices reloads the services in the config file
 // without restarting the current process
 func ReloadServices(ctx *gin.Context) {
-	err := service.SendSignal("reload")
+	err := util.SendSignal("reload")
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
@@ -142,7 +142,7 @@ func ReloadServices(ctx *gin.Context) {
 // not only reload the services,
 // but also restart the process to load the brand-new config(mainly for options part)
 func Restart(ctx *gin.Context) {
-	err := service.SendSignal("restart")
+	err := util.SendSignal("restart")
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
@@ -150,20 +150,20 @@ func Restart(ctx *gin.Context) {
 	response.Success(ctx)
 }
 
-//func Stop(ctx *gin.Context) {
-//	err := service.SendSignal("stop")
-//	if err != nil {
-//		response.FailWithMessage(err.Error(), ctx)
-//		return
-//	}
-//	response.Success(ctx)
-//}
+func Stop(ctx *gin.Context) {
+	err := util.SendSignal("stop")
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.Success(ctx)
+}
 
-//func Kill(ctx *gin.Context) {
-//	err := service.SendSignal("kill")
-//	if err != nil {
-//		response.FailWithMessage(err.Error(), ctx)
-//		return
-//	}
-//	response.Success(ctx)
-//}
+func Kill(ctx *gin.Context) {
+	err := util.SendSignal("kill")
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.Success(ctx)
+}

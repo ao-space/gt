@@ -9,6 +9,15 @@ export const getServerInfoApi = () => {
 export const reloadServicesApi = () => {
   return http.put(`/server/reload`);
 };
+
 export const restartServerApi = () => {
   return http.put(`/server/restart`);
+};
+
+export const stopServerApi = () => {
+  return http.put(`/server/stop`);
+};
+
+export const killServerApi = () => {
+  return http.put(`/server/kill`);
 };

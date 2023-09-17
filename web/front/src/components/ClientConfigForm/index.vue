@@ -21,7 +21,7 @@
   <el-button type="primary" @click="getFromFile">GetFromFile</el-button>
   <el-button type="primary" @click="getFromRunning">GetFromRunning</el-button>
   <el-button type="primary" @click="reloadServices">Reload Services</el-button>
-  <el-button type="primary" @click="restartServer">Restart System</el-button>
+  <el-button type="primary" @click="restartSystem">Restart System</el-button>
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
@@ -375,16 +375,12 @@ const reloadServices = async () => {
       ElMessage.info("Cancel Reload Services Operation!");
     });
 };
-const restartServer = async () => {
-  ElMessageBox.confirm(
-    "You need to make sure that the changes you make only happen in the services section,and make sure it has been saved, or the system won't reload the services.",
-    "Restart System",
-    {
-      confirmButtonText: "Confirm",
-      cancelButtonText: "Cancel",
-      type: "info"
-    }
-  )
+const restartSystem = async () => {
+  ElMessageBox.confirm("Are you sure you want to restart the system?", "Restart System", {
+    confirmButtonText: "Confirm",
+    cancelButtonText: "Cancel",
+    type: "info"
+  })
     .then(async () => {
       try {
         await restartServerApi();
@@ -393,7 +389,7 @@ const restartServer = async () => {
         if (e instanceof Error) {
           ElMessage.error(e.message);
         } else {
-          ElMessage.error("Failed to Reload Services!");
+          ElMessage.error("Failed to Restart System!");
         }
       }
     })

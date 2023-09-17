@@ -117,6 +117,7 @@ func GetConnectionInfo(s *server.Server) (serverPool []request.SimplifiedConnect
 func GetConfigFromFile(s *server.Server) (cfg server.Config, err error) {
 	fullPath := s.Config().Options.Config
 	if fullPath == "" {
+		err = errors.New("config path is empty")
 		return
 	}
 	err = config.Yaml2Interface(fullPath, &cfg)
@@ -126,17 +127,18 @@ func GetConfigFromFile(s *server.Server) (cfg server.Config, err error) {
 	return
 }
 
-func SaveConfigToFile(cfg *server.Config) (fullpath string, err error) {
-	yamlData, err := yaml.Marshal(&cfg)
+func SaveConfigToFile(cfg *server.Config) (fullPath string, err error) {
+	yamlData, err := yaml.Marshal(cfg)
 	if err != nil {
 		return
 	}
-	if cfg.Config != "" {
-		fullpath = cfg.Config
+	if cfg.Options.Config != "" {
+		fullPath = cfg.Options.Config
 	} else {
-		fullpath = filepath.Join(util.GetAppDir(), "server.yaml")
+		fullPath = filepath.Join(util.GetAppDir(), "server.yaml")
+		cfg.Options.Config = fullPath
 	}
-	err = util.WriteYamlToFile(fullpath, yamlData)
+	err = util.WriteYamlToFile(fullPath, yamlData)
 	if err != nil {
 		return
 	}
