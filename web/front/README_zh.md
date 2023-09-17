@@ -6,9 +6,21 @@
 
 ## 目录
 
-[toc]
+- [项目功能](#项目功能)
+- [项目结构](#项目结构)
+- [安装步骤](#安装步骤)
+  - [GT-Server端设置](#gt-server端设置)
+  - [GT-Client端设置](#gt-client端设置)
+- [Web端使用教程](#web端使用教程)
+  - [登录](#登录)
+  - [系统控制](#系统控制)
+  - [系统状态监测](#系统状态监测)
+  - [连接状态查看](#连接状态查看)
+  - [配置界面](#配置界面)
+  - [pprof界面](#pprof界面)
+- [前端开发者设置](#前端开发者设置)
 
-## 项目功能 🔨
+## 项目功能
 
 - 系统状态监测（监测 OS、CPU、Memory、Disk）
 - 连接状态查看 (连接池连接、外部连接)
@@ -17,11 +29,11 @@
 
 ## 项目结构
 
-![Architecture](/src/assets/images/Architecture.png)
+![Architecture](src/assets/images/Architecture.png)
 
-## 安装步骤 📔
+## 安装步骤
 
-### GT-Server 端设置
+### GT-Server端设置
 
 <details>
     <summary>详细步骤</summary>
@@ -44,29 +56,29 @@
 4.  编写 web 配置文件（**Web Setting** 请**详细**配置，其他配置后续可以在 web 中配置,建议**保存**在**release**文件夹中）
     <details>
     <summary>server.yaml</summary>
+        
+      ```yaml
+    #server.yaml
+    options:
+    # General Setting (MUST!) :To start the gt-server
+    # You can change it later on web page
+      addr: 8080
 
-        ```yaml
-        #server.yaml
-        options:
-        # General Setting (MUST!) :To start the gt-server
-        # You can change it later on web page
-            addr: 8080
-
-        # Web Setting(Optional)
-            # Whether to start the Web Server
-            web: true
-            #Set Web Addr
-            webAddr: localhost
-            webPort: 7000
-            # Use to sign the jwt token(Validity Period: 6 hour)
-            signingKey: signature
-            # Use to login in the web page
-            admin: server
-            password: admin
-            # Start the pprof services
-            # need 'web' prop set to be true first
-            pprof: true #(optional)
-        ```
+    # Web Setting(Optional)
+      # Whether to start the Web Server
+      web: true
+      #Set Web Addr
+      webAddr: localhost
+      webPort: 7000
+      # Use to sign the jwt token(Validity Period: 6 hour)
+      signingKey: signature
+      # Use to login in the web page
+      admin: server
+      password: admin
+      # Start the pprof services
+      # need 'web' prop set to be true first
+      pprof: true #(optional)
+      ```
 
     </details>
 
@@ -90,7 +102,7 @@
 
 </details>
 
-### GT-Client 端设置
+### GT-Client端设置
 
 <details>
     <summary>详细步骤</summary>
@@ -159,12 +171,12 @@
 
 </details>
 
-## Web 端使用教程
+## Web端使用教程
 
 ### 登录
 
 - 使用配置文件中设置的 admin 与 password 进行登录
-  ![Login](/src/assets/images/Login.png)
+  ![Login](src/assets/images/Login.png)
 
 ### 系统控制
 
@@ -178,19 +190,19 @@
   - **Shutdown System**：关闭系统
   - **Terminate System**： 中断系统
 
-  ![ToolBar](/src/assets/images/ToolBar.png)
+  ![ToolBar](src/assets/images/ToolBar.png)
 
 ### 系统状态监测
 
 - 提供系统信息、DISK、CPU、RAM 信息查看
-  ![DashBoard](/src/assets/images/DashBoard.png)
+  ![DashBoard](src/assets/images/DashBoard.png)
 
 ### 连接状态查看
 
 - Server 端提供连接**信息**查看
-  ![ServerConnection](/src/assets/images/ServerConnection.png)
+  ![ServerConnection](src/assets/images/ServerConnection.png)
 - Client 端提供连接**状态**查看
-  ![ClientConnection](/src/assets/images/ClientConnection.png)
+  ![ClientConnection](src/assets/images/ClientConnection.png)
 
 ### 配置界面
 
@@ -209,25 +221,25 @@
 
   - **用户保存修改后**，可以通过**Restart System**来进行新配置的启用（该操作会启用一个新的进程）。
 
-  - **General Setting** 处设置的**TCP Setting** 与 **Host Setting** 均是 **全局**设置，**精细化**设置请在下面的**User Setting**处设置![ServerConfig](/src/assets/images/ServerConfig.png)
+  - **General Setting** 处设置的**TCP Setting** 与 **Host Setting** 均是 **全局**设置，**精细化**设置请在下面的**User Setting**处设置![ServerConfig](src/assets/images/ServerConfig.png)
 
 - client 端
 
   - **用户保存修改后**，可以使用**Reload Services**来保持原有进程的同时，重启 Serivces 服务（前提是只更改了 Services），但是如果更改了 Options 字段的内容（即非 Services 部分内容），则要启用该配置服务就只能通过**Restart System**来重启整个进程来实现配置的更改。
-    ![ClientConfig](/src/assets/images/ClientConfig.png)
+    ![ClientConfig](src/assets/images/ClientConfig.png)
 
-### pprof 界面
+### pprof界面
 
 - 性能检测界面
-  ![pprof](/src/assets/images/pprof.png)
+  ![pprof](src/assets/images/pprof.png)
 
 ## 前端开发者设置
 
 - src/api/modules/login.ts 的 getAuthMenuListApi 中注释上面的代码，可以实现无需开启后端得到路由权限
 
-  ![code1](/src/assets/images/code1.png)
+  ![code1](src/assets/images/code1.png)
 
 - src/routers/index.ts 的 router.beforeEach 函数中可以注释这行代码来实现绕过用户登录，来进行其他界面的跳转以及测试
-  ![code2](/src/assets/images/code2.png)
+  ![code2](src/assets/images/code2.png)
 
 ​ 进行上述操作后，即可实现在前端界面开发时，无需开启后端。
