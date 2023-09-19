@@ -289,21 +289,21 @@ func (s *Server) Start() (err error) {
 		}
 		listening = true
 	}
-	if len(s.config.Addr) > 0 {
-		if strings.IndexByte(s.config.Addr, ':') == -1 {
-			s.config.Addr = ":" + s.config.Addr
-		}
-		err = s.listen()
-		if err != nil {
-			return
-		}
-		listening = true
-	}
 	if len(s.config.QuicAddr) > 0 {
 		if strings.IndexByte(s.config.QuicAddr, ':') == -1 {
 			s.config.QuicAddr = ":" + s.config.QuicAddr
 		}
 		err = s.quicListen()
+		if err != nil {
+			return
+		}
+		listening = true
+	}
+	if len(s.config.Addr) > 0 {
+		if strings.IndexByte(s.config.Addr, ':') == -1 {
+			s.config.Addr = ":" + s.config.Addr
+		}
+		err = s.listen()
 		if err != nil {
 			return
 		}
