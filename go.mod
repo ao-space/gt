@@ -38,6 +38,7 @@ require (
 	github.com/pion/transport/v2 v2.2.4 // indirect
 	github.com/pion/transport/v3 v3.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/quic-go/qtls-go1-19 v0.3.2 // indirect
 	github.com/quic-go/qtls-go1-20 v0.3.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect
