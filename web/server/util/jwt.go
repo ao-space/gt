@@ -2,6 +2,7 @@ package util
 
 import (
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/isrc-cas/gt/web/server/model/request"
 	"time"
 )
 
@@ -18,13 +19,13 @@ func NewJWT(signingKey string) *JWT {
 }
 
 type CustomClaims struct {
-	username string
+	Username string
 	jwt.RegisteredClaims
 }
 
 func (j *JWT) CreateClaims(username string, issuer string) CustomClaims {
 	return CustomClaims{
-		username: username,
+		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExpireDuration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -44,9 +45,22 @@ func (j *JWT) ParseToken(tokenString string) (*CustomClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return j.SigningKey, nil
 	})
+	if err != nil {
+		return nil, err
+	}
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
 		return claims, nil
 	} else {
 		return nil, err
 	}
+}
+
+func GenerateToken(signingKey string, issuer string, user request.User) (token string, err error) {
+	j := NewJWT(signingKey)
+	claims := j.CreateClaims(user.Username, issuer)
+	token, err = j.CreateToken(claims)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }

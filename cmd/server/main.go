@@ -36,7 +36,7 @@ func main() {
 		s.Logger.Fatal().Err(err).Msg("failed to start")
 	}
 
-	err = startWebServer(s)
+	webServer, err := startWebServer(s)
 	if err != nil {
 		s.Logger.Fatal().Err(err).Msg("failed to start web server")
 	}
@@ -51,7 +51,7 @@ func main() {
 			return
 		case syscall.SIGQUIT:
 			// restart, start a new process and then shutdown gracefully
-			err = shutdownWebServer(s)
+			err = shutdownWebServer(webServer)
 			if err != nil {
 				s.Logger.Error().Err(err).Msg("failed to shutdown web server")
 				continue
@@ -91,23 +91,16 @@ func runCmd(args []string) (err error) {
 	return
 }
 
-func startWebServer(s *server.Server) (err error) {
+func startWebServer(s *server.Server) (*web.Server, error) {
 	if s.Config().EnableWebServer {
-		err = web.NewWebServer(s)
-		if err != nil {
-			return
-		}
+		return web.NewWebServer(s)
 	}
-	return
+	return nil, nil
 }
-func shutdownWebServer(s *server.Server) (err error) {
-	if s.Config().EnableWebServer {
-		s.Logger.Info().Msg("try to shutdown web server")
-		err = web.ShutdownWebServer()
-		if err != nil {
-			return
-		}
-		s.Logger.Info().Msg("web server stopped")
+func shutdownWebServer(webServer *web.Server) (err error) {
+	if webServer == nil {
+		return
 	}
+	err = webServer.Shutdown()
 	return
 }

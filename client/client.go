@@ -414,6 +414,9 @@ func (c *Client) Config() *Config {
 }
 
 func (c *Client) GetConnectionPoolStatus() (status map[uint]Status) {
+	if c.idleManager == nil {
+		return
+	}
 	return c.idleManager.GetConnectionStatus()
 }
 

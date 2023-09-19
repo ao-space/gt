@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/isrc-cas/gt/logger"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/server"
 	"github.com/isrc-cas/gt/server/web/api"
@@ -19,16 +20,16 @@ import (
 	"time"
 )
 
-var webserver *webServer
-
-type webServer struct {
-	http.Server
+type Server struct {
+	server *http.Server
+	logger logger.Logger // have no right to close logger
 }
 
-func NewWebServer(s *server.Server) (err error) {
-	err = checkConfig(s)
+func NewWebServer(s *server.Server) (*Server, error) {
+
+	err := checkConfig(s)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	addr := s.Config().WebAddr + ":" + strconv.Itoa(int(s.Config().WebPort))
@@ -41,17 +42,18 @@ func NewWebServer(s *server.Server) (err error) {
 	r := gin.Default()
 	setRoutes(s, r)
 
-	srv := &webServer{
-		Server: http.Server{
+	ws := &Server{
+		server: &http.Server{
 			Addr:    addr,
 			Handler: r,
 		},
+		logger: s.Logger,
 	}
-	webserver = srv
-	startWebServer(s)
-	return
 
+	go ws.start()
+	return ws, nil
 }
+
 func checkConfig(s *server.Server) (err error) {
 	if s.Config().WebAddr == "" {
 		return errors.New("option webAddr must be set")
@@ -108,7 +110,6 @@ func setRoutes(s *server.Server, r *gin.Engine) {
 
 	if s.Config().EnablePprof {
 		pprofGroup := r.Group("/debug/pprof")
-		//pprofGroup.Use(middleware.JWTAuthMiddleware(s.Config().SigningKey))
 		{
 			pprofGroup.GET("/", gin.WrapF(pprof.Index))
 			pprofGroup.GET("/cmdline", gin.WrapF(pprof.Cmdline))
@@ -128,26 +129,15 @@ func setRoutes(s *server.Server, r *gin.Engine) {
 
 }
 
-func startWebServer(s *server.Server) {
-	go func() {
-		defer func() {
-			s.Logger.Info().Msg("web server stopped")
-		}()
-		err := webserver.ListenAndServe()
-		if !errors.Is(err, http.ErrServerClosed) {
-			s.Logger.Fatal().Msg("listen: " + err.Error())
-			return
-		}
-		return
-	}()
-	return
+func (s *Server) start() {
+	defer s.logger.Info().Msg("web server stopped")
+	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		s.logger.Error().Err(err).Msg("web server failed to serve")
+	}
 }
 
-func ShutdownWebServer() error {
+func (s *Server) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := webserver.Shutdown(ctx); err != nil {
-		return err
-	}
-	return nil
+	return s.server.Shutdown(ctx)
 }

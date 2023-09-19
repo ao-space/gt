@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/isrc-cas/gt/client"
 	"github.com/isrc-cas/gt/client/web/api"
+	"github.com/isrc-cas/gt/logger"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/util"
 	"github.com/isrc-cas/gt/web/server/middleware"
@@ -19,17 +20,16 @@ import (
 	"time"
 )
 
-var server *webServer
-
-type webServer struct {
-	http.Server
+type Server struct {
+	server *http.Server
+	logger logger.Logger // have no right to close logger
 }
 
-func NewWebServer(c *client.Client) (err error) {
+func NewWebServer(c *client.Client) (*Server, error) {
 
-	err = checkConfig(c)
+	err := checkConfig(c)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	addr := c.Config().WebAddr + ":" + strconv.Itoa(int(c.Config().WebPort))
@@ -42,15 +42,15 @@ func NewWebServer(c *client.Client) (err error) {
 	r := gin.Default()
 	setRoutes(c, r)
 
-	srv := &webServer{
-		Server: http.Server{
+	ws := &Server{
+		server: &http.Server{
 			Addr:    addr,
 			Handler: r,
 		},
+		logger: c.Logger,
 	}
-	server = srv
-	startWebServer(c)
-	return
+	go ws.start()
+	return ws, nil
 }
 
 func checkConfig(c *client.Client) (err error) {
@@ -128,29 +128,16 @@ func setRoutes(c *client.Client, r *gin.Engine) {
 	}
 }
 
-func startWebServer(c *client.Client) {
-	go func() {
-		defer func() {
-			c.Logger.Info().Msg("web server stopped")
-		}()
-		err := server.ListenAndServe()
-		if !errors.Is(err, http.ErrServerClosed) {
-			c.Logger.Error().Err(err).Msg("web server failed to serve")
-			return
-		}
+func (s *Server) start() {
+	defer s.logger.Info().Msg("web server stopped")
+	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		s.logger.Error().Err(err).Msg("web server failed to serve")
 		return
-	}()
-	return
+	}
 }
 
-// ShutdownWebServer used to shut down web server before the next restart,
-// to avoid the port being occupied.
-func ShutdownWebServer() error {
+func (s *Server) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	if err := server.Shutdown(ctx); err != nil {
-		return err
-	}
-	return nil
+	return s.server.Shutdown(ctx)
 }

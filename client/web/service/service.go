@@ -22,16 +22,6 @@ func VerifyUser(user request.User, c *client.Client) (err error) {
 	}
 }
 
-func GenerateToken(signingKey string, user request.User) (token string, err error) {
-	j := util.NewJWT(signingKey)
-	claims := j.CreateClaims(user.Username, "gt-client")
-	token, err = j.CreateToken(claims)
-	if err != nil {
-		return "", err
-	}
-	return token, nil
-}
-
 func GetMenu(c *client.Client) (menu []request.Menu) {
 	menu = []request.Menu{
 		//Home

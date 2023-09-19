@@ -57,7 +57,7 @@ func SelectedMatchingConnections(source []net.ConnectionStat, filter []server.Co
 // Formatter
 
 func SimplifyConnections(conns []net.ConnectionStat) []request.SimplifiedConnection {
-	var simplifiedConns []request.SimplifiedConnection
+	simplifiedConns := make([]request.SimplifiedConnection, 0, len(conns))
 
 	for _, conn := range conns {
 		simplifiedConns = append(simplifiedConns, request.SimplifiedConnection{
@@ -73,7 +73,7 @@ func SimplifyConnections(conns []net.ConnectionStat) []request.SimplifiedConnect
 }
 
 func SimplifyConnectionsWithID(conns map[string][]net.ConnectionStat) []request.SimplifiedConnectionWithID {
-	var simplifiedConns []request.SimplifiedConnectionWithID
+	simplifiedConns := make([]request.SimplifiedConnectionWithID, 0, len(conns))
 
 	for id, connSlice := range conns {
 		for _, conn := range connSlice {
@@ -92,7 +92,7 @@ func SimplifyConnectionsWithID(conns map[string][]net.ConnectionStat) []request.
 }
 
 func SwitchToPoolInfo(conns []server.ConnectionInfo) []client.PoolInfo {
-	var poolInfos []client.PoolInfo
+	poolInfos := make([]client.PoolInfo, 0, len(conns))
 
 	for _, conn := range conns {
 		poolInfos = append(poolInfos, client.PoolInfo{

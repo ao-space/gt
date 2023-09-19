@@ -110,11 +110,6 @@ func defaultConfig() Config {
 			LogFileMaxCount: 7,
 			LogFileMaxSize:  512 * 1024 * 1024,
 			LogLevel:        zerolog.InfoLevel.String(),
-
-			EnableWebServer: false,
-			WebAddr:         "127.0.0.1",
-			WebPort:         8080,
-			EnablePprof:     false,
 		},
 	}
 }

@@ -21,7 +21,7 @@ func Login(s *server.Server) gin.HandlerFunc {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
-		token, err := service.GenerateToken(s.Config().SigningKey, loginReq)
+		token, err := util.GenerateToken(s.Config().SigningKey, "gt-server", loginReq)
 		if err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			return
