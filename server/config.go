@@ -89,6 +89,8 @@ type Options struct {
 	LogFileMaxCount uint   `yaml:"logFileMaxCount" usage:"Max count of the log files"`
 	LogLevel        string `yaml:"logLevel" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
 	Version         bool   `arg:"version" yaml:"-" usage:"Show the version of this program"`
+
+	QuicAddr string `yaml:"quicAddr" usage:"The address for quic to listen on. Supports values like: '80', ':80' or '0.0.0.0:80'"`
 }
 
 func defaultConfig() Config {
