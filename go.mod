@@ -15,7 +15,7 @@ require (
 	github.com/pion/logging v0.2.2
 	github.com/pion/turn/v3 v3.0.1
 	github.com/pkg/errors v0.9.1
-	github.com/quic-go/quic-go v0.38.1
+	github.com/quic-go/quic-go v0.35.0
 	github.com/rs/zerolog v1.30.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/stretchr/testify v1.8.4
