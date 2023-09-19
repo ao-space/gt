@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	connection "github.com/isrc-cas/gt/conn"
 	"io"
 	"math"
 	"net"
@@ -134,6 +135,19 @@ func (s *Server) tlsListen() (err error) {
 
 func (s *Server) listen() (err error) {
 	s.listener, err = net.Listen("tcp", s.config.Addr)
+	if err != nil {
+		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.Addr, err.Error())
+		return
+	}
+	s.Logger.Info().Str("addr", s.listener.Addr().String()).Msg("Listening")
+	go s.acceptLoop(s.listener, func(c *conn) {
+		c.handle(c.handleHTTP)
+	})
+	return
+}
+
+func (s *Server) quicListen() (err error) {
+	s.listener, err = connection.QuicListen(s.config.Addr)
 	if err != nil {
 		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.Addr, err.Error())
 		return

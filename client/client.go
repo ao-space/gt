@@ -227,6 +227,12 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		}
 		d.host = u.Host
 		d.dialFn = d.dial
+	case "quic":
+		if len(u.Port()) < 1 {
+			u.Host = net.JoinHostPort(u.Host, "80")
+		}
+		d.host = u.Host
+		d.dialFn = d.quicDial
 	default:
 		err = fmt.Errorf("remote url (-remote option) '%s' is invalid", remote)
 	}
@@ -282,6 +288,10 @@ func (d *dialer) dial() (conn net.Conn, err error) {
 
 func (d *dialer) tlsDial() (conn net.Conn, err error) {
 	return tls.Dial("tcp", d.host, d.tlsConfig)
+}
+
+func (d *dialer) quicDial() (conn net.Conn, err error) {
+	return connection.QuicDial(d.host)
 }
 
 // Start runs the client agent.
