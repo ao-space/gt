@@ -293,7 +293,8 @@ func (s *Server) Start() (err error) {
 		if strings.IndexByte(s.config.Addr, ':') == -1 {
 			s.config.Addr = ":" + s.config.Addr
 		}
-		err = s.listen()
+		//err = s.listen()
+		err = s.quicListen()
 		if err != nil {
 			return
 		}
