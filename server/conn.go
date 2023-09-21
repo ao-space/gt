@@ -141,7 +141,7 @@ func (c *conn) handle(handleFunc func() bool) {
 			remoteAddr, ok := c.RemoteAddr().(*net.TCPAddr)
 			if !ok {
 				c.Logger.Warn().Msg("conn is not tcp conn")
-				return
+				//return // 为了QUIC删除了这个内容
 			}
 			remoteIP := remoteAddr.IP.String()
 			c.server.reconnectRWMutex.RLock()
