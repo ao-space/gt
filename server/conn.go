@@ -138,10 +138,11 @@ func (c *conn) handle(handleFunc func() bool) {
 			c.Logger = c.Logger.With().Time("tunnel", time.Now()).Logger()
 
 			// 判断 IP 是否处于被限制状态
-			remoteAddr, ok := c.RemoteAddr().(*net.TCPAddr)
+			//remoteAddr, ok := c.RemoteAddr().(*net.TCPAddr)
+			remoteAddr, ok := c.RemoteAddr().(*net.IPAddr)
 			if !ok {
 				c.Logger.Warn().Msg("conn is not tcp conn")
-				//return // 为了QUIC删除了这个内容
+				return // 为了QUIC删除了这个内容
 			}
 			remoteIP := remoteAddr.IP.String()
 			c.server.reconnectRWMutex.RLock()
