@@ -141,7 +141,7 @@ func (c *conn) handle(handleFunc func() bool) {
 			// 判断 IP 是否处于被限制状态
 			//remoteAddr, ok := c.RemoteAddr().(*net.TCPAddr)
 			remoteAddr, ok := c.RemoteAddr().(*net.IPAddr)
-			fmt.Println(remoteAddr)
+			fmt.Println(c.RemoteAddr().String())
 			if !ok {
 				c.Logger.Warn().Msg("conn is not tcp conn")
 				return // 为了QUIC删除了这个内容
