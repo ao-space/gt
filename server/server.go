@@ -147,10 +147,10 @@ func (s *Server) listen() (err error) {
 }
 
 func (s *Server) quicListen() (err error) {
-	s.listener, err = connection.QuicListen(s.config.Addr)
+	s.listener, err = connection.QuicListen(s.config.QuicAddr) ////
 	fmt.Printf("Already astablish QUIC connection")
 	if err != nil {
-		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.Addr, err.Error())
+		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.QuicAddr, err.Error())
 		return
 	}
 	s.Logger.Info().Str("addr", s.listener.Addr().String()).Msg("Listening")
