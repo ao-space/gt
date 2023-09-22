@@ -27,6 +27,8 @@ const (
 	MaxSecretSize = MaxIDSize
 	// DefaultSecretSize secret 的默认长度
 	DefaultSecretSize = DefaultIDSize
+	// DefaultSigningKeySize signing key 的默认长度
+	DefaultSigningKeySize = 32
 	// MinHostPrefixSize 表示 host 前缀长度的最小值
 	MinHostPrefixSize = MinIDSize
 	// MaxHostPrefixSize 表示 host 前缀长度的最大值

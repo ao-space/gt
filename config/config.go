@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -103,6 +104,13 @@ func copyFlagsValue(dst interface{}, src *flag.FlagSet, name2FieldIndex map[stri
 		fieldType := field.Type()
 		flagValue := reflect.ValueOf(f.Value.(flag.Getter).Get())
 		flagValueType := flagValue.Type()
+
+		if fieldType == reflect.TypeOf(Duration{}) {
+			durationValue := flagValue.Interface().(time.Duration)
+			field.Set(reflect.ValueOf(Duration{Duration: durationValue}))
+			return
+		}
+
 		if !flagValueType.AssignableTo(fieldType) {
 			if flagValueType.ConvertibleTo(fieldType) {
 				flagValue = flagValue.Convert(fieldType)
@@ -131,6 +139,10 @@ func registerFlags(flagSetName string, options interface{}) (flagSet *flag.FlagS
 				continue
 			}
 		}
+
+		// 用这种方式可以处理 yaml:"xxx,omitempty" 的情况
+		name = strings.Split(name, ",")[0]
+
 		name2FieldIndex[name] = i
 		usage := fieldType.Tag.Get("usage")
 

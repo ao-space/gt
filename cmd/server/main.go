@@ -15,13 +15,14 @@
 package main
 
 import (
+	"github.com/isrc-cas/gt/server"
+	"github.com/isrc-cas/gt/server/web"
+	"github.com/rs/zerolog/log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/isrc-cas/gt/server"
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -35,15 +36,71 @@ func main() {
 		s.Logger.Fatal().Err(err).Msg("failed to start")
 	}
 
+	webServer, err := startWebServer(s)
+	if err != nil {
+		s.Logger.Fatal().Err(err).Msg("failed to start web server")
+	}
+
 	osSig := make(chan os.Signal, 1)
 	signal.Notify(osSig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 
-	select {
-	case sig := <-osSig:
+	for sig := range osSig {
 		s.Logger.Info().Str("signal", sig.String()).Msg("received os signal")
-		time.AfterFunc(3*time.Minute, func() {
+		switch sig {
+		case syscall.SIGTERM:
+			return
+		case syscall.SIGQUIT:
+			// restart, start a new process and then shutdown gracefully
+			err = shutdownWebServer(webServer)
+			if err != nil {
+				s.Logger.Error().Err(err).Msg("failed to shutdown web server")
+				continue
+			}
+			// avoid port conflict
+			s.ShutdownWithoutClosingLogger()
+
+			err = runCmd(os.Args)
+			if err != nil {
+				s.Logger.Error().Err(err).Msg("failed to start new process")
+				continue
+			}
+			s.Logger.Info().Msg("Restart successfully")
+			s.Logger.Close()
 			os.Exit(0)
-		})
-		s.Shutdown()
+		default:
+			s.Logger.Info().Msg("wait 3m to stop immediately")
+			time.AfterFunc(3*time.Minute, func() {
+				os.Exit(1)
+			})
+			s.Shutdown()
+			os.Exit(0)
+		}
 	}
+}
+
+func runCmd(args []string) (err error) {
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
+	}
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+	err = cmd.Process.Release()
+	return
+}
+
+func startWebServer(s *server.Server) (*web.Server, error) {
+	if s.Config().EnableWebServer {
+		return web.NewWebServer(s)
+	}
+	return nil, nil
+}
+func shutdownWebServer(webServer *web.Server) (err error) {
+	if webServer == nil {
+		return
+	}
+	err = webServer.Shutdown()
+	return
 }

@@ -15,6 +15,7 @@
 package main
 
 import (
+	"github.com/isrc-cas/gt/client/web"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -25,19 +26,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func runCmd(args []string) (err error) {
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
-	}
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
-	err = cmd.Process.Release()
-	return
-}
-
 func main() {
 	c, err := client.New(os.Args, nil)
 	if err != nil {
@@ -47,6 +35,11 @@ func main() {
 	err = c.Start()
 	if err != nil {
 		c.Logger.Fatal().Err(err).Msg("failed to start")
+	}
+
+	webServer, err := startWebServer(c)
+	if err != nil {
+		c.Logger.Fatal().Err(err).Msg("failed to start web server")
 	}
 
 	osSig := make(chan os.Signal, 1)
@@ -63,9 +56,14 @@ func main() {
 			return
 		case syscall.SIGQUIT:
 			// restart, start a new process and then shutdown gracefully
-			err := runCmd(os.Args)
+			err = shutdownWebServer(webServer)
 			if err != nil {
-				c.Logger.Error().Err(err).Msg("failed to start new process")
+				c.Logger.Error().Err(err).Msg("failed to shutdown web server")
+				continue
+			}
+			err = runCmd(os.Args)
+			if err != nil {
+				c.Logger.Error().Err(err).Msg("failed to stop web server")
 				continue
 			}
 			// yield control to the new process
@@ -82,4 +80,30 @@ func main() {
 			os.Exit(0)
 		}
 	}
+}
+func runCmd(args []string) (err error) {
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
+	}
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+	err = cmd.Process.Release()
+	return
+}
+func startWebServer(c *client.Client) (*web.Server, error) {
+	if c.Config().EnableWebServer {
+		return web.NewWebServer(c)
+	}
+	return nil, nil
+}
+
+func shutdownWebServer(webServer *web.Server) (err error) {
+	if webServer != nil {
+		return
+	}
+	err = webServer.Shutdown()
+	return
 }
