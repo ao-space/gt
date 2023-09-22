@@ -38,17 +38,12 @@ type conn struct {
 	services      atomic.Pointer[services]
 }
 
-type PoolInfo struct {
-	LocalAddr  net.Addr
-	RemoteAddr net.Addr
-}
-
 func newConn(c net.Conn, client *Client) *conn {
 	nc := &conn{
 		Connection: connection.Connection{
 			Conn:         c,
 			Reader:       pool.GetReader(c),
-			WriteTimeout: client.Config().RemoteTimeout.Duration,
+			WriteTimeout: client.Config().RemoteTimeout,
 		},
 		client: client,
 		tasks:  make(map[uint32]*httpTask, 100),
@@ -182,10 +177,10 @@ func (c *conn) readLoop(connID uint) {
 	r := &bufio.LimitedReader{}
 	r.Reader = c.Reader
 	var timeout time.Duration
-	if c.client.Config().RemoteTimeout.Duration > 0 {
-		timeout = c.client.Config().RemoteTimeout.Duration / 2
+	if c.client.Config().RemoteTimeout > 0 {
+		timeout = c.client.Config().RemoteTimeout / 2
 		if timeout <= 0 {
-			timeout = c.client.Config().RemoteTimeout.Duration
+			timeout = c.client.Config().RemoteTimeout
 		}
 	}
 	for pings <= 3 {
@@ -436,8 +431,8 @@ func (c *conn) processServiceData(connID uint, taskID uint32, s *service, r *buf
 			readErr = err
 		}
 	}
-	if task.service.LocalTimeout.Duration > 0 {
-		dl := time.Now().Add(task.service.LocalTimeout.Duration)
+	if task.service.LocalTimeout > 0 {
+		dl := time.Now().Add(task.service.LocalTimeout)
 		writeErr = task.conn.SetReadDeadline(dl)
 		if writeErr != nil {
 			return
@@ -483,8 +478,8 @@ func (c *conn) processData(taskID uint32, r *bufio.LimitedReader) (readErr, writ
 			readErr = err
 		}
 	}
-	if task.service.LocalTimeout.Duration > 0 {
-		dl := time.Now().Add(task.service.LocalTimeout.Duration)
+	if task.service.LocalTimeout > 0 {
+		dl := time.Now().Add(task.service.LocalTimeout)
 		writeErr = task.conn.SetReadDeadline(dl)
 		if writeErr != nil {
 			return

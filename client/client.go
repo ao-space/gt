@@ -247,7 +247,7 @@ func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
 	req.URL.RawQuery = query.Encode()
 	req.Header.Set("Request-Id", strconv.FormatInt(time.Now().Unix(), 10))
 	client := http.Client{
-		Timeout: c.Config().RemoteTimeout.Duration,
+		Timeout: c.Config().RemoteTimeout,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -326,13 +326,8 @@ func (c *Client) Start() (err error) {
 	}
 
 	err = c.parseServices()
-	//make sure even if there is  no service,
-	//web server still can start for config
 	if err != nil {
-		//filter out no service error
-		if err != errNoService || (err == errNoService && !c.Config().EnableWebServer) {
-			return
-		}
+		return
 	}
 
 	var dialer dialer
@@ -361,7 +356,7 @@ func (c *Client) Start() (err error) {
 				break
 			}
 			c.Logger.Error().Err(err).Msg("failed to query server address")
-			time.Sleep(c.Config().ReconnectDelay.Duration)
+			time.Sleep(c.Config().ReconnectDelay)
 		}
 	}
 	if len(dialer.host) == 0 {
@@ -411,25 +406,6 @@ func (c *Client) Start() (err error) {
 
 func (c *Client) Config() *Config {
 	return c.config.Load()
-}
-
-func (c *Client) GetConnectionPoolStatus() (status map[uint]Status) {
-	if c.idleManager == nil {
-		return
-	}
-	return c.idleManager.GetConnectionStatus()
-}
-
-func (c *Client) GetConnectionPoolNetInfo() (pools []PoolInfo) {
-	c.tunnelsRWMtx.RLock()
-	defer c.tunnelsRWMtx.RUnlock()
-	for conn := range c.tunnels {
-		pools = append(pools, PoolInfo{
-			LocalAddr:  conn.LocalAddr(),
-			RemoteAddr: conn.RemoteAddr(),
-		})
-	}
-	return
 }
 
 // Close stops the client agent.
@@ -530,7 +506,7 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 	if atomic.LoadUint32(&c.closing) == 1 {
 		return true
 	}
-	time.Sleep(c.Config().ReconnectDelay.Duration)
+	time.Sleep(c.Config().ReconnectDelay)
 	c.idleManager.SetWait(connID)
 	c.idleManager.WaitIdle(connID)
 
@@ -542,8 +518,8 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 		if err == nil {
 			break
 		}
-		c.Logger.Error().Err(err).Msg("failed to query server address")
-		time.Sleep(c.Config().ReconnectDelay.Duration)
+		c.Logger.Error().Uint("connID", connID).Err(err).Msg("failed to query server address")
+		time.Sleep(c.Config().ReconnectDelay)
 	}
 	return
 }
@@ -598,16 +574,14 @@ func (c *Client) WaitUntilReady(timeout time.Duration) (err error) {
 	return
 }
 
-var errNoService = errors.New("no service is configured")
-
 func (c *Client) parseServices() (err error) {
 	services, err := parseServices(c.Config())
 	if err != nil {
 		return
 	}
-	// services 不能为空除非启动了 web 服务
+	// services 不能为空
 	if len(services) == 0 {
-		err = errNoService
+		err = errors.New("no service is configured")
 		return
 	}
 	h := sha256.New()
@@ -649,7 +623,7 @@ func parseServices(config *Config) (result services, err error) {
 			if configServicesLen == 1 ||
 				(x.Position > config.Local[i].Position &&
 					(i == configServicesLen-1 || x.Position < config.Local[i+1].Position)) {
-				configServices[i].LocalTimeout.Duration = x.Value
+				configServices[i].LocalTimeout = x.Value
 			}
 		}
 		for _, x := range config.UseLocalAsHTTPHost {
@@ -673,11 +647,12 @@ func parseServices(config *Config) (result services, err error) {
 	for i := 0; i < len(result); i++ {
 		if result[i].LocalURL.URL == nil {
 			err = errors.New("local url (-local option) cannot be empty")
+			return
 		}
 
 		// 设置默认值
-		if result[i].LocalTimeout.Duration == 0 {
-			result[i].LocalTimeout.Duration = 120 * time.Second
+		if result[i].LocalTimeout == 0 {
+			result[i].LocalTimeout = 120 * time.Second
 		}
 		if result[i].RemoteTCPRandom == nil {
 			result[i].RemoteTCPRandom = new(bool)
@@ -714,7 +689,7 @@ func parseServices(config *Config) (result services, err error) {
 				return
 			}
 		default:
-			err = fmt.Errorf("local url (-local option) '%s' must begin with http://, https:// or tcp://", result[i].LocalURL.String())
+			err = fmt.Errorf("local url (-local option) '%s' must begin with http://, https:// or tcp://", config.Local[i].Value)
 			return
 		}
 
@@ -787,7 +762,7 @@ func (c *Client) ReloadServices() (err error) {
 		return
 	}
 	if len(services) == 0 {
-		err = errNoService
+		err = errors.New("no service is configured")
 		return
 	}
 	checksum := [32]byte{}

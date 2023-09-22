@@ -59,7 +59,7 @@ func newConn(c net.Conn, s *Server) *conn {
 	nc := &conn{
 		Connection: connection.Connection{
 			Conn:         c,
-			WriteTimeout: s.config.Timeout.Duration,
+			WriteTimeout: s.config.Timeout,
 		},
 		server: s,
 		tasks:  make(map[uint32]*conn, 100),
@@ -110,8 +110,8 @@ func (c *conn) handle(handleFunc func() bool) {
 			atomic.AddUint64(&c.server.failed, 1)
 		}
 	}()
-	if c.server.config.Timeout.Duration > 0 {
-		dl := startTime.Add(c.server.config.Timeout.Duration)
+	if c.server.config.Timeout > 0 {
+		dl := startTime.Add(c.server.config.Timeout)
 		err := c.SetReadDeadline(dl)
 		if err != nil {
 			c.Logger.Debug().Err(err).Msg("handle set deadline failed")
@@ -334,8 +334,8 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 			c.server.reconnectRWMutex.Unlock()
 
 			// ReconnectDuration 为 0 表示不进行限制解除
-			if c.server.config.ReconnectDuration.Duration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
-				time.AfterFunc(c.server.config.ReconnectDuration.Duration, func() {
+			if c.server.config.ReconnectDuration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
+				time.AfterFunc(c.server.config.ReconnectDuration, func() {
 					c.server.reconnectRWMutex.Lock()
 					c.server.reconnect[remoteIP] = 0
 					c.server.reconnectRWMutex.Unlock()
@@ -379,8 +379,8 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 			c.server.reconnectRWMutex.Unlock()
 
 			// ReconnectDuration 为 0 表示不进行限制解除
-			if c.server.config.ReconnectDuration.Duration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
-				time.AfterFunc(c.server.config.ReconnectDuration.Duration, func() {
+			if c.server.config.ReconnectDuration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
+				time.AfterFunc(c.server.config.ReconnectDuration, func() {
 					c.server.reconnectRWMutex.Lock()
 					c.server.reconnect[remoteIP] = 0
 					c.server.reconnectRWMutex.Unlock()
@@ -759,8 +759,8 @@ func (c *conn) readLoop(cli *client) (reload bool) {
 	r := &bufio.LimitedReader{}
 	isClosing := false
 	for {
-		if c.server.config.Timeout.Duration > 0 {
-			dl := time.Now().Add(c.server.config.Timeout.Duration)
+		if c.server.config.Timeout > 0 {
+			dl := time.Now().Add(c.server.config.Timeout)
 			err = c.SetReadDeadline(dl)
 			if err != nil {
 				return
@@ -887,8 +887,8 @@ func (c *conn) readLoop(cli *client) (reload bool) {
 				}
 				return
 			}
-			if c.server.config.Timeout.Duration > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
-				dl := time.Now().Add(c.server.config.Timeout.Duration)
+			if c.server.config.Timeout > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
+				dl := time.Now().Add(c.server.config.Timeout)
 				err = task.SetReadDeadline(dl)
 				if err != nil {
 					c.Logger.Debug().Err(err).Uint32("taskID", taskID).Msg("update read deadline failed")
@@ -971,8 +971,8 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 	buf[bufIndex+1] = byte(predef.Data)
 	bufIndex += 2
 	for {
-		if c.server.config.Timeout.Duration > 0 {
-			dl := time.Now().Add(c.server.config.Timeout.Duration)
+		if c.server.config.Timeout > 0 {
+			dl := time.Now().Add(c.server.config.Timeout)
 			rErr = task.SetReadDeadline(dl)
 			if rErr != nil {
 				return
@@ -996,8 +996,8 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 			if wErr != nil {
 				return
 			}
-			if c.server.config.Timeout.Duration > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
-				dl := time.Now().Add(c.server.config.Timeout.Duration)
+			if c.server.config.Timeout > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
+				dl := time.Now().Add(c.server.config.Timeout)
 				wErr = c.SetReadDeadline(dl)
 				if wErr != nil {
 					return

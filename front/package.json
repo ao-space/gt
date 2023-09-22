@@ -1,0 +1,14 @@
+{
+  "name": "gt-web",
+  "version": "1.0.0",
+  "description": "通过web端管理gt配置",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "keywords": [
+    "gt-web"
+  ],
+  "author": "dejun@iscas.ac.cn",
+  "license": "ISC"
+}
