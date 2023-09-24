@@ -58,6 +58,7 @@ type Server struct {
 	tlsListener  net.Listener
 	listener     net.Listener
 	sniListener  net.Listener
+	quicListener net.Listener
 	accepted     uint64
 	served       uint64
 	failed       uint64
@@ -147,13 +148,13 @@ func (s *Server) listen() (err error) {
 }
 
 func (s *Server) quicListen() (err error) {
-	s.listener, err = connection.QuicListen(s.config.QuicAddr)
+	s.quicListener, err = connection.QuicListen(s.config.QuicAddr)
 	if err != nil {
 		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.QuicAddr, err.Error())
 		return
 	}
-	s.Logger.Info().Str("addr", s.listener.Addr().String()).Msg("Listening")
-	go s.acceptLoop(s.listener, func(c *conn) {
+	s.Logger.Info().Str("addr", s.quicListener.Addr().String()).Msg("Listening")
+	go s.acceptLoop(s.quicListener, func(c *conn) {
 		c.handle(c.handleHTTP)
 	})
 	return
@@ -956,6 +957,15 @@ func (s *Server) GetTLSListenerAddrPort() (addrPort netip.AddrPort) {
 		return
 	}
 	addrPort = s.tlsListener.Addr().(*net.TCPAddr).AddrPort()
+	return
+}
+
+// GetQuicListenerAddrPort 获取 QUIC listener 地址，返回值可能为空
+func (s *Server) GetQuicListenerAddrPort() (addrPort string) {
+	if s.tlsListener == nil {
+		return
+	}
+	addrPort = s.quicListener.Addr().String()
 	return
 }
 
