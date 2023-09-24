@@ -326,6 +326,23 @@ options:
 ./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
 ```
 
+#### Internal QUIC Penetration
+
+- Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of the public network server. Hopefully by accessing id1.example.com:8080
+  To access the web page served by port 80 on the intranet server. At the same time, QUIC is used to build a transport connection between the client and the server.
+
+- Server (Public network server)
+
+```shell
+./release/linux-amd64-server -addr 8080 -quicAddr 10080 -id id1 -secret secret1
+```
+
+- Client (Internal network server)
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:10080 -id id1 -secret secret1
+```
+
 #### Client Start Multiple Services Simultaneously
 
 - Requirement: There is an internal network server and a public network server, and id1-1.example.com and

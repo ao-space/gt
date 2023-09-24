@@ -308,6 +308,23 @@ options:
 ./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
 ```
 
+#### QUIC 内网穿透
+
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:8080
+  来访问内网服务器上 80 端口服务的网页。同时用 QUIC 为客户端与服务端之间构建传输连接。
+
+- 服务端（公网服务器）
+
+```shell
+./release/linux-amd64-server -addr 8080 -quicAddr 10080 -id id1 -secret secret1
+```
+
+- 客户端（内网服务器）
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:10080 -id id1 -secret secret1
+```
+
 #### 客户端同时开启多个服务
 
 - 需求：有一台内网服务器和一台公网服务器，id1-1.example.com 和 id1-2.example.com 解析到公网服务器的地址。希望通过访问
