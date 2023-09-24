@@ -229,7 +229,7 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		d.dialFn = d.dial
 	case "quic":
 		if len(u.Port()) < 1 {
-			u.Host = net.JoinHostPort(u.Host, "80")
+			u.Host = net.JoinHostPort(u.Host, "10080")
 		}
 		d.host = u.Host
 		d.dialFn = d.quicDial

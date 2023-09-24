@@ -90,7 +90,7 @@ type Options struct {
 	LogLevel        string `yaml:"logLevel" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
 	Version         bool   `arg:"version" yaml:"-" usage:"Show the version of this program"`
 
-	QuicAddr string `yaml:"quicAddr" usage:"The address for quic to listen on. Supports values like: '80', ':80' or '0.0.0.0:80'"`
+	QuicAddr string `yaml:"quicAddr" usage:"The address for quic connection (between GT client and GT server) to listen on. Supports values like: '10080', ':10080' or '0.0.0.0:10080'"`
 }
 
 func defaultConfig() Config {
