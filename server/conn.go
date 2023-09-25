@@ -137,8 +137,19 @@ func (c *conn) handle(handleFunc func() bool) {
 
 			c.Logger = c.Logger.With().Time("tunnel", time.Now()).Logger()
 
-			remoteAddr := c.RemoteAddr().String()
-			remoteIP := strings.Split(remoteAddr, ":")[0]
+			remoteTcpAddr, okTcp := c.RemoteAddr().(*net.TCPAddr)
+			var remoteIP string
+			if okTcp {
+				remoteIP = remoteTcpAddr.IP.String()
+			} else {
+				remoteUdpAddr, okUdp := c.RemoteAddr().(*net.UDPAddr)
+				if okUdp {
+					remoteIP = remoteUdpAddr.IP.String()
+				} else {
+					c.Logger.Warn().Msg("conn is not tcp/udp conn")
+					return
+				}
+			}
 
 			c.server.reconnectRWMutex.RLock()
 			reconnectTimes := c.server.reconnect[remoteIP]

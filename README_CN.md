@@ -311,18 +311,19 @@ options:
 #### QUIC 内网穿透
 
 - 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:8080
-  来访问内网服务器上 80 端口服务的网页。同时用 QUIC 为客户端与服务端之间构建传输连接。
+  来访问内网服务器上 80 端口服务的网页。使用 QUIC 为客户端与服务端之间构建传输连接，QUIC 使用 TLS 1.3 进行传输加密。当用户同时给出certFile
+  和keyFile时，使用他们进行加密通信。否则，会使用 ECDSA 加密算法自动生成密钥和证书。
 
 - 服务端（公网服务器）
 
 ```shell
-./release/linux-amd64-server -addr 8080 -quicAddr 10080 -id id1 -secret secret1
+./release/linux-amd64-server -addr 8080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
 ```
 
-- 客户端（内网服务器）
+- 客户端（内网服务器），因为使用了自签名证书，所以使用了 `-remoteCertInsecure` 选项，其它情况禁止使用此选项（中间人攻击导致加密内容被解密
 
 ```shell
-./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:10080 -id id1 -secret secret1
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
 ```
 
 #### 客户端同时开启多个服务

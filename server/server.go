@@ -148,12 +148,21 @@ func (s *Server) listen() (err error) {
 }
 
 func (s *Server) quicListen() (err error) {
-	s.quicListener, err = connection.QuicListen(s.config.QuicAddr)
+	var tlsConfig *tls.Config
+	if len(s.config.CertFile) > 0 && len(s.config.KeyFile) > 0 {
+		tlsConfig, err = newTLSConfig(s.config.CertFile, s.config.KeyFile, s.config.TLSMinVersion)
+	} else {
+		tlsConfig = connection.GenerateTLSConfig()
+	}
+	if err != nil {
+		return
+	}
+	s.quicListener, err = connection.QuicListen(s.config.QuicAddr, tlsConfig)
 	if err != nil {
 		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.QuicAddr, err.Error())
 		return
 	}
-	s.Logger.Info().Str("addr", s.quicListener.Addr().String()).Msg("Listening")
+	s.Logger.Info().Str("QuicAddr", s.quicListener.Addr().String()).Msg("Listening")
 	go s.acceptLoop(s.quicListener, func(c *conn) {
 		c.handle(c.handleHTTP)
 	})

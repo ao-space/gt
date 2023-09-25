@@ -329,18 +329,19 @@ options:
 #### Internal QUIC Penetration
 
 - Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of the public network server. Hopefully by accessing id1.example.com:8080
-  To access the web page served by port 80 on the intranet server. At the same time, QUIC is used to build a transport connection between the client and the server.
+  To access the web page served by port 80 on the intranet server. Use QUIC to build a transport connection between the client and the server. QUIC uses TLS 1.3 for transport encryption. When the user also gives certFile
+  and keyFile, use them for encrypted communication. Otherwise, keys and certificates are automatically generated using the ECDSA encryption algorithm.
 
-- Server (Public network server)
+- Server (public network server)
 
 ```shell
-./release/linux-amd64-server -addr 8080 -quicAddr 10080 -id id1 -secret secret1
+./release/linux-amd64-server -addr 8080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
 ```
 
-- Client (Internal network server)
+- Client (internal network server), because a self-signed certificate is used, the `-remoteCertInsecure` option is used. This option is prohibited from being used in other cases (man-in-the-middle attacks cause encrypted content to be decrypted
 
 ```shell
-./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:10080 -id id1 -secret secret1
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
 ```
 
 #### Client Start Multiple Services Simultaneously

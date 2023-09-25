@@ -2,8 +2,9 @@ package conn
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -24,13 +25,16 @@ type QuicListener struct {
 var _ net.Conn = &QuicConnection{}
 var _ net.Listener = &QuicListener{}
 
-func QuicDial(addr string) (net.Conn, error) {
-	tlsConf := &tls.Config{
-		InsecureSkipVerify: true,
-		NextProtos:         []string{"quic-echo-example"},
+func QuicDial(addr string, config *tls.Config) (net.Conn, error) {
+	config.NextProtos = []string{"gt-quic"}
+	conn, err := quic.DialAddr(context.Background(), addr, config, &quic.Config{})
+	if err != nil {
+		panic(err)
 	}
-	conn, _ := quic.DialAddr(context.Background(), addr, tlsConf, &quic.Config{})
 	stream, err := conn.OpenStreamSync(context.Background())
+	if err != nil {
+		panic(err)
+	}
 	nc := &QuicConnection{
 		Connection: conn,
 		Stream:     stream,
@@ -38,8 +42,12 @@ func QuicDial(addr string) (net.Conn, error) {
 	return nc, err
 }
 
-func QuicListen(addr string) (net.Listener, error) {
-	listener, err := quic.ListenAddr(addr, GenerateTLSConfig(), nil)
+func QuicListen(addr string, config *tls.Config) (net.Listener, error) {
+	config.NextProtos = []string{"gt-quic"}
+	listener, err := quic.ListenAddr(addr, config, &quic.Config{})
+	if err != nil {
+		panic(err)
+	}
 	ln := &QuicListener{
 		Listener: *listener,
 	}
@@ -57,16 +65,20 @@ func (ln *QuicListener) Accept() (net.Conn, error) {
 }
 
 func GenerateTLSConfig() *tls.Config {
-	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	ecdsaKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		panic(err)
 	}
 	template := x509.Certificate{SerialNumber: big.NewInt(1)}
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &ecdsaKey.PublicKey, ecdsaKey)
 	if err != nil {
 		panic(err)
 	}
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+	keyBytes, err := x509.MarshalECPrivateKey(ecdsaKey)
+	if err != nil {
+		panic(err)
+	}
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "ECDSA PRIVATE KEY", Bytes: keyBytes})
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 
 	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
@@ -75,6 +87,6 @@ func GenerateTLSConfig() *tls.Config {
 	}
 	return &tls.Config{
 		Certificates: []tls.Certificate{tlsCert},
-		NextProtos:   []string{"quic-echo-example"},
+		NextProtos:   []string{"gt-quic"},
 	}
 }
