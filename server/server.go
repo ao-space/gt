@@ -169,28 +169,6 @@ func (s *Server) quicListen() (err error) {
 	return
 }
 
-func (s *Server) autoListen() (err error) {
-	var tlsConfig *tls.Config
-	if len(s.config.CertFile) > 0 && len(s.config.KeyFile) > 0 {
-		tlsConfig, err = newTLSConfig(s.config.CertFile, s.config.KeyFile, s.config.TLSMinVersion)
-	} else {
-		tlsConfig = connection.GenerateTLSConfig()
-	}
-	if err != nil {
-		return
-	}
-	s.quicListener, err = connection.QuicListen(s.config.QuicAddr, tlsConfig)
-	if err != nil {
-		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.QuicAddr, err.Error())
-		return
-	}
-	s.Logger.Info().Str("QuicAddr", s.quicListener.Addr().String()).Msg("Listening")
-	go s.acceptLoop(s.quicListener, func(c *conn) {
-		c.handle(c.handleHTTP)
-	})
-	return
-}
-
 func (s *Server) sniListen() (err error) {
 	s.sniListener, err = net.Listen("tcp", s.config.SNIAddr)
 	if err != nil {
@@ -319,6 +297,13 @@ func (s *Server) Start() (err error) {
 			return
 		}
 		listening = true
+	}
+	if len(s.config.AutoAddr) > 0 {
+		if strings.IndexByte(s.config.AutoAddr, ':') == -1 {
+			s.config.AutoAddr = ":" + s.config.AutoAddr
+		}
+		s.config.QuicAddr = s.config.AutoAddr
+		s.config.Addr = s.config.AutoAddr
 	}
 	if len(s.config.QuicAddr) > 0 {
 		if strings.IndexByte(s.config.QuicAddr, ':') == -1 {

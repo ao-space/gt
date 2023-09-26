@@ -344,6 +344,23 @@ options:
 ./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
 ```
 
+#### Intelligent Internal Penetration (Adaptive Selection of TCP/QUIC)
+
+- Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of the public network server. Hopefully by accessing id1.example.com:8080
+  To access the web page served by port 80 on the intranet server. GT adaptively selects whether to use TCP or QUIC for intranet penetration based on the network delay and packet loss rate between the intranet server and the public network server.
+
+- Server (public network server)
+
+```shell
+./release/linux-amd64-server -addr 8080 -autoAddr 443 -id id1 -secret secret1
+```
+
+- Client (intranet server). If QUIC is selected, a self-signed certificate is required, so the `-remoteCertInsecure` option is used.
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote auto://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
+```
+
 #### Client Start Multiple Services Simultaneously
 
 - Requirement: There is an internal network server and a public network server, and id1-1.example.com and

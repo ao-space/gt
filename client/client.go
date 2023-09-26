@@ -46,6 +46,7 @@ import (
 	"github.com/isrc-cas/gt/pool"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/util"
+	probing "github.com/prometheus-community/pro-bing"
 	"github.com/shirou/gopsutil/process"
 )
 
@@ -227,6 +228,29 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		}
 		d.host = u.Host
 		d.dialFn = d.dial
+	case "auto":
+		if len(u.Port()) < 1 {
+			u.Host = net.JoinHostPort(u.Host, "443")
+		}
+		d.host = u.Host
+
+		pinger, err := probing.NewPinger(u.Host)
+		if err != nil {
+			panic(err)
+		}
+		pinger.Count = 10
+		err = pinger.Run()
+		if err != nil {
+			panic(err)
+		}
+		stats := pinger.Statistics()
+		avgRtt := float64(stats.AvgRtt.Microseconds()) / 1000
+		pktLoss := stats.PacketLoss
+		if pktLoss < 1 || avgRtt < 1000 {
+			d.dialFn = d.dial
+		} else {
+			d.dialFn = d.quicDial
+		}
 	case "quic":
 		if len(u.Port()) < 1 {
 			u.Host = net.JoinHostPort(u.Host, "443")
