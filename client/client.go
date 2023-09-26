@@ -234,7 +234,8 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		}
 		d.host = u.Host
 
-		pinger, err := probing.NewPinger(u.Host)
+		pureAddr, _, _ := net.SplitHostPort(d.host)
+		pinger, err := probing.NewPinger(pureAddr)
 		if err != nil {
 			panic(err)
 		}
@@ -327,6 +328,7 @@ func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
 }
 
 func (d *dialer) dial() (conn net.Conn, err error) {
+	fmt.Println("GT chooses TCP !!!")
 	return net.Dial("tcp", d.host)
 }
 
@@ -335,6 +337,7 @@ func (d *dialer) tlsDial() (conn net.Conn, err error) {
 }
 
 func (d *dialer) quicDial() (conn net.Conn, err error) {
+	fmt.Println("GT chooses QUIC !!!")
 	return connection.QuicDial(d.host, d.tlsConfig)
 }
 
