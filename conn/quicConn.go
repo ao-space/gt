@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	quicbbr "github.com/For-ACGN/quic-bbr"
 	"github.com/quic-go/quic-go"
 	"math/big"
 	"net"
@@ -23,31 +22,22 @@ type QuicListener struct {
 	quic.Listener
 }
 
-type QuicBbrConnection struct {
-	quicbbr.Session
-	quicbbr.Stream
-}
-
 var _ net.Conn = &QuicConnection{}
 var _ net.Listener = &QuicListener{}
-var _ net.Conn = &QuicBbrConnection{}
-
-func (c *QuicBbrConnection) Close() error { return nil }
 
 func QuicDial(addr string, config *tls.Config) (net.Conn, error) {
 	config.NextProtos = []string{"gt-quic"}
-	//conn, err := quic.DialAddr(context.Background(), addr, config, &quic.Config{})
-	conn, err := quicbbr.DialAddr(addr, config, &quicbbr.Config{})
+	conn, err := quic.DialAddr(context.Background(), addr, config, &quic.Config{})
 	if err != nil {
 		panic(err)
 	}
-	stream, err := conn.OpenStreamSync()
+	stream, err := conn.OpenStreamSync(context.Background())
 	if err != nil {
 		panic(err)
 	}
-	nc := &QuicBbrConnection{
-		Session: conn,
-		Stream:  stream,
+	nc := &QuicConnection{
+		Connection: conn,
+		Stream:     stream,
 	}
 	return nc, err
 }

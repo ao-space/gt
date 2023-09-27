@@ -3,7 +3,6 @@ module github.com/isrc-cas/gt
 go 1.19
 
 require (
-	github.com/For-ACGN/quic-bbr v0.0.0-20220524123157-ffe55c2d8bc0
 	github.com/archdx/zerolog-sentry v1.5.0
 	github.com/buger/jsonparser v1.1.1
 	github.com/davecgh/go-spew v1.1.1
@@ -25,7 +24,6 @@ require (
 )
 
 require (
-	github.com/cheekybits/genny v1.0.0 // indirect
 	github.com/getsentry/sentry-go v0.24.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
@@ -33,7 +31,6 @@ require (
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/marten-seemann/qtls v0.2.4 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
