@@ -32,6 +32,8 @@ var _ net.Conn = &QuicConnection{}
 var _ net.Listener = &QuicListener{}
 var _ net.Conn = &QuicBbrConnection{}
 
+func (c *QuicBbrConnection) Close() error { return nil }
+
 func QuicDial(addr string, config *tls.Config) (net.Conn, error) {
 	config.NextProtos = []string{"gt-quic"}
 	//conn, err := quic.DialAddr(context.Background(), addr, config, &quic.Config{})
