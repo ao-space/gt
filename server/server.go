@@ -288,6 +288,13 @@ func (s *Server) Start() (err error) {
 	}
 
 	var listening bool
+	if len(s.config.AutoAddr) > 0 {
+		if strings.IndexByte(s.config.AutoAddr, ':') == -1 {
+			s.config.AutoAddr = ":" + s.config.AutoAddr
+		}
+		s.config.QuicAddr = s.config.AutoAddr
+		s.config.TLSAddr = s.config.AutoAddr
+	}
 	if len(s.config.TLSAddr) > 0 && len(s.config.CertFile) > 0 && len(s.config.KeyFile) > 0 {
 		if strings.IndexByte(s.config.TLSAddr, ':') == -1 {
 			s.config.TLSAddr = ":" + s.config.TLSAddr
@@ -297,13 +304,6 @@ func (s *Server) Start() (err error) {
 			return
 		}
 		listening = true
-	}
-	if len(s.config.AutoAddr) > 0 {
-		if strings.IndexByte(s.config.AutoAddr, ':') == -1 {
-			s.config.AutoAddr = ":" + s.config.AutoAddr
-		}
-		s.config.QuicAddr = s.config.AutoAddr
-		s.config.Addr = s.config.AutoAddr
 	}
 	if len(s.config.QuicAddr) > 0 {
 		if strings.IndexByte(s.config.QuicAddr, ':') == -1 {

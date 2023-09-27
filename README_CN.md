@@ -329,12 +329,12 @@ options:
 #### 智能内网穿透（自适应选择 TCP/QUIC ）
 
 - 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:8080
-  来访问内网服务器上 80 端口服务的网页。GT根据内网服务器和公网服务器之间网络的时延和丢包率，自适应选择使用 TCP 还是 QUIC 进行内网穿透。
+  来访问内网服务器上 80 端口服务的网页。GT根据内网服务器和公网服务器之间网络的时延和丢包率，自适应选择使用 TCP+TLS 还是 QUIC 进行内网穿透。
 
 - 服务端（公网服务器）
 
 ```shell
-./release/linux-amd64-server -addr 8080 -autoAddr 443 -id id1 -secret secret1
+./release/linux-amd64-server -addr 8080 -autoAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
 ```
 
 - 客户端（内网服务器）。如果选择了QUIC则需要使用自签名证书，所以使用了 `-remoteCertInsecure` 选项。

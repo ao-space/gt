@@ -232,8 +232,29 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		if len(u.Port()) < 1 {
 			u.Host = net.JoinHostPort(u.Host, "443")
 		}
+		tlsConfig := &tls.Config{}
+		if len(c.Config().RemoteCert) > 0 {
+			var cf []byte
+			cf, err = os.ReadFile(c.Config().RemoteCert)
+			if err != nil {
+				err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
+				return
+			}
+			roots := x509.NewCertPool()
+			ok := roots.AppendCertsFromPEM(cf)
+			if !ok {
+				err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
+				return
+			}
+			tlsConfig.RootCAs = roots
+		}
+		if c.Config().RemoteCertInsecure {
+			tlsConfig.InsecureSkipVerify = true
+		}
 		d.host = u.Host
+		d.tlsConfig = tlsConfig
 
+		fmt.Println("GT is waiting to probes to get network conditions !")
 		pureAddr, _, _ := net.SplitHostPort(d.host)
 		pinger, err := probing.NewPinger(pureAddr)
 		if err != nil {
@@ -247,11 +268,15 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		stats := pinger.Statistics()
 		avgRtt := float64(stats.AvgRtt.Microseconds()) / 1000
 		pktLoss := stats.PacketLoss
+
 		if pktLoss < 1 || avgRtt < 1000 {
-			d.dialFn = d.dial
+			fmt.Println("According to network conditions, GT has choose to establish TCP+TLS connection for penetration !")
+			d.dialFn = d.tlsDial
 		} else {
+			fmt.Println("According to network conditions, GT has choose to establish QUIC connection for penetration !")
 			d.dialFn = d.quicDial
 		}
+
 	case "quic":
 		if len(u.Port()) < 1 {
 			u.Host = net.JoinHostPort(u.Host, "443")
@@ -328,7 +353,6 @@ func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
 }
 
 func (d *dialer) dial() (conn net.Conn, err error) {
-	fmt.Println("GT chooses TCP !!!")
 	return net.Dial("tcp", d.host)
 }
 
@@ -337,7 +361,6 @@ func (d *dialer) tlsDial() (conn net.Conn, err error) {
 }
 
 func (d *dialer) quicDial() (conn net.Conn, err error) {
-	fmt.Println("GT chooses QUIC !!!")
 	return connection.QuicDial(d.host, d.tlsConfig)
 }
 

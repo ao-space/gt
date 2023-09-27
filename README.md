@@ -347,12 +347,12 @@ options:
 #### Intelligent Internal Penetration (Adaptive Selection of TCP/QUIC)
 
 - Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of the public network server. Hopefully by accessing id1.example.com:8080
-  To access the web page served by port 80 on the intranet server. GT adaptively selects whether to use TCP or QUIC for intranet penetration based on the network delay and packet loss rate between the intranet server and the public network server.
+  To access the web page served by port 80 on the intranet server. GT adaptively selects whether to use TCP+TLS or QUIC for intranet penetration based on the network delay and packet loss rate between the intranet server and the public network server.
 
 - Server (public network server)
 
 ```shell
-./release/linux-amd64-server -addr 8080 -autoAddr 443 -id id1 -secret secret1
+./release/linux-amd64-server -addr 8080 -autoAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
 ```
 
 - Client (intranet server). If QUIC is selected, a self-signed certificate is required, so the `-remoteCertInsecure` option is used.
