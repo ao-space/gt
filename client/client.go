@@ -254,7 +254,7 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		d.host = u.Host
 		d.tlsConfig = tlsConfig
 
-		fmt.Println("GT is waiting for probes to get network conditions !")
+		fmt.Println("GT is waiting for probes to get network conditions!")
 		pureAddr, _, _ := net.SplitHostPort(d.host)
 		pinger, err := probing.NewPinger(pureAddr)
 		if err != nil {
@@ -273,10 +273,10 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		result := connection.PredictWithRttAndLoss(networkCondition)
 
 		if result[1] > result[0] {
-			fmt.Println("According to network conditions, GT has choose to establish TCP+TLS connection for penetration !")
+			fmt.Println("According to network conditions, GT has chosen to establish QUIC connection for penetration!")
 			d.dialFn = d.quicDial
 		} else {
-			fmt.Println("According to network conditions, GT has choose to establish QUIC connection for penetration !")
+			fmt.Println("According to network conditions, GT has chosen to establish TCP+TLS connection for penetration!")
 			d.dialFn = d.tlsDial
 		}
 
