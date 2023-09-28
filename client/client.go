@@ -305,33 +305,37 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		}
 		d.host = u.Host
 		d.tlsConfig = tlsConfig
-		d.dialFn = d.quicDial
-	case "quicbbr":
-		if len(u.Port()) < 1 {
-			u.Host = net.JoinHostPort(u.Host, "443")
+		if c.Config().OpenBBR {
+			d.dialFn = d.quicBbrDial
+		} else {
+			d.dialFn = d.quicDial
 		}
-		tlsConfig := &tls.Config{}
-		if len(c.Config().RemoteCert) > 0 {
-			var cf []byte
-			cf, err = os.ReadFile(c.Config().RemoteCert)
-			if err != nil {
-				err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
-				return
-			}
-			roots := x509.NewCertPool()
-			ok := roots.AppendCertsFromPEM(cf)
-			if !ok {
-				err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
-				return
-			}
-			tlsConfig.RootCAs = roots
-		}
-		if c.Config().RemoteCertInsecure {
-			tlsConfig.InsecureSkipVerify = true
-		}
-		d.host = u.Host
-		d.tlsConfig = tlsConfig
-		d.dialFn = d.quicBbrDial
+	//case "quicbbr":
+	//	if len(u.Port()) < 1 {
+	//		u.Host = net.JoinHostPort(u.Host, "443")
+	//	}
+	//	tlsConfig := &tls.Config{}
+	//	if len(c.Config().RemoteCert) > 0 {
+	//		var cf []byte
+	//		cf, err = os.ReadFile(c.Config().RemoteCert)
+	//		if err != nil {
+	//			err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
+	//			return
+	//		}
+	//		roots := x509.NewCertPool()
+	//		ok := roots.AppendCertsFromPEM(cf)
+	//		if !ok {
+	//			err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
+	//			return
+	//		}
+	//		tlsConfig.RootCAs = roots
+	//	}
+	//	if c.Config().RemoteCertInsecure {
+	//		tlsConfig.InsecureSkipVerify = true
+	//	}
+	//	d.host = u.Host
+	//	d.tlsConfig = tlsConfig
+	//	d.dialFn = d.quicBbrDial
 	default:
 		err = fmt.Errorf("remote url (-remote option) '%s' is invalid", remote)
 	}

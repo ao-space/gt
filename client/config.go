@@ -80,6 +80,8 @@ type Options struct {
 	Version         bool   `arg:"version" yaml:"-" usage:"Show the version of this program"`
 
 	Signal string `arg:"s" yaml:"-" usage:"Send signal to client processes. Supports values: reload, restart, stop, kill"`
+
+	OpenBBR bool `yaml:"bbr" usage:"Use bbr as congestion control algorithm when GT use QUIC connection. Default algorithm is Cubic."`
 }
 
 func defaultConfig() Config {
@@ -101,6 +103,8 @@ func defaultConfig() Config {
 			LogFileMaxCount: 7,
 			LogFileMaxSize:  512 * 1024 * 1024,
 			LogLevel:        zerolog.InfoLevel.String(),
+
+			OpenBBR: false,
 		},
 	}
 }

@@ -437,6 +437,8 @@ and apiKeyFile options are not empty, otherwise HTTP is used.
 
 ## Performance Test
 
+### GT and frp
+
 Load testing was performed on this project and frp for comparison using wrk. The internal service points to a test page
 running nginx locally, and the test results are as follows:
 
@@ -448,7 +450,7 @@ Total Number of Cores: 8 (4 performance and 4 efficiency)
 Memory: 16 GB
 ```
 
-### GT benchmark
+#### GT benchmark
 
 ```shell
 $ wrk -c 100 -d 30s -t 10 http://pi.example.com:7001
@@ -467,7 +469,7 @@ $ ps aux
  2767   0.0  0.1 408703664  17584 s007  S+    4:55PM   0:52.16 ./server -port 7001
 ```
 
-### frp dev branch 42745a3
+#### frp dev branch 42745a3
 
 ```shell
 $ wrk -c 100 -d 30s -t 10 http://pi.example.com:7000
@@ -485,6 +487,52 @@ $ ps aux
   PID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND
  2975   0.3  0.5 408767328  88768 s004  S+    5:01PM   0:21.88 ./frps -c ./frps.ini
  2976   0.0  0.4 408712832  66112 s005  S+    5:01PM   1:06.51 ./frpc -c ./frpc.ini
+```
+
+### GT-TCP and GT-QUIC
+Conduct stress testing through wrk, and test GT using TPC and QUIC for intranet penetration. The intranet service points
+to the HTTP test page running locally. The test results are as follows:
+
+
+```text
+System: Ubuntu 22.04
+Chip: Intel i9-12900
+Total Number of Cores: 16 (8 performance and  efficiency)
+Memory: 32 GB
+```
+
+#### GT-TCP benchmark
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote tcp://id1.example.com:12080 -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080
+Running 30s test @ http://id1.example.com:12080
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.25ms    3.38ms 131.60ms   93.76%
+    Req/Sec     5.46k     0.97k   24.64k    78.30%
+  1631213 requests in 30.10s, 200.68MB read
+Requests/sec:  54193.67
+Transfer/sec:      6.67MB
+```
+
+#### GT-QUIC benchmark
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080
+Running 30s test @ http://id1.example.com:12080
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.57ms    3.09ms  89.69ms   95.66%
+    Req/Sec     9.47k     2.38k   24.98k    82.97%
+  2834686 requests in 30.10s, 348.73MB read
+Requests/sec:  94176.60
+Transfer/sec:     11.59MB
 ```
 
 ## Run
