@@ -327,6 +327,16 @@ func (s *Server) Start() (err error) {
 		}
 		listening = true
 	}
+	if len(s.config.QuicAddr) > 0 {
+		if strings.IndexByte(s.config.QuicAddr, ':') == -1 {
+			s.config.QuicAddr = ":" + s.config.QuicAddr
+		}
+		err = s.quicListen()
+		if err != nil {
+			return
+		}
+		listening = true
+	}
 	if len(s.config.QuicBbrAddr) > 0 {
 		if strings.IndexByte(s.config.QuicBbrAddr, ':') == -1 {
 			s.config.QuicBbrAddr = ":" + s.config.QuicBbrAddr
