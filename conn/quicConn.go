@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	quicbbr "github.com/DrakenLibra/gt-bbr"
 	"github.com/quic-go/quic-go"
 	"math/big"
 	"net"
@@ -18,12 +19,23 @@ type QuicConnection struct {
 	quic.Stream
 }
 
+type QuicBbrConnection struct {
+	quicbbr.Session
+	quicbbr.Stream
+}
+
 type QuicListener struct {
 	quic.Listener
 }
 
+type QuicBbrListener struct {
+	quicbbr.Listener
+}
+
 var _ net.Conn = &QuicConnection{}
 var _ net.Listener = &QuicListener{}
+var _ net.Conn = &QuicBbrConnection{}
+var _ net.Listener = &QuicBbrListener{}
 
 func QuicDial(addr string, config *tls.Config) (net.Conn, error) {
 	config.NextProtos = []string{"gt-quic"}
@@ -60,6 +72,16 @@ func (ln *QuicListener) Accept() (net.Conn, error) {
 	nc := &QuicConnection{
 		Connection: conn,
 		Stream:     stream,
+	}
+	return nc, err
+}
+
+func (ln *QuicBbrListener) Accept() (net.Conn, error) {
+	conn, _ := ln.Listener.Accept()
+	stream, err := conn.AcceptStream()
+	nc := &QuicBbrConnection{
+		Session: conn,
+		Stream:  stream,
 	}
 	return nc, err
 }
