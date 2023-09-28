@@ -37,6 +37,12 @@ var _ net.Listener = &QuicListener{}
 var _ net.Conn = &QuicBbrConnection{}
 var _ net.Listener = &QuicBbrListener{}
 
+func (c *QuicBbrConnection) Close() error {
+	err := c.Stream.Close()
+	err = c.Session.Close()
+	return err
+}
+
 func QuicDial(addr string, config *tls.Config) (net.Conn, error) {
 	config.NextProtos = []string{"gt-quic"}
 	conn, err := quic.DialAddr(context.Background(), addr, config, &quic.Config{})
