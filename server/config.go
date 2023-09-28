@@ -90,8 +90,9 @@ type Options struct {
 	LogLevel        string `yaml:"logLevel" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
 	Version         bool   `arg:"version" yaml:"-" usage:"Show the version of this program"`
 
-	QuicAddr string `yaml:"quicAddr" usage:"The address for quic connection (between GT client and GT server) to listen on. Supports values like: '443', ':443' or '0.0.0.0:443'"`
-	AutoAddr string `yaml:"autoAddr" usage:"The address for intelligent Internal penetration to listen on. Supports values like: '443', ':443' or '0.0.0.0:443'"`
+	QuicAddr    string `yaml:"quicAddr" usage:"The address for quic connection (between GT client and GT server) to listen on. Supports values like: '443', ':443' or '0.0.0.0:443'"`
+	QuicBbrAddr string `yaml:"quicbbrAddr" usage:"The address for quic connection (between GT client and GT server) to listen on. Supports values like: '443', ':443' or '0.0.0.0:443'"`
+	AutoAddr    string `yaml:"autoAddr" usage:"The address for intelligent Internal penetration to listen on. Supports values like: '443', ':443' or '0.0.0.0:443'"`
 }
 
 func defaultConfig() Config {

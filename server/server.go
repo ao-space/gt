@@ -169,6 +169,28 @@ func (s *Server) quicListen() (err error) {
 	return
 }
 
+func (s *Server) quicBbrListen() (err error) {
+	var tlsConfig *tls.Config
+	if len(s.config.CertFile) > 0 && len(s.config.KeyFile) > 0 {
+		tlsConfig, err = newTLSConfig(s.config.CertFile, s.config.KeyFile, s.config.TLSMinVersion)
+	} else {
+		tlsConfig = connection.GenerateTLSConfig()
+	}
+	if err != nil {
+		return
+	}
+	s.quicListener, err = connection.QuicBbrListen(s.config.QuicBbrAddr, tlsConfig)
+	if err != nil {
+		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.QuicBbrAddr, err.Error())
+		return
+	}
+	s.Logger.Info().Str("QuicAddr", s.quicListener.Addr().String()).Msg("Listening")
+	go s.acceptLoop(s.quicListener, func(c *conn) {
+		c.handle(c.handleHTTP)
+	})
+	return
+}
+
 func (s *Server) sniListen() (err error) {
 	s.sniListener, err = net.Listen("tcp", s.config.SNIAddr)
 	if err != nil {
@@ -305,11 +327,11 @@ func (s *Server) Start() (err error) {
 		}
 		listening = true
 	}
-	if len(s.config.QuicAddr) > 0 {
-		if strings.IndexByte(s.config.QuicAddr, ':') == -1 {
-			s.config.QuicAddr = ":" + s.config.QuicAddr
+	if len(s.config.QuicBbrAddr) > 0 {
+		if strings.IndexByte(s.config.QuicBbrAddr, ':') == -1 {
+			s.config.QuicBbrAddr = ":" + s.config.QuicBbrAddr
 		}
-		err = s.quicListen()
+		err = s.quicBbrListen()
 		if err != nil {
 			return
 		}
