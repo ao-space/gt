@@ -8,10 +8,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	quicbbr "github.com/DrakenLibra/gt-bbr"
+	probing "github.com/prometheus-community/pro-bing"
 	"github.com/quic-go/quic-go"
 	"math/big"
 	"net"
+	"sync"
+	"sync/atomic"
 )
 
 type QuicConnection struct {
@@ -146,4 +150,41 @@ func GenerateTLSConfig() *tls.Config {
 		Certificates: []tls.Certificate{tlsCert},
 		NextProtos:   []string{"gt-quic"},
 	}
+}
+
+func GetAutoProbesResults(addr string) (avgRtt, pktLoss float64) {
+	pureAddr, _, _ := net.SplitHostPort(addr)
+	totalNum := 100
+
+	var wg sync.WaitGroup
+	wg.Add(totalNum)
+
+	var totalLossRate int64 = 0
+	var totalDelay int64 = 0
+	for i := 0; i < totalNum; i++ {
+		go func() {
+			pinger, err := probing.NewPinger(pureAddr)
+			if err != nil {
+				panic(err)
+			}
+			pinger.Count = 3
+			err = pinger.Run()
+			if err != nil {
+				panic(err)
+			}
+			stats := pinger.Statistics()
+			avgRtt := stats.AvgRtt.Microseconds()
+			pktLoss := int64(stats.PacketLoss * 100)
+			fmt.Println(avgRtt, pktLoss)
+			atomic.AddInt64(&totalLossRate, pktLoss)
+			atomic.AddInt64(&totalDelay, avgRtt)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	avgRtt = float64(atomic.LoadInt64(&totalDelay)) / (float64(1000 * totalNum))
+	pktLoss = float64(atomic.LoadInt64(&totalLossRate)) / float64(totalNum*100)
+
+	return
 }

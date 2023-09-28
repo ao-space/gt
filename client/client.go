@@ -46,7 +46,6 @@ import (
 	"github.com/isrc-cas/gt/pool"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/util"
-	probing "github.com/prometheus-community/pro-bing"
 	"github.com/shirou/gopsutil/process"
 )
 
@@ -255,19 +254,8 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		d.tlsConfig = tlsConfig
 
 		fmt.Println("GT is waiting for probes to get network conditions!")
-		pureAddr, _, _ := net.SplitHostPort(d.host)
-		pinger, err := probing.NewPinger(pureAddr)
-		if err != nil {
-			panic(err)
-		}
-		pinger.Count = 10
-		err = pinger.Run()
-		if err != nil {
-			panic(err)
-		}
-		stats := pinger.Statistics()
-		avgRtt := float64(stats.AvgRtt.Microseconds()) / 1000
-		pktLoss := stats.PacketLoss
+
+		avgRtt, pktLoss := connection.GetAutoProbesResults(d.host)
 
 		var networkCondition = []float64{0, 0, 0, 0, avgRtt, pktLoss, 0, 0, 0, 0}
 		result := connection.PredictWithRttAndLoss(networkCondition)
