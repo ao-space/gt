@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	quicbbr "github.com/DrakenLibra/gt-bbr"
 	probing "github.com/prometheus-community/pro-bing"
 	"github.com/quic-go/quic-go"
@@ -175,7 +174,6 @@ func GetAutoProbesResults(addr string) (avgRtt, pktLoss float64) {
 			stats := pinger.Statistics()
 			avgRtt := stats.AvgRtt.Microseconds()
 			pktLoss := int64(stats.PacketLoss * 100)
-			fmt.Println(avgRtt, pktLoss)
 			atomic.AddInt64(&totalLossRate, pktLoss)
 			atomic.AddInt64(&totalDelay, avgRtt)
 			wg.Done()

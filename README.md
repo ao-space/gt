@@ -347,7 +347,8 @@ options:
 #### Intelligent Internal Penetration (Adaptive Selection of TCP/QUIC)
 
 - Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of the public network server. Hopefully by accessing id1.example.com:8080
-  To access the web page served by port 80 on the intranet server. GT adaptively selects whether to use TCP+TLS or QUIC for intranet penetration based on the network delay and packet loss rate between the intranet server and the public network server.
+  To access the web page served by port 80 on the intranet server. GT client sends multiple sets of network status detection probes concurrently to obtain the network delay and packet loss rate between the intranet server and the public network server.
+  Input the trained XGBoost model to obtain the results, and adaptively select whether to use TCP+TLS or QUIC for intranet penetration.
 
 - Server (public network server)
 
