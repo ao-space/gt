@@ -1,6 +1,17 @@
 // 基于网络数据训练的XGBOOST模型，通过输入10种网络参数来判断在TCP和QUIC之间进行切换
 // 其中，第5个参数是Average RTT，第6个参数是Retransmission Rate（也就是Loss Rate）
-// 我目前只用了这两个参数，并且将其他参数设置为中间值（归一化后为0.5）
+// input的是个参数分别为以下内容：
+// （1）Conn_num：建立的连接connection的数量；
+// （2）Ttfb_rate：Ttfb/Ttfb_avg；
+// （3）Duration：统计网络情况的时间窗口长度；
+// （4）Ttfb：单向延迟，从cline发包到server接受；
+// （5）Rtt：平均往返时延；
+// （6）Retran：重传率，约等于丢包率；
+// （7）Sends：每秒接受的HTTP请求数；
+// （8）Body_recv：每秒接受的THHP请求的字节数；
+// （9）Ttfb_avg：平均单项延迟；
+// （10）Performance：每秒接受的字节数；
+
 package conn
 
 import "math"
