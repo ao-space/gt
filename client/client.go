@@ -227,47 +227,6 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		}
 		d.host = u.Host
 		d.dialFn = d.dial
-	case "auto":
-		if len(u.Port()) < 1 {
-			u.Host = net.JoinHostPort(u.Host, "443")
-		}
-		tlsConfig := &tls.Config{}
-		if len(c.Config().RemoteCert) > 0 {
-			var cf []byte
-			cf, err = os.ReadFile(c.Config().RemoteCert)
-			if err != nil {
-				err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
-				return
-			}
-			roots := x509.NewCertPool()
-			ok := roots.AppendCertsFromPEM(cf)
-			if !ok {
-				err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
-				return
-			}
-			tlsConfig.RootCAs = roots
-		}
-		if c.Config().RemoteCertInsecure {
-			tlsConfig.InsecureSkipVerify = true
-		}
-		d.host = u.Host
-		d.tlsConfig = tlsConfig
-
-		fmt.Println("GT is waiting for probes to get network conditions!")
-
-		avgRtt, pktLoss := connection.GetAutoProbesResults(d.host)
-
-		var networkCondition = []float64{0, 0, 0, 0, avgRtt, pktLoss, 0, 0, 0, 0}
-		result := connection.PredictWithRttAndLoss(networkCondition)
-
-		if result[1] > result[0] {
-			fmt.Println("According to network conditions, GT has chosen to establish QUIC connection for penetration!")
-			d.dialFn = d.quicDial
-		} else {
-			fmt.Println("According to network conditions, GT has chosen to establish TCP+TLS connection for penetration!")
-			d.dialFn = d.tlsDial
-		}
-
 	case "quic":
 		if len(u.Port()) < 1 {
 			u.Host = net.JoinHostPort(u.Host, "443")
@@ -305,7 +264,7 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 }
 
 func (d *dialer) initWithRemote(c *Client) (err error) {
-	return d.init(c, c.Config().Remote, c.Config().RemoteSTUN)
+	return d.init(c, c.Config().Remote[c.chosenRemoteLabel], c.Config().RemoteSTUN)
 }
 
 func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
@@ -411,9 +370,54 @@ func (c *Client) Start() (err error) {
 
 	var dialer dialer
 	if len(c.Config().Remote) > 0 {
-		if !strings.Contains(c.Config().Remote, "://") {
-			c.Config().Remote = "tcp://" + c.Config().Remote
+		var hasQuic bool
+		for index, _ := range c.Config().Remote {
+			if !strings.Contains(c.Config().Remote[index], "://") {
+				c.Config().Remote[index] = "tcp://" + c.Config().Remote[index]
+			}
 		}
+		if len(c.Config().Remote) >= 2 {
+			for index, remote := range c.Config().Remote {
+				var u *url.URL
+				u, err = url.Parse(remote)
+				if err != nil {
+					err = fmt.Errorf("remote url (-remote option) '%s' is invalid, cause %s", remote, err.Error())
+					return
+				}
+				if u.Scheme == "quic" {
+					c.Logger.Info().Str("remote", remote).Msg("waiting...intelligent switch are sending probes to get network conditions...")
+					hasQuic = true
+					if len(u.Port()) < 1 {
+						u.Host = net.JoinHostPort(u.Host, "443")
+					}
+					var avgRtt, pktLoss float64
+					avgRtt, pktLoss, err = connection.GetQuicProbesResults(u.Host)
+					if err != nil {
+						c.Logger.Error().Err(err).Msg("can not use QUIC connection to detect network conditions")
+						return err
+					}
+
+					c.Logger.Info().Float64("averageRTT", avgRtt).Float64("lossRate", pktLoss).Msg("QUIC probes get network conditions with")
+					var networkCondition = []float64{0, 0, 0, 0, avgRtt, pktLoss, 0, 0, 0, 0}
+					result := connection.PredictWithRttAndLoss(networkCondition)
+					if result[1] > result[0] {
+						c.chosenRemoteLabel = index
+					} else {
+						if index == 0 {
+							c.chosenRemoteLabel = 1
+						} else {
+							c.chosenRemoteLabel = 0
+						}
+					}
+				}
+			}
+			if !hasQuic {
+				c.chosenRemoteLabel = 0
+			}
+		} else {
+			c.chosenRemoteLabel = 0
+		}
+		c.Logger.Info().Str("remote", c.Config().Remote[c.chosenRemoteLabel]).Msg("intelligent switch strategy finally choose to establish with")
 		err = dialer.initWithRemote(c)
 		if err != nil {
 			return

@@ -45,6 +45,9 @@ type Client struct {
 	configChecksum      atomic.Pointer[[32]byte]
 	reloadWaitGroup     sync.WaitGroup
 	reloading           atomic.Bool
+
+	// indicate which remote is chosen to establish tunnel
+	chosenRemoteLabel int
 }
 
 func (c *conn) onTunnelClose() {

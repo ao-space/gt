@@ -36,18 +36,18 @@ type Config struct {
 
 // Options is the config options for a client.
 type Options struct {
-	Config                string        `arg:"config" yaml:"-" usage:"The config file path to load"`
-	ID                    string        `yaml:"id" usage:"The unique id used to connect to server. Now it's the prefix of the domain."`
-	Secret                string        `yaml:"secret" usage:"The secret used to verify the id"`
-	ReconnectDelay        time.Duration `yaml:"reconnectDelay" usage:"The delay before reconnect. Supports values like '30s', '5m'"`
-	Remote                string        `yaml:"remote" usage:"The remote server url. Supports tcp:// and tls://, default tcp://"`
-	RemoteSTUN            string        `yaml:"remoteSTUN" usage:"The remote STUN server address"`
-	RemoteAPI             string        `yaml:"remoteAPI" usage:"The API to get remote server url"`
-	RemoteCert            string        `yaml:"remoteCert" usage:"The path to remote cert"`
-	RemoteCertInsecure    bool          `yaml:"remoteCertInsecure" usage:"Accept self-signed SSL certs from remote"`
-	RemoteConnections     uint          `yaml:"remoteConnections" usage:"The max number of server connections in the pool. Valid value is 1 to 10"`
-	RemoteIdleConnections uint          `yaml:"remoteIdleConnections" usage:"The number of idle server connections kept in the pool"`
-	RemoteTimeout         time.Duration `yaml:"remoteTimeout" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
+	Config                string               `arg:"config" yaml:"-" usage:"The config file path to load"`
+	ID                    string               `yaml:"id" usage:"The unique id used to connect to server. Now it's the prefix of the domain."`
+	Secret                string               `yaml:"secret" usage:"The secret used to verify the id"`
+	ReconnectDelay        time.Duration        `yaml:"reconnectDelay" usage:"The delay before reconnect. Supports values like '30s', '5m'"`
+	Remote                config.Slice[string] `yaml:"remote" usage:"The remote server url. Supports tcp:// and tls:// and quic://, default tcp://"`
+	RemoteSTUN            string               `yaml:"remoteSTUN" usage:"The remote STUN server address"`
+	RemoteAPI             string               `yaml:"remoteAPI" usage:"The API to get remote server url"`
+	RemoteCert            string               `yaml:"remoteCert" usage:"The path to remote cert"`
+	RemoteCertInsecure    bool                 `yaml:"remoteCertInsecure" usage:"Accept self-signed SSL certs from remote"`
+	RemoteConnections     uint                 `yaml:"remoteConnections" usage:"The max number of server connections in the pool. Valid value is 1 to 10"`
+	RemoteIdleConnections uint                 `yaml:"remoteIdleConnections" usage:"The number of idle server connections kept in the pool"`
+	RemoteTimeout         time.Duration        `yaml:"remoteTimeout" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
 
 	HostPrefix         config.PositionSlice[string]        `yaml:"-" arg:"hostPrefix" usage:"The server will recognize this host prefix and forward data to local"`
 	RemoteTCPPort      config.PositionSlice[uint16]        `yaml:"-" arg:"remoteTCPPort" usage:"The TCP port that the remote server will open"`

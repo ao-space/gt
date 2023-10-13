@@ -9,12 +9,12 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	quicbbr "github.com/DrakenLibra/gt-bbr"
-	probing "github.com/prometheus-community/pro-bing"
+	"github.com/isrc-cas/gt/predef"
 	"github.com/quic-go/quic-go"
 	"math/big"
 	"net"
-	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type QuicConnection struct {
@@ -48,7 +48,7 @@ func (c *QuicBbrConnection) Close() error {
 
 func QuicDial(addr string, config *tls.Config) (net.Conn, error) {
 	config.NextProtos = []string{"gt-quic"}
-	conn, err := quic.DialAddr(context.Background(), addr, config, &quic.Config{})
+	conn, err := quic.DialAddr(context.Background(), addr, config, &quic.Config{EnableDatagrams: true})
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +82,7 @@ func QuicBbrDial(addr string, config *tls.Config) (net.Conn, error) {
 
 func QuicListen(addr string, config *tls.Config) (net.Listener, error) {
 	config.NextProtos = []string{"gt-quic"}
-	listener, err := quic.ListenAddr(addr, config, &quic.Config{})
+	listener, err := quic.ListenAddr(addr, config, &quic.Config{EnableDatagrams: true})
 	if err != nil {
 		panic(err)
 	}
@@ -151,38 +151,66 @@ func GenerateTLSConfig() *tls.Config {
 	}
 }
 
-func GetAutoProbesResults(addr string) (avgRtt, pktLoss float64) {
-	pureAddr, _, _ := net.SplitHostPort(addr)
+func GetQuicProbesResults(addr string) (avgRtt float64, pktLoss float64, err error) {
 	totalNum := 100
-
-	var wg sync.WaitGroup
-	wg.Add(totalNum)
-
-	var totalLossRate int64 = 0
+	var totalSuccessNum int64 = 0
 	var totalDelay int64 = 0
+	var buf []byte
+	probeCloseError := &quic.ApplicationError{
+		Remote:       false,
+		ErrorCode:    0x42,
+		ErrorMessage: "close QUIC probe connection",
+	}
+	tlsConfig := &tls.Config{}
+	tlsConfig.InsecureSkipVerify = true
+
+	conn, err := QuicDial(addr, tlsConfig)
+	if err != nil {
+		return
+	}
+	sendBuffer := []byte{predef.MagicNumber, 0x02}
+	_, err = conn.Write(sendBuffer)
+	if err != nil {
+		return
+	}
+
 	for i := 0; i < totalNum; i++ {
 		go func() {
-			pinger, err := probing.NewPinger(pureAddr)
+			err = conn.(*QuicConnection).SendMessage([]byte(time.Now().Format("2006-01-02 15:04:05.000000000")))
 			if err != nil {
-				panic(err)
+				return
 			}
-			pinger.Count = 3
-			err = pinger.Run()
-			if err != nil {
-				panic(err)
-			}
-			stats := pinger.Statistics()
-			avgRtt := stats.AvgRtt.Microseconds()
-			pktLoss := int64(stats.PacketLoss * 100)
-			atomic.AddInt64(&totalLossRate, pktLoss)
-			atomic.AddInt64(&totalDelay, avgRtt)
-			wg.Done()
 		}()
 	}
-	wg.Wait()
+
+	for {
+		timer := time.AfterFunc(3*time.Second, func() {
+			err = conn.(*QuicConnection).CloseWithError(0x42, "close QUIC probe connection")
+			if err != nil {
+				return
+			}
+		})
+		buf, err = conn.(*QuicConnection).ReceiveMessage()
+		if err != nil {
+			// QUIC的stream关闭时会返回io.EOF，但是QUIC的不可靠数据包Datagram是在connection层面进行发送的
+			// 因此需要通过quic.ApplicationError判断QUIC connection是否由于应用程序主动关闭
+			if err.Error() == probeCloseError.Error() {
+				err = nil
+				break
+			} else {
+				return
+			}
+		}
+		if buf != nil {
+			sendTine, _ := time.ParseInLocation("2006-01-02 15:04:05.000000000", string(buf), time.Local)
+			interval := time.Now().Sub(sendTine).Microseconds()
+			atomic.AddInt64(&totalSuccessNum, 1)
+			atomic.AddInt64(&totalDelay, interval)
+		}
+		timer.Stop()
+	}
 
 	avgRtt = float64(atomic.LoadInt64(&totalDelay)) / (float64(1000 * totalNum))
-	pktLoss = float64(atomic.LoadInt64(&totalLossRate)) / float64(totalNum*100)
-
+	pktLoss = 1 - float64(atomic.LoadInt64(&totalSuccessNum))/float64(totalNum)
 	return
 }

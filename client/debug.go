@@ -48,6 +48,9 @@ type Client struct {
 
 	// test purpose only
 	OnTunnelClose atomic.Value
+
+	// indicate which remote is chosen to establish tunnel
+	chosenRemoteLabel int
 }
 
 func (c *conn) onTunnelClose() {

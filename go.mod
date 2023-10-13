@@ -13,6 +13,7 @@ require (
 	github.com/jonboulle/clockwork v0.2.2
 	github.com/lestrrat-go/strftime v1.0.5
 	github.com/mattn/go-pointer v0.0.1
+	github.com/onsi/gomega v1.27.6
 	github.com/pion/logging v0.2.2
 	github.com/pion/turn/v3 v3.0.1
 	github.com/pkg/errors v0.9.1
@@ -30,6 +31,7 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/golang/mock v1.6.0 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect

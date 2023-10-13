@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"errors"
+	"github.com/quic-go/quic-go"
 	"io"
 	"net"
 	"runtime/debug"
@@ -161,6 +162,34 @@ func (c *conn) handle(handleFunc func() bool) {
 
 			// 不能将 reconnectTimes 传参，多线程环境下这个值应该实时获取
 			handled = c.handleTunnelLoop(remoteIP)
+			return
+		case 0x02:
+			var buf []byte
+			probeCloseError := &quic.ApplicationError{
+				Remote:       true,
+				ErrorCode:    0x42,
+				ErrorMessage: "close QUIC probe connection",
+			}
+			for {
+				timer := time.AfterFunc(3*time.Second, func() {
+					c.Logger.Info().Msg("closing QUIC probe connection")
+				})
+				if buf, err = c.Connection.Conn.(*connection.QuicConnection).ReceiveMessage(); err != nil {
+					if err.Error() == probeCloseError.Error() {
+						break
+					} else {
+						c.Logger.Warn().Err(err).Msg("failed to use QUIC probe connection to receive message")
+						return
+					}
+				}
+				err = c.Connection.Conn.(*connection.QuicConnection).SendMessage(buf)
+				if err != nil {
+					c.Logger.Warn().Err(err).Msg("failed to use QUIC probe connection to send message")
+					return
+				}
+				timer.Stop()
+			}
+			handled = true
 			return
 		}
 	}
