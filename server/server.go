@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/shirou/gopsutil/process"
 	"io"
 	"math"
 	"net"
@@ -32,6 +33,7 @@ import (
 	"strings"
 	gosync "sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/buger/jsonparser"
@@ -78,7 +80,15 @@ type Server struct {
 
 // New parses the command line args and creates a Server. out 用于测试
 func New(args []string, out io.Writer) (s *Server, err error) {
-	conf := defaultConfig()
+	var conf Config
+	if predef.IsNoArgs() {
+		conf = defaultConfigWithNoArgs()
+	} else {
+		conf = defaultConfig()
+		if util.Contains(args, "-webAddr") {
+			conf.Config = predef.GetDefaultServerConfigPath()
+		}
+	}
 	err = config.ParseFlags(args, &conf, &conf.Options)
 	if err != nil {
 		return
@@ -86,6 +96,13 @@ func New(args []string, out io.Writer) (s *Server, err error) {
 	if conf.Options.Version {
 		_, _ = fmt.Println(predef.Version)
 		os.Exit(0)
+	}
+
+	if len(conf.Options.Signal) > 0 {
+		err = processSignal(conf.Options.Signal)
+		if err != nil {
+			return
+		}
 	}
 
 	l, err := logger.Init(logger.Options{
@@ -114,6 +131,80 @@ func New(args []string, out io.Writer) (s *Server, err error) {
 	return
 }
 
+func processSignal(signal string) (err error) {
+	switch signal {
+	case "restart":
+		err := sig(syscall.SIGQUIT)
+		if err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	case "stop":
+		err := sig(syscall.SIGTERM)
+		if err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	case "kill":
+		err := sig(syscall.SIGKILL)
+		if err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	default:
+		err = fmt.Errorf("unknown value of '-s': %q", signal)
+	}
+	return
+}
+
+func sig(sig syscall.Signal) (err error) {
+	processes, err := process.Processes()
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		return
+	}
+	tid := os.Getpid()
+	p, err := process.NewProcess(int32(tid))
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		return
+	}
+	e, err := p.Exe()
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		return
+	}
+
+	for _, proc := range processes {
+		pid := int(proc.Pid)
+		if pid == tid {
+			continue
+		}
+		var exe string
+		exe, err = proc.Exe()
+		if err != nil {
+			if os.IsNotExist(err) || os.IsPermission(err) {
+				continue
+			}
+			_, _ = fmt.Fprintln(os.Stderr, err)
+			return
+		}
+		if strings.HasPrefix(exe, e) {
+			p, err := os.FindProcess(pid)
+			if err != nil {
+				_, _ = fmt.Fprintln(os.Stderr, err)
+				return err
+			}
+			err = p.Signal(sig)
+			if err != nil {
+				_, _ = fmt.Fprintln(os.Stderr, err)
+				return err
+			}
+			fmt.Printf("sent signal to process %d.\n", pid)
+		}
+	}
+	return
+}
 func (s *Server) tlsListen() (err error) {
 	var tlsConfig *tls.Config
 	tlsConfig, err = newTLSConfig(s.config.CertFile, s.config.KeyFile, s.config.TLSMinVersion)
@@ -209,6 +300,10 @@ func (s *Server) acceptLoop(l net.Listener, handle func(*conn)) {
 func (s *Server) Start() (err error) {
 	s.Logger.Info().Msg(predef.Version)
 
+	if len(s.config.Addr) <= 0 {
+		err = fmt.Errorf("address (-addr option) '%s' is invalid", s.config.Addr)
+		return
+	}
 	err = s.users.mergeUsers(s.config.Users, nil, nil)
 	if err != nil {
 		return
@@ -312,7 +407,12 @@ func (s *Server) Start() (err error) {
 			return
 		}
 	}
-	s.Logger.Info().Msg(spew.Sdump(s.config))
+
+	conf4log := *s.Config()
+	conf4log.Password = "******"
+	conf4log.SigningKey = "******"
+
+	s.Logger.Info().Msg(spew.Sdump(conf4log))
 	return
 }
 
@@ -461,7 +561,7 @@ func (s *Server) authWithAPI(id string, secret string, prefixes []string) (hostP
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Request-Id", strconv.FormatInt(time.Now().Unix(), 10))
 	client := http.Client{
-		Timeout: s.config.Timeout,
+		Timeout: s.config.Timeout.Duration,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -528,10 +628,14 @@ func (s *Server) IsClosing() (closing bool) {
 
 // Shutdown stops the server gracefully.
 func (s *Server) Shutdown() {
+	defer s.Logger.Close()
+	s.ShutdownWithoutClosingLogger()
+}
+
+func (s *Server) ShutdownWithoutClosingLogger() {
 	if !atomic.CompareAndSwapUint32(&s.closing, 0, 1) {
 		return
 	}
-	defer s.Logger.Close()
 	event := s.Logger.Info()
 	if s.apiServer != nil {
 		event.AnErr("api", s.apiServer.Close())
@@ -950,5 +1054,19 @@ func (s *Server) GetSTUNListenerAddrPort() (addrPort netip.AddrPort) {
 		return
 	}
 	addrPort = s.turnListener.LocalAddr().(*net.UDPAddr).AddrPort()
+	return
+}
+
+func (s *Server) Config() *Config {
+	return &s.config
+}
+
+func (s *Server) GetConnectionInfo() (info []ConnectionInfo) {
+	s.id2Client.Range(func(key, value interface{}) bool {
+		client := value.(*client)
+		clientInfo := client.GetConnectionInfo()
+		info = append(info, clientInfo...)
+		return true
+	})
 	return
 }

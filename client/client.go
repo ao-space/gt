@@ -51,7 +51,7 @@ import (
 
 // New parses the command line args and creates a Client. out 用于测试
 func New(args []string, out io.Writer) (c *Client, err error) {
-	conf := defaultConfig()
+	conf := getDefaultConfig(args)
 	err = config.ParseFlags(args, &conf, &conf.Options)
 	if err != nil {
 		return
@@ -94,6 +94,17 @@ func New(args []string, out io.Writer) (c *Client, err error) {
 	c.tunnelsCond = sync.NewCond(c.tunnelsRWMtx.RLocker())
 	c.apiServer = api.NewServer(l.With().Str("scope", "api").Logger())
 	c.apiServer.ReadTimeout = 30 * time.Second
+	return
+}
+func getDefaultConfig(args []string) (conf Config) {
+	if predef.IsNoArgs() {
+		conf = defaultConfigWithNoArgs()
+	} else {
+		conf = defaultConfig()
+		if util.Contains(args, "-webAddr") {
+			conf.Config = predef.GetDefaultClientConfigPath()
+		}
+	}
 	return
 }
 
@@ -247,7 +258,7 @@ func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
 	req.URL.RawQuery = query.Encode()
 	req.Header.Set("Request-Id", strconv.FormatInt(time.Now().Unix(), 10))
 	client := http.Client{
-		Timeout: c.Config().RemoteTimeout,
+		Timeout: c.Config().RemoteTimeout.Duration,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -356,7 +367,7 @@ func (c *Client) Start() (err error) {
 				break
 			}
 			c.Logger.Error().Err(err).Msg("failed to query server address")
-			time.Sleep(c.Config().ReconnectDelay)
+			time.Sleep(c.Config().ReconnectDelay.Duration)
 		}
 	}
 	if len(dialer.host) == 0 {
@@ -378,6 +389,8 @@ func (c *Client) Start() (err error) {
 
 	conf4Log := *c.Config()
 	conf4Log.Secret = "******"
+	conf4Log.Password = "******"
+	conf4Log.SigningKey = "******"
 	c.Logger.Info().Msg(spew.Sdump(conf4Log))
 	for i := uint(1); i <= c.Config().RemoteConnections; i++ {
 		go c.connectLoop(dialer, i)
@@ -408,6 +421,25 @@ func (c *Client) Config() *Config {
 	return c.config.Load()
 }
 
+func (c *Client) GetConnectionPoolStatus() (status map[uint]Status) {
+	if c.idleManager == nil {
+		return
+	}
+	return c.idleManager.GetConnectionStatus()
+}
+
+func (c *Client) GetConnectionPoolNetInfo() (pools []PoolInfo) {
+	c.tunnelsRWMtx.RLock()
+	defer c.tunnelsRWMtx.RUnlock()
+	for conn := range c.tunnels {
+		pools = append(pools, PoolInfo{
+			LocalAddr:  conn.LocalAddr(),
+			RemoteAddr: conn.RemoteAddr(),
+		})
+	}
+	return
+}
+
 // Close stops the client agent.
 func (c *Client) Close() {
 	if !atomic.CompareAndSwapUint32(&c.closing, 0, 1) {
@@ -425,7 +457,9 @@ func (c *Client) Close() {
 		p.Close()
 	}
 	c.peersRWMtx.Unlock()
-	c.idleManager.Close()
+	if c.idleManager != nil {
+		c.idleManager.Close()
+	}
 	c.Logger.Info().Err(c.apiServer.Close()).Msg("api server close")
 	if c.tcpForwardListener != nil {
 		_ = c.tcpForwardListener.Close()
@@ -434,10 +468,15 @@ func (c *Client) Close() {
 
 // Shutdown stops the client gracefully.
 func (c *Client) Shutdown() {
+	defer c.Logger.Close()
+	c.ShutdownWithoutClosingLogger()
+}
+
+func (c *Client) ShutdownWithoutClosingLogger() {
 	if !atomic.CompareAndSwapUint32(&c.closing, 0, 1) {
 		return
 	}
-	defer c.Logger.Close()
+
 	c.tunnelsRWMtx.Lock()
 	for t := range c.tunnels {
 		t.SendCloseSignal()
@@ -449,7 +488,9 @@ func (c *Client) Shutdown() {
 	}
 	c.peersRWMtx.Unlock()
 
-	c.idleManager.Close()
+	if c.idleManager != nil {
+		c.idleManager.Close()
+	}
 	c.waitTunnelsShutdown.Wait()
 
 	c.Logger.Info().Err(c.apiServer.Close()).Msg("api server close")
@@ -506,7 +547,7 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 	if atomic.LoadUint32(&c.closing) == 1 {
 		return true
 	}
-	time.Sleep(c.Config().ReconnectDelay)
+	time.Sleep(c.Config().ReconnectDelay.Duration)
 	c.idleManager.SetWait(connID)
 	c.idleManager.WaitIdle(connID)
 
@@ -519,7 +560,7 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 			break
 		}
 		c.Logger.Error().Uint("connID", connID).Err(err).Msg("failed to query server address")
-		time.Sleep(c.Config().ReconnectDelay)
+		time.Sleep(c.Config().ReconnectDelay.Duration)
 	}
 	return
 }
@@ -574,14 +615,15 @@ func (c *Client) WaitUntilReady(timeout time.Duration) (err error) {
 	return
 }
 
+var errNoService = errors.New("no service is configured")
+
 func (c *Client) parseServices() (err error) {
 	services, err := parseServices(c.Config())
 	if err != nil {
 		return
 	}
-	// services 不能为空
 	if len(services) == 0 {
-		err = errors.New("no service is configured")
+		err = errNoService
 		return
 	}
 	h := sha256.New()
@@ -623,7 +665,7 @@ func parseServices(config *Config) (result services, err error) {
 			if configServicesLen == 1 ||
 				(x.Position > config.Local[i].Position &&
 					(i == configServicesLen-1 || x.Position < config.Local[i+1].Position)) {
-				configServices[i].LocalTimeout = x.Value
+				configServices[i].LocalTimeout.Duration = x.Value
 			}
 		}
 		for _, x := range config.UseLocalAsHTTPHost {
@@ -647,12 +689,11 @@ func parseServices(config *Config) (result services, err error) {
 	for i := 0; i < len(result); i++ {
 		if result[i].LocalURL.URL == nil {
 			err = errors.New("local url (-local option) cannot be empty")
-			return
 		}
 
 		// 设置默认值
-		if result[i].LocalTimeout == 0 {
-			result[i].LocalTimeout = 120 * time.Second
+		if result[i].LocalTimeout.Duration == 0 {
+			result[i].LocalTimeout.Duration = 120 * time.Second
 		}
 		if result[i].RemoteTCPRandom == nil {
 			result[i].RemoteTCPRandom = new(bool)
@@ -689,7 +730,7 @@ func parseServices(config *Config) (result services, err error) {
 				return
 			}
 		default:
-			err = fmt.Errorf("local url (-local option) '%s' must begin with http://, https:// or tcp://", config.Local[i].Value)
+			err = fmt.Errorf("local url (-local option) '%s' must begin with http://, https:// or tcp://", result[i].LocalURL.String())
 			return
 		}
 
@@ -733,7 +774,16 @@ func (c *Client) ReloadServices() (err error) {
 		c.reloading.Store(false)
 	}()
 
-	conf := defaultConfig()
+	conf := getDefaultConfig(os.Args)
+	// ignore the webSetting
+	conf.WebAddr = c.Config().WebAddr
+	conf.WebKeyFile = c.Config().WebKeyFile
+	conf.WebCertFile = c.Config().WebCertFile
+	conf.EnablePprof = c.Config().EnablePprof
+	conf.SigningKey = c.Config().SigningKey
+	conf.Admin = c.Config().Admin
+	conf.Password = c.Config().Password
+
 	err = config.ParseFlags(os.Args, &conf, &conf.Options)
 	if err != nil {
 		return
@@ -762,7 +812,7 @@ func (c *Client) ReloadServices() (err error) {
 		return
 	}
 	if len(services) == 0 {
-		err = errors.New("no service is configured")
+		err = errNoService
 		return
 	}
 	checksum := [32]byte{}

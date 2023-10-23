@@ -215,8 +215,8 @@ func respAndClose(id uint32, c *conn, data [][]byte) {
 			return
 		}
 		remoteTimeout := c.client.Config().RemoteTimeout
-		if remoteTimeout > 0 {
-			dl := time.Now().Add(remoteTimeout)
+		if remoteTimeout.Duration > 0 {
+			dl := time.Now().Add(remoteTimeout.Duration)
 			wErr = c.Conn.SetReadDeadline(dl)
 			if wErr != nil {
 				return
@@ -519,7 +519,7 @@ func (dco *dataChannelObserver) OnOpen() {
 	defer func() {
 		count := dco.peerTask.channelCount.Add(^uint32(0))
 		if count == 0 {
-			dco.peerTask.timer.Reset(dco.peerTask.tunnel.client.Config().WebRTCConnectionIdleTimeout)
+			dco.peerTask.timer.Reset(dco.peerTask.tunnel.client.Config().WebRTCConnectionIdleTimeout.Duration)
 		}
 		logger.Info().Err(err).Uint32("channelCount", count).
 			Str("state", dco.dataChannel.State().String()).
@@ -554,8 +554,8 @@ func (dco *dataChannelObserver) OnOpen() {
 	defer pool.BytesPool.Put(buf)
 
 	for {
-		if service.LocalTimeout > 0 {
-			dl := time.Now().Add(service.LocalTimeout)
+		if service.LocalTimeout.Duration > 0 {
+			dl := time.Now().Add(service.LocalTimeout.Duration)
 			rErr = task.conn.SetReadDeadline(dl)
 			if rErr != nil {
 				return

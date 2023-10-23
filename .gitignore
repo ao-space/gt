@@ -14,5 +14,39 @@
 
 build
 release
-.vscode
 .dockerignore
+
+# IDE files
+.vscode
+.idea
+
+# Frontend specific ignores
+web/front/logs
+web/front/*.log
+web/front/npm-debug.log*
+web/front/yarn-debug.log*
+web/front/yarn-error.log*
+web/front/pnpm-debug.log*
+web/front/lerna-debug.log*
+
+web/front/node_modules
+web/front/dist
+web/front/dist-ssr
+web/front/stats.html
+web/front/*.local
+
+# Editor directories and files
+web/front/.vscode/*
+web/front/!.vscode/extensions.json
+web/front/!.vscode/settings.json
+web/front/.idea
+web/front/.DS_Store
+web/front/*.suo
+web/front/*.ntvs*
+web/front/*.njsproj
+web/front/*.sln
+web/front/*.sw?
+
+# dist
+server/web/dist
+client/web/dist
