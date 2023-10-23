@@ -17,8 +17,11 @@ package config
 import (
 	"flag"
 	"fmt"
+	"github.com/isrc-cas/gt/predef"
+	"github.com/isrc-cas/gt/util"
 	"os"
 	"reflect"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -33,23 +36,29 @@ var (
 
 // ParseFlags parses args and sets the result to config and options.
 func ParseFlags(args []string, config, options interface{}) error {
-	if len(args) < 2 {
-		return nil
-	}
 	positionMtx.Lock()
 	defer positionMtx.Unlock()
 	position.Store(0)
 
+	if len(args) == 0 {
+		return nil
+	}
 	flagSet, n2fi, configPath := registerFlags(args[0], options)
-	err := flagSet.Parse(args[1:])
-	if err != nil {
-		return err
+	if len(args) > 1 {
+		// 有参数时，解析参数
+		err := flagSet.Parse(args[1:])
+		if err != nil {
+			return err
+		}
 	}
 
 	if configPath != nil {
-		err = Yaml2Interface(*configPath, config)
+		err := Yaml2Interface(*configPath, config)
 		if err != nil {
-			return err
+			// 如果是 (零配置启动/启用了web服务，&&配置文件不存在)，则忽略错误，否则返回错误
+			if !((predef.IsNoArgs() || util.Contains(args, "-webAddr")) && os.IsNotExist(err)) {
+				return err
+			}
 		}
 	}
 
@@ -65,7 +74,6 @@ func Yaml2Interface(path string, dstInterface interface{}) (err error) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		err = fmt.Errorf("open yaml file %q failed: %v", path, err)
 		return
 	}
 	defer func() {
@@ -103,6 +111,13 @@ func copyFlagsValue(dst interface{}, src *flag.FlagSet, name2FieldIndex map[stri
 		fieldType := field.Type()
 		flagValue := reflect.ValueOf(f.Value.(flag.Getter).Get())
 		flagValueType := flagValue.Type()
+
+		if fieldType == reflect.TypeOf(Duration{}) {
+			durationValue := flagValue.Interface().(time.Duration)
+			field.Set(reflect.ValueOf(Duration{Duration: durationValue}))
+			return
+		}
+
 		if !flagValueType.AssignableTo(fieldType) {
 			if flagValueType.ConvertibleTo(fieldType) {
 				flagValue = flagValue.Convert(fieldType)
@@ -131,6 +146,10 @@ func registerFlags(flagSetName string, options interface{}) (flagSet *flag.FlagS
 				continue
 			}
 		}
+
+		// 用这种方式可以处理 yaml:"xxx,omitempty" 的情况
+		name = strings.Split(name, ",")[0]
+
 		name2FieldIndex[name] = i
 		usage := fieldType.Tag.Get("usage")
 

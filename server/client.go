@@ -480,3 +480,22 @@ func (c *client) speedLimit(bufLen uint32, isUpload bool) {
 	*count -= sleepSeconds * c.speedNum
 	time.Sleep(time.Duration(sleepSeconds) * time.Second)
 }
+
+type ConnectionInfo struct {
+	ID         string
+	LocalAddr  net.Addr
+	RemoteAddr net.Addr
+}
+
+func (c *client) GetConnectionInfo() (info []ConnectionInfo) {
+	c.tunnelsRWMtx.RLock()
+	defer c.tunnelsRWMtx.RUnlock()
+	for conn := range c.tunnels {
+		info = append(info, ConnectionInfo{
+			ID:         c.id,
+			RemoteAddr: conn.RemoteAddr(),
+			LocalAddr:  conn.LocalAddr(),
+		})
+	}
+	return
+}
