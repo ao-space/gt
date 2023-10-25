@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/pion/turn/v3"
 	"github.com/shirou/gopsutil/process"
 	"io"
 	"math"
@@ -45,7 +46,6 @@ import (
 	"github.com/isrc-cas/gt/server/sync"
 	"github.com/isrc-cas/gt/util"
 	"github.com/pion/logging"
-	"github.com/pion/turn/v3"
 )
 
 // Server is a network agent server.
@@ -299,11 +299,6 @@ func (s *Server) acceptLoop(l net.Listener, handle func(*conn)) {
 // Start runs the server.
 func (s *Server) Start() (err error) {
 	s.Logger.Info().Msg(predef.Version)
-
-	if len(s.config.Addr) <= 0 {
-		err = fmt.Errorf("address (-addr option) '%s' is invalid", s.config.Addr)
-		return
-	}
 	err = s.users.mergeUsers(s.config.Users, nil, nil)
 	if err != nil {
 		return
