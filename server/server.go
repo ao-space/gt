@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	connection "github.com/isrc-cas/gt/conn"
+	"github.com/isrc-cas/gt/conn/msquic"
 	"io"
 	"math"
 	"net"
@@ -158,7 +159,9 @@ func (s *Server) quicListen(openBBR bool) (err error) {
 		return
 	}
 	if openBBR {
-		s.quicListener, err = connection.QuicBbrListen(s.config.QuicAddr, tlsConfig)
+		//s.quicListener, err = connection.QuicBbrListen(s.config.QuicAddr, tlsConfig)
+		//s.quicListener, err = quic.NewListenr(s.config.QuicAddr, 10_000, s.config.KeyFile, s.config.CertFile, "")
+		s.quicListener, err = msquic.MsquicListen(s.config.QuicAddr, s.config.KeyFile, s.config.CertFile)
 	} else {
 		s.quicListener, err = connection.QuicListen(s.config.QuicAddr, tlsConfig)
 	}
@@ -303,8 +306,16 @@ func (s *Server) Start() (err error) {
 		listening = true
 	}
 	if len(s.config.QuicAddr) > 0 {
-		if strings.IndexByte(s.config.QuicAddr, ':') == -1 {
-			s.config.QuicAddr = ":" + s.config.QuicAddr
+		//if strings.IndexByte(s.config.QuicAddr, ':') == -1 {
+		//	s.config.QuicAddr = ":" + s.config.QuicAddr
+		//}
+		// TODO Go 的冒号加空格会同时监听 IPv4 和 IPv6，这里行为与其他的不一致
+		colonIndex := strings.IndexByte(s.config.QuicAddr, ':')
+		if colonIndex == -1 {
+			s.config.QuicAddr = "0.0.0.0:" + s.config.QuicAddr
+		}
+		if colonIndex == 0 {
+			s.config.QuicAddr = "0.0.0.0" + s.config.QuicAddr
 		}
 		err = s.quicListen(s.config.OpenBBR)
 		if err != nil {

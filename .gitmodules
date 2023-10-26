@@ -17,3 +17,6 @@
 	url = https://git.mirror.iscas.ac.cn/ao-space/google-webrtc.git
 	branch = main
 	shallow = true
+[submodule "dep/msquic"]
+	path = dep/msquic
+	url = https://github.com/microsoft/msquic

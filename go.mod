@@ -3,7 +3,6 @@ module github.com/isrc-cas/gt
 go 1.19
 
 require (
-	github.com/DrakenLibra/gt-bbr v0.0.0-20230928081539-5c3f8cfb9590
 	github.com/archdx/zerolog-sentry v1.5.0
 	github.com/buger/jsonparser v1.1.1
 	github.com/davecgh/go-spew v1.1.1
@@ -13,11 +12,9 @@ require (
 	github.com/jonboulle/clockwork v0.2.2
 	github.com/lestrrat-go/strftime v1.0.5
 	github.com/mattn/go-pointer v0.0.1
-	github.com/onsi/gomega v1.27.6
 	github.com/pion/logging v0.2.2
 	github.com/pion/turn/v3 v3.0.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-community/pro-bing v0.3.0
 	github.com/quic-go/quic-go v0.35.0
 	github.com/rs/zerolog v1.30.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
@@ -26,16 +23,12 @@ require (
 )
 
 require (
-	github.com/cheekybits/genny v1.0.0 // indirect
 	github.com/getsentry/sentry-go v0.24.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/golang/mock v1.6.0 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/marten-seemann/qtls v0.2.4 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
@@ -54,7 +47,6 @@ require (
 	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.9.1 // indirect

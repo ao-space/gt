@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/isrc-cas/gt/conn/msquic"
 	"io"
 	"net"
 	"net/http"
@@ -252,8 +253,10 @@ func (d *dialer) init(c *Client, remote string, stun string) (err error) {
 		}
 		d.host = u.Host
 		d.tlsConfig = tlsConfig
+		//quic-go只有Cubic一种拥塞控制算法
+		//msquic默认使用bbr作为拥塞控制算法
 		if c.Config().OpenBBR {
-			d.dialFn = d.quicBbrDial
+			d.dialFn = d.msquicDial
 		} else {
 			d.dialFn = d.quicDial
 		}
@@ -318,8 +321,8 @@ func (d *dialer) quicDial() (conn net.Conn, err error) {
 	return connection.QuicDial(d.host, d.tlsConfig)
 }
 
-func (d *dialer) quicBbrDial() (conn net.Conn, err error) {
-	return connection.QuicBbrDial(d.host, d.tlsConfig)
+func (d *dialer) msquicDial() (conn net.Conn, err error) {
+	return msquic.MsquicDial(d.host, d.tlsConfig)
 }
 
 // Start runs the client agent.
@@ -371,12 +374,14 @@ func (c *Client) Start() (err error) {
 	var dialer dialer
 	if len(c.Config().Remote) > 0 {
 		var hasQuic bool
+		var enterSwitch bool
 		for index, _ := range c.Config().Remote {
 			if !strings.Contains(c.Config().Remote[index], "://") {
 				c.Config().Remote[index] = "tcp://" + c.Config().Remote[index]
 			}
 		}
 		if len(c.Config().Remote) >= 2 {
+			enterSwitch = true
 			for index, remote := range c.Config().Remote {
 				var u *url.URL
 				u, err = url.Parse(remote)
@@ -417,7 +422,9 @@ func (c *Client) Start() (err error) {
 		} else {
 			c.chosenRemoteLabel = 0
 		}
-		c.Logger.Info().Str("remote", c.Config().Remote[c.chosenRemoteLabel]).Msg("intelligent switch strategy finally choose to establish with")
+		if enterSwitch {
+			c.Logger.Info().Str("remote", c.Config().Remote[c.chosenRemoteLabel]).Msg("intelligent switch strategy finally choose to establish with")
+		}
 		err = dialer.initWithRemote(c)
 		if err != nil {
 			return
