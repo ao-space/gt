@@ -14,6 +14,13 @@
 
 package predef
 
+import (
+	"github.com/isrc-cas/gt/util"
+	"os"
+	"path/filepath"
+	"time"
+)
+
 const (
 	// MinIDSize is the minimum size of ID
 	MinIDSize = 1
@@ -27,6 +34,14 @@ const (
 	MaxSecretSize = MaxIDSize
 	// DefaultSecretSize secret 的默认长度
 	DefaultSecretSize = DefaultIDSize
+	// DefaultSigningKeySize signing key 的默认长度
+	DefaultSigningKeySize = 32
+	// DefaultAdminSize admin 的默认长度
+	DefaultAdminSize = 8
+	// DefaultPasswordSize password 的默认长度
+	DefaultPasswordSize = 8
+	// DefaultTokenDuration token 的默认有效期
+	DefaultTokenDuration = 30 * time.Minute
 	// MinHostPrefixSize 表示 host 前缀长度的最小值
 	MinHostPrefixSize = MinIDSize
 	// MaxHostPrefixSize 表示 host 前缀长度的最大值
@@ -63,3 +78,39 @@ var (
 
 // MagicNumber 常量数字，见 https://en.wikipedia.org/wiki/Magic_number_(programming)
 const MagicNumber byte = 0xF0
+
+var (
+	defaultClientConfigPath string
+	defaultClientLogPath    string
+	defaultServerConfigPath string
+	defaultServerLogPath    string
+)
+
+// IsNoArgs 表示是否没有参数, 用于判断是否需要提供更多的默认配置
+var isNoArgs = false
+
+func init() {
+	defaultClientConfigPath = filepath.Join(util.GetAppDir(), "client.yaml")
+	defaultClientLogPath = filepath.Join(util.GetAppDir(), "client.log")
+	defaultServerConfigPath = filepath.Join(util.GetAppDir(), "server.yaml")
+	defaultServerLogPath = filepath.Join(util.GetAppDir(), "server.log")
+	if len(os.Args) <= 1 {
+		isNoArgs = true
+	}
+}
+
+func GetDefaultClientConfigPath() string {
+	return defaultClientConfigPath
+}
+func GetDefaultClientLogPath() string {
+	return defaultClientLogPath
+}
+func GetDefaultServerConfigPath() string {
+	return defaultServerConfigPath
+}
+func GetDefaultServerLogPath() string {
+	return defaultServerLogPath
+}
+func IsNoArgs() bool {
+	return isNoArgs
+}

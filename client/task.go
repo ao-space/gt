@@ -280,8 +280,8 @@ func (t *httpTask) process(connID uint, taskID uint32, c *conn) {
 	buf[4] = byte(predef.Data >> 8)
 	buf[5] = byte(predef.Data)
 	for {
-		if t.service.LocalTimeout > 0 {
-			dl := time.Now().Add(t.service.LocalTimeout)
+		if t.service.LocalTimeout.Duration > 0 {
+			dl := time.Now().Add(t.service.LocalTimeout.Duration)
 			rErr = t.conn.SetReadDeadline(dl)
 			if rErr != nil {
 				return
@@ -303,8 +303,8 @@ func (t *httpTask) process(connID uint, taskID uint32, c *conn) {
 			if wErr != nil {
 				return
 			}
-			if c.client.Config().RemoteTimeout > 0 {
-				dl := time.Now().Add(c.client.Config().RemoteTimeout)
+			if c.client.Config().RemoteTimeout.Duration > 0 {
+				dl := time.Now().Add(c.client.Config().RemoteTimeout.Duration)
 				wErr = c.Conn.SetReadDeadline(dl)
 				if wErr != nil {
 					return

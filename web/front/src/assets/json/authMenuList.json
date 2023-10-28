@@ -1,0 +1,72 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "path": "/home/index",
+      "name": "home",
+      "component": "/home/index",
+      "meta": {
+        "icon": "HomeFilled",
+        "title": "Home",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": true,
+        "isKeepAlive": false
+      }
+    },
+    {
+      "path": "/connection",
+      "name": "connection",
+      "component": "/connection/index",
+      "meta": {
+        "icon": "Connection",
+        "title": "Connection Status",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": false
+      }
+    },
+    {
+      "path": "/config/client",
+      "name": "client",
+      "component": "/config/ClientConfig/index",
+      "meta": {
+        "icon": "Setting",
+        "title": "Client",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
+      "path": "/config/server",
+      "name": "server",
+      "component": "/config/ServerConfig/index",
+      "meta": {
+        "icon": "Setting",
+        "title": "Server",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
+      "path": "/pprof",
+      "name": "pprof",
+      "component": "/pprof/index",
+      "meta": {
+        "icon": "link",
+        "title": "pprof",
+        "isLink": "http://localhost:8080/debug/pprof",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": false
+      }
+    }
+  ],
+  "msg": "Success"
+}

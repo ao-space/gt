@@ -16,17 +16,34 @@ package util
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 )
+
+var (
+	r    *rand.Rand
+	lock sync.Mutex
+)
+
+func init() {
+	r = rand.New(rand.NewSource(time.Now().Unix()))
+}
 
 // RandomString 随机字符串
 func RandomString(n int) string {
 	letters := []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	r := rand.New(rand.NewSource(time.Now().Unix()))
 
 	s := make([]byte, n)
+	lock.Lock()
+	defer lock.Unlock()
 	for i := range s {
 		s[i] = letters[r.Intn(len(letters))]
 	}
 	return string(s)
+}
+
+func RandomPort() int {
+	lock.Lock()
+	defer lock.Unlock()
+	return r.Intn(65535-1024) + 1024
 }

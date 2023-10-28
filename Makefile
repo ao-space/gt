@@ -31,6 +31,10 @@ endif
 RELEASE_OPTIONS=$(GO_RACE) -tags release -trimpath -ldflags "$(GO_STATIC_LINK_FLAG) -s -w -X 'github.com/isrc-cas/gt/predef.Version=$(VERSION)'"
 DEBUG_OPTIONS=$(GO_RACE) -trimpath -ldflags "$(GO_STATIC_LINK_FLAG) -X 'github.com/isrc-cas/gt/predef.Version=$(VERSION)'"
 SOURCES=$(shell ls -1 **/*.go)
+FRONTEND_DIR=web/front
+SOURCES_FRONT = $(shell find $(FRONTEND_DIR) -type d \( -name 'node_modules' -o -name 'dist' \) -prune -o -type f \( -name '*.ts' -o -name '*.vue' -o -name '*.scss' -o -name '*.json' -o -name '*.cjs' -o -name '*.config.ts' -o -name '*.html' \) -print)
+SERVER_FRONT_DIR=server/web
+CLIENT_FRONT_DIR=client/web
 TARGET?=$(shell gcc -dumpmachine)
 TARGET_OS=$(shell echo $(TARGET) | awk -F '-' '{print $$2}')
 ifeq ($(TARGET_OS), native)
@@ -62,7 +66,7 @@ export CGO_LDFLAGS= $(shell pwd)/dep/_google-webrtc/src/out/release-$(TARGET)/ob
 	-ldl -pthread -lnuma
 export CGO_ENABLED=1
 
-.PHONY: all build docker_build_linux_arm64 fmt build_client docker_build_linux_arm64_client gofumpt build_server docker_build_linux_arm64_server golangci-lint check_webrtc_dependencies docker_release_linux_amd64 release clean docker_release_linux_amd64_client release_client compile_webrtc docker_release_linux_amd64_server release_server docker_create_image docker_build_linux_amd64 docker_release_linux_arm64 revive docker_build_linux_amd64_client docker_release_linux_arm64_client test docker_build_linux_amd64_server docker_release_linux_arm64_server update_submodule check_msquic_dependencies compile_msquic
+.PHONY: all build docker_build_linux_arm64 fmt build_client docker_build_linux_arm64_client gofumpt build_server docker_build_linux_arm64_server golangci-lint check_webrtc_dependencies docker_release_linux_amd64 release clean docker_release_linux_amd64_client release_client compile_webrtc docker_release_linux_amd64_server release_server docker_create_image docker_build_linux_amd64 docker_release_linux_arm64 revive docker_build_linux_amd64_client docker_release_linux_arm64_client test docker_build_linux_amd64_server docker_release_linux_arm64_server update_submodule  build_web_server build_web_client release_web_server release_web_client check_npm front_release duplicate_dist_server clean_duplication_client clean_web clean_dist clean_duplication clean_duplication_server clean_duplication_client  check_msquic_dependencies compile_msquic
 
 all: gofumpt golangci-lint test release
 
@@ -89,6 +93,8 @@ golangci-lint:
 		--exclude 'S1000: should use a simple channel send/receive instead of `select` with a single case'
 
 update_submodule:
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_google-webrtc
 	$(UPDATE_SUBMODULE_COMMAND)
 
 docker_create_image: update_submodule
@@ -126,26 +132,62 @@ docker_release_linux_arm64_server: docker_create_image
 
 build: build_server build_client
 release: release_server release_client
-build_client: $(SOURCES) Makefile compile_webrtc compile_msquic
+build_client: $(SOURCES) Makefile compile_webrtc build_web_client compile_msquic
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/client
-release_client: $(SOURCES) Makefile compile_webrtc compile_msquic
+release_client: $(SOURCES) Makefile compile_webrtc release_web_client compile_msquic
 	$(eval CGO_CXXFLAGS+=-O3)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/client
-build_server: $(SOURCES) Makefile compile_webrtc compile_msquic
+build_server: $(SOURCES) Makefile compile_webrtc build_web_server compile_msquic
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/server
-release_server: $(SOURCES) Makefile compile_webrtc compile_msquic
+release_server: $(SOURCES) Makefile compile_webrtc release_web_server compile_msquic
 	$(eval CGO_CXXFLAGS+=-O3)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/server
 
-clean:
-	rm build/* release/*
-	rm -r dep/_google-webrtc/src/out/*
+build_web_server: $(SOURCES_FRONT) Makefile check_npm front_build duplicate_dist_server
+build_web_client: $(SOURCES_FRONT) Makefile check_npm front_build duplicate_dist_client
+
+release_web_server: $(SOURCES_FRONT) Makefile check_npm front_release duplicate_dist_server
+release_web_client: $(SOURCES_FRONT) Makefile check_npm front_release duplicate_dist_client
+
+check_npm:
+	npm --version || curl -qL https://www.npmjs.com/install.sh | sh
+
+front_build: $(SOURCES_FRONT)
+	(cd $(FRONTEND_DIR) && npm install && npm run "build:test")
+
+front_release: $(SOURCES_FRONT)
+	(cd $(FRONTEND_DIR) && npm install && npm run "build:pro")
+
+duplicate_dist_server:
+	cp -r $(FRONTEND_DIR)/dist $(SERVER_FRONT_DIR)/dist
+
+duplicate_dist_client:
+	cp -r $(FRONTEND_DIR)/dist $(CLIENT_FRONT_DIR)/dist
+
+clean: clean_web
+	rm -rf build/* release/*
+	rm -rf dep/_google-webrtc/src/out/*
+
+clean_web: clean_dist
+	rm -rf $(FRONTEND_DIR)/node_modules
+	rm -f $(FRONTEND_DIR)/package-lock.json
+
+clean_dist: clean_duplication
+	rm -rf $(FRONTEND_DIR)/dist
+
+clean_duplication: clean_duplication_server clean_duplication_client
+
+clean_duplication_server:
+	rm -rf $(SERVER_FRONT_DIR)/dist
+clean_duplication_client:
+	rm -rf $(CLIENT_FRONT_DIR)/dist
+
 
 check_webrtc_dependencies:
 	sh -c "command -v gn"

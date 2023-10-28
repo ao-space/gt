@@ -21,6 +21,15 @@ RUN sed -i 's|deb.debian.org|mirrors.163.com|g' /etc/apt/sources.list && \
     apt update && \
     apt install xz-utils bzip2 sudo lsb-release ninja-build generate-ninja file patch -y
 
+# 安装nodejs 20
+RUN apt-get install -y ca-certificates curl gnupg && \
+    mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    NODE_MAJOR=20 && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && \
+    apt-get install nodejs -y
+
 # golang 切换国内源并且提前安装好依赖
 ENV GO111MODULE=on
 ENV GOPROXY=https://goproxy.cn
