@@ -91,6 +91,7 @@ type Options struct {
 	Signal string `arg:"s" yaml:"-" json:"-" usage:"Send signal to client processes. Supports values: reload, restart, stop, kill"`
 
 	OpenBBR bool `yaml:"bbr" usage:"Use bbr as congestion control algorithm (through msquic) when GT use QUIC connection. Default algorithm is Cubic (through quic-go)."`
+
 }
 
 // if you enable web service, it will set 'Config' if not specified
