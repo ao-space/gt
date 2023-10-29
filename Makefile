@@ -76,9 +76,9 @@ gofumpt:
 	gofumpt --version || go install mvdan.cc/gofumpt@latest
 	gofumpt -l -w $(shell find . -name '*.go' | grep -Ev '^\./bufio|^\./client/std|^\./logger/file-rotatelogs|^\./dep')
 
-test: compile_webrtc
+test: compile_webrtc compile_msquic
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
-	go test -race -cover -count 1 ./...
+	go test -race -cover -count 1 ./bufio ./client ./config ./server ./test ./util
 
 golangci-lint:
 	golangci-lint --version || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
