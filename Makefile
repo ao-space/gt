@@ -95,6 +95,24 @@ golangci-lint:
 update_submodule:
 	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt
 	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_google-webrtc
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/clog
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/googletest
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl/boringssl
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/gost-engine
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl/krb5
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/gost-engine/libprov
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl/pyca-cryptography
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/krb5
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl/wycheproof
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/oqs-provider
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/pyca-cryptography
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/python-ecdsa
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/tlsfuzzer
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/tlslite-ng
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/wycheproof
 	$(UPDATE_SUBMODULE_COMMAND)
 
 docker_create_image: update_submodule
@@ -132,19 +150,19 @@ docker_release_linux_arm64_server: docker_create_image
 
 build: build_server build_client
 release: release_server release_client
-build_client: $(SOURCES) Makefile compile_webrtc build_web_client compile_msquic
+build_client: $(SOURCES) Makefile compile_msquic compile_webrtc build_web_client
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/client
-release_client: $(SOURCES) Makefile compile_webrtc release_web_client compile_msquic
+release_client: $(SOURCES) Makefile compile_msquic compile_webrtc release_web_client
 	$(eval CGO_CXXFLAGS+=-O3)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/client
-build_server: $(SOURCES) Makefile compile_webrtc build_web_server compile_msquic
+build_server: $(SOURCES) Makefile compile_msquic compile_webrtc build_web_server
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/server
-release_server: $(SOURCES) Makefile compile_webrtc release_web_server compile_msquic
+release_server: $(SOURCES) Makefile compile_msquic compile_webrtc release_web_server
 	$(eval CGO_CXXFLAGS+=-O3)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/server
@@ -238,5 +256,3 @@ compile_msquic: check_msquic_dependencies update_submodule
 	sed -i 's|\(^ *msquic_lib\)$$|\1 ALL|g' ./dep/msquic/src/bin/CMakeLists.txt
 	cmake -B./dep/msquic/$(TARGET) -S./dep/msquic -DQUIC_BUILD_SHARED=OFF -DCMAKE_TARGET_ARCHITECTURE=$(TARGET_CPU)
 	make -C./dep/msquic/$(TARGET) -j$(shell nproc)
-	@renameSymbols=$$(objdump -t ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a | awk -v RS= '/_YB80VJ/{next}1' | grep -E 'g +(F|O) ' | grep -Evi ' (ms){0,1}quic' | awk '{print " --redefine-sym " $$NF "=" $$NF "_YB80VJ"}') && \
-    		objcopy $$renameSymbols ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a
