@@ -255,6 +255,12 @@ compile_msquic: check_msquic_dependencies update_submodule
 	mkdir -p ./dep/msquic/$(TARGET)
 	sed -i 's|\(^ *msquic_lib\)$$|\1 ALL|g' ./dep/msquic/src/bin/CMakeLists.txt
 	cmake -B./dep/msquic/$(TARGET) -S./dep/msquic -DQUIC_BUILD_SHARED=OFF -DCMAKE_TARGET_ARCHITECTURE=$(TARGET_CPU)
+ifeq ($(TARGET_CPU),arm64)
+	make -C./dep/msquic/$(TARGET) -j$(shell nproc)
+	@renameSymbols=$$(objdump -t ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a | awk -v RS= '/_YB80VJ/{next}1' | grep -E 'g +(F|O) ' | grep -Evi ' (ms){0,1}quic' | awk '{print " --redefine-sym " $$NF "=" $$NF "_YB80VJ"}') && \
+    		aarch64-linux-gnu-objcopy $$renameSymbols ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a
+else
 	make -C./dep/msquic/$(TARGET) -j$(shell nproc)
 	@renameSymbols=$$(objdump -t ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a | awk -v RS= '/_YB80VJ/{next}1' | grep -E 'g +(F|O) ' | grep -Evi ' (ms){0,1}quic' | awk '{print " --redefine-sym " $$NF "=" $$NF "_YB80VJ"}') && \
     		objcopy $$renameSymbols ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a
+endif
