@@ -30,6 +30,14 @@ RUN apt-get install -y ca-certificates curl gnupg && \
     apt-get update && \
     apt-get install nodejs -y
 
+# 安装msquic依赖
+RUN apt-get update && \
+    apt-get install -y cmake build-essential liblttng-ust-dev lttng-tools libssl-dev && \
+    wget https://cmake.org/files/v3.23/cmake-3.23.0.tar.gz && \
+    tar -zxvf cmake-3.23.0.tar.gz && cd cmake-3.23.0 && ./configure && make -j8 && make install && \
+    cmake --version
+# RUN apt-get install -y cmake build-essential liblttng-ust-dev lttng-tools
+
 # golang 切换国内源并且提前安装好依赖
 ENV GO111MODULE=on
 ENV GOPROXY=https://goproxy.cn

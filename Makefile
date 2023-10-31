@@ -57,11 +57,16 @@ export GOOS?=$(shell go env GOOS)
 export GOARCH?=$(shell go env GOARCH)
 export CC=$(TARGET)-gcc -w
 export CXX=$(TARGET)-g++ -w
-export CGO_CXXFLAGS=-I$(shell pwd)/dep/_google-webrtc/src -I$(shell pwd)/dep/_google-webrtc/src/third_party/abseil-cpp -std=c++17 -DWEBRTC_POSIX
-export CGO_LDFLAGS=$(shell pwd)/dep/_google-webrtc/src/out/release-$(TARGET)/obj/libwebrtc.a -ldl -pthread
+export CGO_CXXFLAGS=-I$(shell pwd)/dep/_google-webrtc/src \
+	-I$(shell pwd)/dep/_google-webrtc/src/third_party/abseil-cpp \
+	-I$(shell pwd)/dep/msquic/src/inc \
+	-std=c++17 -DWEBRTC_POSIX -DQUIC_API_ENABLE_PREVIEW_FEATURES
+export CGO_LDFLAGS= $(shell pwd)/dep/_google-webrtc/src/out/release-$(TARGET)/obj/libwebrtc.a \
+ 	$(shell pwd)/dep/msquic/$(TARGET)/bin/Release/libmsquic.a \
+	-ldl -pthread
 export CGO_ENABLED=1
 
-.PHONY: all build docker_build_linux_arm64 fmt build_client docker_build_linux_arm64_client gofumpt build_server docker_build_linux_arm64_server golangci-lint check_webrtc_dependencies docker_release_linux_amd64 release clean docker_release_linux_amd64_client release_client compile_webrtc docker_release_linux_amd64_server release_server docker_create_image docker_build_linux_amd64 docker_release_linux_arm64 revive docker_build_linux_amd64_client docker_release_linux_arm64_client test docker_build_linux_amd64_server docker_release_linux_arm64_server update_submodule build_web_server build_web_client release_web_server release_web_client check_npm front_release duplicate_dist_server clean_duplication_client clean_web clean_dist clean_duplication clean_duplication_server clean_duplication_client
+.PHONY: all build docker_build_linux_arm64 fmt build_client docker_build_linux_arm64_client gofumpt build_server docker_build_linux_arm64_server golangci-lint check_webrtc_dependencies docker_release_linux_amd64 release clean docker_release_linux_amd64_client release_client compile_webrtc docker_release_linux_amd64_server release_server docker_create_image docker_build_linux_amd64 docker_release_linux_arm64 revive docker_build_linux_amd64_client docker_release_linux_arm64_client test docker_build_linux_amd64_server docker_release_linux_arm64_server update_submodule  build_web_server build_web_client release_web_server release_web_client check_npm front_release duplicate_dist_server clean_duplication_client clean_web clean_dist clean_duplication clean_duplication_server clean_duplication_client  check_msquic_dependencies compile_msquic
 
 all: gofumpt golangci-lint test release
 
@@ -71,9 +76,9 @@ gofumpt:
 	gofumpt --version || go install mvdan.cc/gofumpt@latest
 	gofumpt -l -w $(shell find . -name '*.go' | grep -Ev '^\./bufio|^\./client/std|^\./logger/file-rotatelogs|^\./dep')
 
-test: compile_webrtc
+test: compile_webrtc compile_msquic
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
-	go test -race -cover -count 1 ./...
+	go test -race -cover -count 1 ./bufio ./client ./config ./server ./test ./util
 
 golangci-lint:
 	golangci-lint --version || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
@@ -90,6 +95,24 @@ golangci-lint:
 update_submodule:
 	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt
 	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_google-webrtc
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/clog
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/googletest
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl/boringssl
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/gost-engine
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl/krb5
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/gost-engine/libprov
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl/pyca-cryptography
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/krb5
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl/wycheproof
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/oqs-provider
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/pyca-cryptography
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/python-ecdsa
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/tlsfuzzer
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/tlslite-ng
+	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/msquic/submodules/openssl3/wycheproof
 	$(UPDATE_SUBMODULE_COMMAND)
 
 docker_create_image: update_submodule
@@ -127,19 +150,19 @@ docker_release_linux_arm64_server: docker_create_image
 
 build: build_server build_client
 release: release_server release_client
-build_client: $(SOURCES) Makefile compile_webrtc build_web_client
+build_client: $(SOURCES) Makefile compile_msquic compile_webrtc build_web_client
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/client
-release_client: $(SOURCES) Makefile compile_webrtc release_web_client
+release_client: $(SOURCES) Makefile compile_msquic compile_webrtc release_web_client
 	$(eval CGO_CXXFLAGS+=-O3)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/client
-build_server: $(SOURCES) Makefile compile_webrtc build_web_server
+build_server: $(SOURCES) Makefile compile_msquic compile_webrtc build_web_server
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/server
-release_server: $(SOURCES) Makefile compile_webrtc release_web_server
+release_server: $(SOURCES) Makefile compile_msquic compile_webrtc release_web_server
 	$(eval CGO_CXXFLAGS+=-O3)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/server
@@ -224,3 +247,20 @@ compile_webrtc: check_webrtc_dependencies update_submodule
 	sed -i 's| [^ ]*g++ | $(CXX) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
 	sed -i 's|"ar"|$(TARGET)-ar|g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
 	ninja -C ./dep/_google-webrtc/src/out/release-$(TARGET)
+
+check_msquic_dependencies:
+	sh -c "command -v cmake"
+
+compile_msquic: check_msquic_dependencies update_submodule
+	mkdir -p ./dep/msquic/$(TARGET)
+	sed -i 's|\(^ *msquic_lib\)$$|\1 ALL|g' ./dep/msquic/src/bin/CMakeLists.txt
+	cmake -B./dep/msquic/$(TARGET) -S./dep/msquic -DQUIC_BUILD_SHARED=OFF -DCMAKE_TARGET_ARCHITECTURE=$(TARGET_CPU)
+ifeq ($(TARGET_CPU),arm64)
+	make -C./dep/msquic/$(TARGET) -j$(shell nproc)
+	@renameSymbols=$$(objdump -t ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a | awk -v RS= '/_YB80VJ/{next}1' | grep -E 'g +(F|O) ' | grep -Evi ' (ms){0,1}quic' | awk '{print " --redefine-sym " $$NF "=" $$NF "_YB80VJ"}') && \
+    		aarch64-linux-gnu-objcopy $$renameSymbols ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a
+else
+	make -C./dep/msquic/$(TARGET) -j$(shell nproc)
+	@renameSymbols=$$(objdump -t ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a | awk -v RS= '/_YB80VJ/{next}1' | grep -E 'g +(F|O) ' | grep -Evi ' (ms){0,1}quic' | awk '{print " --redefine-sym " $$NF "=" $$NF "_YB80VJ"}') && \
+    		objcopy $$renameSymbols ./dep/msquic/$(TARGET)/bin/Release/libmsquic.a
+endif

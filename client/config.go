@@ -41,7 +41,7 @@ type Options struct {
 	ID                    string          `yaml:"id,omitempty" json:",omitempty" usage:"The unique id used to connect to server. Now it's the prefix of the domain."`
 	Secret                string          `yaml:"secret,omitempty" json:",omitempty" usage:"The secret used to verify the id"`
 	ReconnectDelay        config.Duration `yaml:"reconnectDelay,omitempty" json:",omitempty" usage:"The delay before reconnect. Supports values like '30s', '5m'"`
-	Remote                string          `yaml:"remote,omitempty" json:",omitempty" usage:"The remote server url. Supports tcp:// and tls://, default tcp://"`
+	Remote                config.Slice[string]          `yaml:"remote,omitempty" json:",omitempty" usage:"The remote server url. Supports tcp:// and tls:// and quic://, default tcp://"`
 	RemoteSTUN            string          `yaml:"remoteSTUN,omitempty" json:",omitempty" usage:"The remote STUN server address"`
 	RemoteAPI             string          `yaml:"remoteAPI,omitempty" json:",omitempty" usage:"The API to get remote server url"`
 	RemoteCert            string          `yaml:"remoteCert,omitempty" json:",omitempty" usage:"The path to remote cert"`
@@ -89,6 +89,9 @@ type Options struct {
 	Password    string `arg:"password" yaml:"password,omitempty" json:"-" usage:"Admin password use for login in web server"`
 
 	Signal string `arg:"s" yaml:"-" json:"-" usage:"Send signal to client processes. Supports values: reload, restart, stop, kill"`
+
+	OpenBBR bool `yaml:"bbr" usage:"Use bbr as congestion control algorithm (through msquic) when GT use QUIC connection. Default algorithm is Cubic (through quic-go)."`
+
 }
 
 // if you enable web service, it will set 'Config' if not specified
@@ -112,6 +115,8 @@ func defaultConfig() Config {
 			LogFileMaxCount: 7,
 			LogFileMaxSize:  512 * 1024 * 1024,
 			LogLevel:        zerolog.InfoLevel.String(),
+
+			OpenBBR: false,
 		},
 	}
 }

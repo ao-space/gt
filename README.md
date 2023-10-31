@@ -33,52 +33,63 @@ Currently implemented main functions:
 ## Index
 
 <!-- TOC -->
-
-* [Working Principle](#working-principle)
-* [Usage](#usage)
-  * [Configuration File](#configuration-file)
-  * [Server User Configuration](#server-user-configuration)
-    * [Configure Users via Command Line](#configure-users-via-command-line)
-    * [Configure Users via Users Configuration File](#configure-users-via-users-configuration-file)
-    * [Configure Users via Config Configuration File](#configure-users-via-config-configuration-file)
-    * [Allow All Clients](#allow-all-clients)
-  * [Server TCP Configuration](#server-tcp-configuration)
-    * [Configure TCP via Users Configuration File](#configure-tcp-via-users-configuration-file)
-    * [Configure TCP via Config Configuration File](#configure-tcp-via-config-configuration-file)
-  * [Command Line Parameters](#command-line-parameters)
-    * [Internal HTTP Penetration](#internal-http-penetration)
-    * [Internal HTTPS Penetration](#internal-https-penetration)
-    * [Internal HTTPS SNI Penetration](#internal-https-sni-penetration)
-    * [Encrypt Client-Server Communication with TLS](#encrypt-client-server-communication-with-tls)
-    * [Internal TCP Penetration](#internal-tcp-penetration)
-    * [Client Start Multiple Services Simultaneously](#client-start-multiple-services-simultaneously)
-    * [Server API](#server-api)
-* [Performance Test](#performance-test)
-  * [GT benchmark](#gt-benchmark)
-  * [frp dev branch 42745a3](#frp-dev-branch-42745a3)
-* [Run](#run)
-  * [Docker Container Run](#docker-container-run)
-* [Compilation](#compilation)
-  * [Compilation on Ubuntu/Debian](#compilation-on-ubuntudebian)
-    * [Install Dependencies](#install-dependencies)
-    * [Get Code and Compile](#get-code-and-compile)
-      * [Obtain WebRTC from ISCAS Mirror and Compile GT](#obtain-webrtc-from-iscas-mirror-and-compile-gt)
-      * [Obtain WebRTC from Official and Compile GT](#obtain-webrtc-from-official-and-compile-gt)
-  * [Compile on Ubuntu/Debian via Docker](#compile-on-ubuntudebian-via-docker)
-    * [Install Dependencies](#install-dependencies-1)
-    * [Get Code and Compile](#get-code-and-compile-1)
-      * [Obtain WebRTC from ISCAS Mirror and Compile GT](#obtain-webrtc-from-iscas-mirror-and-compile-gt-1)
-      * [Obtain WebRTC from Official and Compile GT](#obtain-webrtc-from-official-and-compile-gt-1)
-* [Roadmap](#roadmap)
-* [Contribution Guide](#contribution-guide)
-  * [Contribute Code](#contribute-code)
-  * [Code Quality](#code-quality)
-  * [Commit Messages](#commit-messages)
-  * [Issue Reporting](#issue-reporting)
-  * [Feature Requests](#feature-requests)
-  * [Thank You for Your Contribution](#thank-you-for-your-contribution)
-  * [Contributors](#contributors)
-
+* [GT](#gt)
+  * [Index](#index)
+  * [Working Principle](#working-principle)
+  * [Usage](#usage)
+    * [Configuration File](#configuration-file)
+    * [Server User Configuration](#server-user-configuration)
+      * [Configure Users via Command Line](#configure-users-via-command-line)
+      * [Configure Users via Users Configuration File](#configure-users-via-users-configuration-file)
+      * [Configure Users via Config Configuration File](#configure-users-via-config-configuration-file)
+      * [Allow All Clients](#allow-all-clients)
+    * [Server TCP Configuration](#server-tcp-configuration)
+      * [Configure TCP via Users Configuration File](#configure-tcp-via-users-configuration-file)
+      * [Configure TCP via Config Configuration File](#configure-tcp-via-config-configuration-file)
+    * [Command Line Parameters](#command-line-parameters)
+      * [Internal HTTP Penetration](#internal-http-penetration)
+      * [Internal HTTPS Penetration](#internal-https-penetration)
+      * [Internal HTTPS SNI Penetration](#internal-https-sni-penetration)
+      * [Encrypt Client-Server Communication with TLS](#encrypt-client-server-communication-with-tls)
+      * [Internal TCP Penetration](#internal-tcp-penetration)
+      * [Internal QUIC Penetration](#internal-quic-penetration)
+      * [Intelligent Internal Penetration (Adaptive Selection of TCP/QUIC)](#intelligent-internal-penetration-adaptive-selection-of-tcpquic)
+      * [Client Start Multiple Services Simultaneously](#client-start-multiple-services-simultaneously)
+      * [Server API](#server-api)
+  * [Performance Test](#performance-test)
+    * [Group 1 (MacOS environment+nginx testing)](#group-1-macos-environmentnginx-testing)
+      * [GT benchmark](#gt-benchmark)
+      * [frp dev branch 42745a3](#frp-dev-branch-42745a3)
+    * [Group 2 (Ubuntu environment+nginx testing)](#group-2-ubuntu-environmentnginx-testing)
+      * [GT-TCP](#gt-tcp)
+      * [GT-QUIC](#gt-quic)
+      * [frp v0.52.1](#frp-v0521)
+    * [Group 3 (Ubuntu environment+short request testing)](#group-3-ubuntu-environmentshort-request-testing)
+      * [GT-TCP](#gt-tcp-1)
+      * [GT-QUIC](#gt-quic-1)
+      * [frp v0.52.1](#frp-v0521-1)
+  * [Run](#run)
+    * [Docker Container Run](#docker-container-run)
+  * [Compilation](#compilation)
+    * [Compilation on Ubuntu/Debian](#compilation-on-ubuntudebian)
+      * [Install Dependencies](#install-dependencies)
+      * [Get Code and Compile](#get-code-and-compile)
+        * [Obtain WebRTC from ISCAS Mirror and Compile GT](#obtain-webrtc-from-iscas-mirror-and-compile-gt)
+        * [Obtain WebRTC from Official and Compile GT](#obtain-webrtc-from-official-and-compile-gt)
+    * [Compile on Ubuntu/Debian via Docker](#compile-on-ubuntudebian-via-docker)
+      * [Install Dependencies](#install-dependencies-1)
+      * [Get Code and Compile](#get-code-and-compile-1)
+        * [Obtain WebRTC from ISCAS Mirror and Compile GT](#obtain-webrtc-from-iscas-mirror-and-compile-gt-1)
+        * [Obtain WebRTC from Official and Compile GT](#obtain-webrtc-from-official-and-compile-gt-1)
+  * [Roadmap](#roadmap)
+  * [Contribution Guide](#contribution-guide)
+    * [Contribute Code](#contribute-code)
+    * [Code Quality](#code-quality)
+    * [Commit Messages](#commit-messages)
+    * [Issue Reporting](#issue-reporting)
+    * [Feature Requests](#feature-requests)
+    * [Thank You for Your Contribution](#thank-you-for-your-contribution)
+    * [Contributors](#contributors)
 <!-- TOC -->
 
 ## Working Principle
@@ -326,6 +337,43 @@ options:
 ./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
 ```
 
+#### Internal QUIC Penetration
+
+- Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of the public network server. Hopefully by accessing id1.example.com:8080
+  To access the web page served by port 80 on the intranet server. Use QUIC to build a transport connection between the client and the server. QUIC uses TLS 1.3 for transport encryption. When the user also gives certFile
+  and keyFile, use them for encrypted communication. Otherwise, keys and certificates are automatically generated using the ECDSA encryption algorithm.
+
+- Server (public network server)
+
+```shell
+./release/linux-amd64-server -addr 8080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+```
+
+- Client (internal network server), because a self-signed certificate is used, the `-remoteCertInsecure` option is used. This option is prohibited from being used in other cases (man-in-the-middle attacks cause encrypted content to be decrypted
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
+```
+
+#### Intelligent Internal Penetration (Adaptive Selection of TCP/QUIC)
+
+- - Requirements: There is an intranet server and a public network server, and id1.example.com resolves to the address of the public network server. Hopefully by accessing id1.example.com:8080
+    To access the web page served by port 80 on the intranet server. GT server listens to multiple addresses. GT client provides multiple `-remote` options and currently supports intelligent switching between QUIC and TCP/TLS.
+    GT client concurrently sends multiple sets of network status detection probes through QUIC connections to obtain the network delay and packet loss rate between the intranet server and the public network server.
+    Input the trained XGBoost model to obtain the results, and adaptively select whether to use TCP+TLS or QUIC for intranet penetration.
+
+- Server (public network server)
+
+```shell
+./release/linux-amd64-server -addr 8080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+```
+
+- Client (intranet server). `-remote` requires at least one QUIC address to be given.
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remote tcp://id1.example.com:8080 -remoteCertInsecure -id id1 -secret secret1
+```
+
 #### Client Start Multiple Services Simultaneously
 
 - Requirement: There is an internal network server and a public network server, and id1-1.example.com and
@@ -402,18 +450,20 @@ and apiKeyFile options are not empty, otherwise HTTP is used.
 
 ## Performance Test
 
+### Group 1 (MacOS environment+nginx testing)
+
 Load testing was performed on this project and frp for comparison using wrk. The internal service points to a test page
 running nginx locally, and the test results are as follows:
 
 ```text
-Model Name: MacBook Pro  
+Model Name: MacBook Pro
 Model Identifier: MacBookPro17,1
 Chip: Apple M1
 Total Number of Cores: 8 (4 performance and 4 efficiency)
 Memory: 16 GB
 ```
 
-### GT benchmark
+#### GT benchmark
 
 ```shell
 $ wrk -c 100 -d 30s -t 10 http://pi.example.com:7001
@@ -432,7 +482,7 @@ $ ps aux
  2767   0.0  0.1 408703664  17584 s007  S+    4:55PM   0:52.16 ./server -port 7001
 ```
 
-### frp dev branch 42745a3
+#### frp dev branch 42745a3
 
 ```shell
 $ wrk -c 100 -d 30s -t 10 http://pi.example.com:7000
@@ -450,6 +500,125 @@ $ ps aux
   PID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND
  2975   0.3  0.5 408767328  88768 s004  S+    5:01PM   0:21.88 ./frps -c ./frps.ini
  2976   0.0  0.4 408712832  66112 s005  S+    5:01PM   1:06.51 ./frpc -c ./frpc.ini
+```
+
+### Group 2 (Ubuntu environment+nginx testing)
+
+Load testing was performed on this project and frp for comparison using wrk. The internal service points to a test page
+running nginx locally, and the test results are as follows:
+
+```text
+System: Ubuntu 22.04
+Chip: Intel i9-12900
+Total Number of Cores: 16 (8 performance and 8 efficiency)
+Memory: 32 GB
+```
+
+#### GT-TCP
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote tcp://id1.example.com:12080 -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080
+Running 30s test @ http://id1.example.com:12080
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   558.51us    2.05ms  71.54ms   99.03%
+    Req/Sec    24.29k     2.28k   49.07k    95.74%
+  7264421 requests in 30.10s, 5.81GB read
+Requests/sec: 241344.46
+Transfer/sec:    197.70MB
+```
+
+#### GT-QUIC
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080
+Running 30s test @ http://id1.example.com:12080
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   826.65us    1.14ms  66.29ms   98.68%
+    Req/Sec    12.91k     1.36k   23.53k    79.43%
+  3864241 requests in 30.10s, 3.09GB read
+Requests/sec: 128380.49
+Transfer/sec:    105.16MB
+```
+
+#### frp v0.52.1
+
+```shell
+$ ./frps -c ./frps.toml
+$ ./frpc -c ./frpc.toml
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080/
+Running 30s test @ http://id1.example.com:12080/
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.49ms    8.27ms 154.62ms   92.43%
+    Req/Sec     4.02k     2.08k    7.51k    53.21%
+  1203236 requests in 30.08s, 0.93GB read
+Requests/sec:  40003.03
+Transfer/sec:     31.82MB
+```
+
+### Group 3 (Ubuntu environment+short request testing)
+
+By using wrk for stress testing, this project is compared with frp. Each request only returns a field response of less 
+than 10 bytes, which is used to simulate HTTP short requests. The test results are as follows:
+
+#### GT-TCP
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote tcp://id1.example.com:12080 -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080/
+Running 30s test @ http://id1.example.com:12080/
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.55ms   13.48ms 220.23ms   95.31%
+    Req/Sec     5.23k     2.11k   12.40k    76.10%
+  1557980 requests in 30.06s, 191.67MB read
+Requests/sec:  51822.69
+Transfer/sec:      6.38MB
+```
+
+#### GT-QUIC
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080/
+Running 30s test @ http://id1.example.com:12080/
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.84ms    6.75ms 168.93ms   98.47%
+    Req/Sec     9.33k     2.13k   22.86k    78.54%
+  2787908 requests in 30.10s, 342.98MB read
+Requests/sec:  92622.63
+Transfer/sec:     11.39MB
+```
+
+#### frp v0.52.1
+
+```shell
+$ ./frps -c ./frps.toml
+$ ./frpc -c ./frpc.toml
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080/
+Running 30s test @ http://id1.example.com:12080/
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.95ms    3.74ms 136.09ms   91.10%
+    Req/Sec     4.16k     1.22k   12.86k    87.85%
+  1243103 requests in 30.07s, 152.93MB read
+Requests/sec:  41334.52
+Transfer/sec:      5.09MB
 ```
 
 ## Run

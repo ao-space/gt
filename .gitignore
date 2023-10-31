@@ -15,7 +15,7 @@
 build
 release
 .dockerignore
-
+.DS_Store
 # IDE files
 .vscode
 .idea

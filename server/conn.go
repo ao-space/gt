@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"errors"
+	"github.com/quic-go/quic-go"
 	"io"
 	"net"
 	"runtime/debug"
@@ -137,13 +138,20 @@ func (c *conn) handle(handleFunc func() bool) {
 
 			c.Logger = c.Logger.With().Time("tunnel", time.Now()).Logger()
 
-			// 判断 IP 是否处于被限制状态
-			remoteAddr, ok := c.RemoteAddr().(*net.TCPAddr)
-			if !ok {
-				c.Logger.Warn().Msg("conn is not tcp conn")
-				return
+			remoteTcpAddr, okTcp := c.RemoteAddr().(*net.TCPAddr)
+			var remoteIP string
+			if okTcp {
+				remoteIP = remoteTcpAddr.IP.String()
+			} else {
+				remoteUdpAddr, okUdp := c.RemoteAddr().(*net.UDPAddr)
+				if okUdp {
+					remoteIP = remoteUdpAddr.IP.String()
+				} else {
+					c.Logger.Warn().Msg("conn is not tcp/udp conn")
+					return
+				}
 			}
-			remoteIP := remoteAddr.IP.String()
+
 			c.server.reconnectRWMutex.RLock()
 			reconnectTimes := c.server.reconnect[remoteIP]
 			c.server.reconnectRWMutex.RUnlock()
@@ -154,6 +162,34 @@ func (c *conn) handle(handleFunc func() bool) {
 
 			// 不能将 reconnectTimes 传参，多线程环境下这个值应该实时获取
 			handled = c.handleTunnelLoop(remoteIP)
+			return
+		case 0x02:
+			var buf []byte
+			probeCloseError := &quic.ApplicationError{
+				Remote:       true,
+				ErrorCode:    0x42,
+				ErrorMessage: "close QUIC probe connection",
+			}
+			for {
+				timer := time.AfterFunc(3*time.Second, func() {
+					c.Logger.Info().Msg("closing QUIC probe connection")
+				})
+				if buf, err = c.Connection.Conn.(*connection.QuicConnection).ReceiveMessage(); err != nil {
+					if err.Error() == probeCloseError.Error() {
+						break
+					} else {
+						c.Logger.Warn().Err(err).Msg("failed to use QUIC probe connection to receive message")
+						return
+					}
+				}
+				err = c.Connection.Conn.(*connection.QuicConnection).SendMessage(buf)
+				if err != nil {
+					c.Logger.Warn().Err(err).Msg("failed to use QUIC probe connection to send message")
+					return
+				}
+				timer.Stop()
+			}
+			handled = true
 			return
 		}
 	}

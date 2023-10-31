@@ -37,53 +37,64 @@ GT 是一个支持点对点直连（P2P）和互联网中转的反向代理开�
 ## 目录
 
 <!-- TOC -->
-
-* [工作原理](#工作原理)
-* [用法](#用法)
-  * [Web 管理](#web-管理)
-  * [配置文件](#配置文件)
-  * [服务端配置 users](#服务端配置-users)
-    * [通过命令行配置 users](#通过命令行配置-users)
-    * [通过 users 配置文件配置 users](#通过-users-配置文件配置-users)
-    * [通过 config 配置文件配置 users](#通过-config-配置文件配置-users)
-    * [允许所有的客户端](#允许所有的客户端)
-  * [服务端配置 TCP](#服务端配置-tcp)
-    * [通过 users 配置文件配置 TCP](#通过-users-配置文件配置-tcp)
-    * [通过 config 配置文件配置 TCP](#通过-config-配置文件配置-tcp)
-  * [命令行参数](#命令行参数)
-    * [HTTP 内网穿透](#http-内网穿透)
-    * [HTTPS 内网穿透](#https-内网穿透)
-    * [HTTPS SNI 内网穿透](#https-sni-内网穿透)
-    * [TLS 加密客户端服务端之间的通信](#tls-加密客户端服务端之间的通信)
-    * [TCP 内网穿透](#tcp-内网穿透)
-    * [客户端同时开启多个服务](#客户端同时开启多个服务)
-    * [服务端 API](#服务端-api)
-* [性能测试](#性能测试)
-  * [GT benchmark](#gt-benchmark)
-  * [frp dev branch 42745a3](#frp-dev-branch-42745a3)
-* [运行](#运行)
-  * [Docker 容器运行](#docker-容器运行)
-* [编译](#编译)
-  * [在 Ubuntu/Debian 上编译](#在-ubuntudebian-上编译)
-    * [安装依赖](#安装依赖)
-    * [获取代码并编译](#获取代码并编译)
-      * [从 ISCAS 镜像获取 WebRTC 并编译 GT](#从-iscas-镜像获取-webrtc-并编译-gt)
-      * [从官方获取 WebRTC 并编译 GT](#从官方获取-webrtc-并编译-gt)
-  * [在 Ubuntu/Debian 上通过 Docker 编译](#在-ubuntudebian-上通过-docker-编译)
-    * [安装依赖](#安装依赖-1)
-    * [获取代码并编译](#获取代码并编译-1)
-      * [从 ISCAS 镜像获取 WebRTC 并编译 GT](#从-iscas-镜像获取-webrtc-并编译-gt-1)
-      * [从官方获取 WebRTC 并编译 GT](#从官方获取-webrtc-并编译-gt-1)
-* [演进计划](#演进计划)
-* [贡献指南](#贡献指南)
-  * [贡献代码](#贡献代码)
-  * [代码质量](#代码质量)
-  * [提交信息](#提交信息)
-  * [问题报告](#问题报告)
-  * [功能请求](#功能请求)
-  * [感谢您的贡献](#感谢您的贡献)
-  * [贡献者](#贡献者)
-
+- [GT](#gt)
+  - [目录](#目录)
+  - [工作原理](#工作原理)
+  - [用法](#用法)
+    - [Web 管理](#web-管理)
+    - [配置文件](#配置文件)
+    - [服务端配置 users](#服务端配置-users)
+      - [通过命令行配置 users](#通过命令行配置-users)
+      - [通过 users 配置文件配置 users](#通过-users-配置文件配置-users)
+      - [通过 config 配置文件配置 users](#通过-config-配置文件配置-users)
+      - [允许所有的客户端](#允许所有的客户端)
+    - [服务端配置 TCP](#服务端配置-tcp)
+      - [通过 users 配置文件配置 TCP](#通过-users-配置文件配置-tcp)
+      - [通过 config 配置文件配置 TCP](#通过-config-配置文件配置-tcp)
+    - [命令行参数](#命令行参数)
+      - [HTTP 内网穿透](#http-内网穿透)
+      - [HTTPS 内网穿透](#https-内网穿透)
+      - [HTTPS SNI 内网穿透](#https-sni-内网穿透)
+      - [TLS 加密客户端服务端之间的通信](#tls-加密客户端服务端之间的通信)
+      - [TCP 内网穿透](#tcp-内网穿透)
+      - [QUIC 内网穿透](#quic-内网穿透)
+      - [智能内网穿透（自适应选择 TCP/QUIC ）](#智能内网穿透自适应选择-tcpquic-)
+      - [客户端同时开启多个服务](#客户端同时开启多个服务)
+      - [服务端 API](#服务端-api)
+  - [性能测试](#性能测试)
+    - [第一组（MacOS环境+nginx测试）](#第一组macos环境nginx测试)
+      - [GT benchmark](#gt-benchmark)
+      - [frp dev branch 42745a3](#frp-dev-branch-42745a3)
+    - [第二组（Ubuntu环境+nginx测试）](#第二组ubuntu环境nginx测试)
+      - [GT-TCP](#gt-tcp)
+      - [GT-QUIC](#gt-quic)
+      - [frp v0.52.1](#frp-v0521)
+    - [第三组(Ubuntu环境+short request测试)](#第三组ubuntu环境short-request测试)
+      - [GT-TCP](#gt-tcp-1)
+      - [GT-QUIC](#gt-quic-1)
+      - [frp v0.52.1](#frp-v0521-1)
+  - [运行](#运行)
+    - [Docker 容器运行](#docker-容器运行)
+  - [编译](#编译)
+    - [在 Ubuntu/Debian 上编译](#在-ubuntudebian-上编译)
+      - [安装依赖](#安装依赖)
+      - [获取代码并编译](#获取代码并编译)
+        - [从 ISCAS 镜像获取 WebRTC 并编译 GT](#从-iscas-镜像获取-webrtc-并编译-gt)
+        - [从官方获取 WebRTC 并编译 GT](#从官方获取-webrtc-并编译-gt)
+    - [在 Ubuntu/Debian 上通过 Docker 编译](#在-ubuntudebian-上通过-docker-编译)
+      - [安装依赖](#安装依赖-1)
+      - [获取代码并编译](#获取代码并编译-1)
+        - [从 ISCAS 镜像获取 WebRTC 并编译 GT](#从-iscas-镜像获取-webrtc-并编译-gt-1)
+        - [从官方获取 WebRTC 并编译 GT](#从官方获取-webrtc-并编译-gt-1)
+  - [演进计划](#演进计划)
+  - [贡献指南](#贡献指南)
+    - [贡献代码](#贡献代码)
+    - [代码质量](#代码质量)
+    - [提交信息](#提交信息)
+    - [问题报告](#问题报告)
+    - [功能请求](#功能请求)
+    - [感谢您的贡献](#感谢您的贡献)
+    - [贡献者](#贡献者)
 <!-- TOC -->
 
 ## 工作原理
@@ -331,6 +342,44 @@ options:
 ./release/linux-amd64-client -local tcp://127.0.0.1:22 -remote tcp://id1.example.com:8080 -id id1 -secret secret1 -remoteTCPPort 2222 -remoteTCPRandom
 ```
 
+#### QUIC 内网穿透
+
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:8080
+  来访问内网服务器上 80 端口服务的网页。使用 QUIC 为客户端与服务端之间构建传输连接，QUIC 使用 TLS 1.3 进行传输加密。当用户同时给出certFile
+  和keyFile时，使用他们进行加密通信。否则，会使用 ECDSA 加密算法自动生成密钥和证书。默认的拥塞控制算法为 Cubic 算法， 当客户端和用户端同时
+  使用 `-bbr` 选项时，使用 bbr 作为拥塞控制算法。
+
+- 服务端（公网服务器）
+
+```shell
+./release/linux-amd64-server -addr 8080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+```
+
+- 客户端（内网服务器），因为使用了自签名证书，所以使用了 `-remoteCertInsecure` 选项，其它情况禁止使用此选项（中间人攻击导致加密内容被解密）。
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
+```
+
+#### 智能内网穿透（自适应选择 TCP/QUIC ）
+
+- 需求：有一台内网服务器和一台公网服务器，id1.example.com 解析到公网服务器的地址。希望通过访问 id1.example.com:8080
+  来访问内网服务器上 80 端口服务的网页。GT server监听多个地址，GT client给出了多个 `-remote` 选项，目前支持在 QUIC 和 TCP/TLS 之间进行智能切换。 
+  GT client 通过 QUIC 连接并发发送多组网络状况探测探针，获取内网服务器和公网服务器之间网络的时延和丢包率，
+  输入训练好的XGBoost模型获取结果，自适应选择使用 TCP+TLS 还是 QUIC 进行内网穿透。
+
+- 服务端（公网服务器）
+
+```shell
+./release/linux-amd64-server -addr 8080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+```
+
+- 客户端（内网服务器）。`-remote` 需要给出至少一个 QUIC 的地址。
+
+```shell
+./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remote tcp://id1.example.com:8080 -remoteCertInsecure -id id1 -secret secret1
+```
+
 #### 客户端同时开启多个服务
 
 - 需求：有一台内网服务器和一台公网服务器，id1-1.example.com 和 id1-2.example.com 解析到公网服务器的地址。希望通过访问
@@ -402,6 +451,8 @@ apiCertFile 和 apiKeyFile 选项不为空时使用 HTTPS，其他情况使用 H
 
 ## 性能测试
 
+### 第一组（MacOS环境+nginx测试）
+
 通过 wrk 进行压力测试本项目与 frp 进行对比，内网服务指向在本地运行 nginx 的测试页面，测试结果如下：
 
 ```text
@@ -412,7 +463,7 @@ Total Number of Cores: 8 (4 performance and 4 efficiency)
 Memory: 16 GB
 ```
 
-### GT benchmark
+#### GT benchmark
 
 ```shell
 $ wrk -c 100 -d 30s -t 10 http://pi.example.com:7001
@@ -431,7 +482,7 @@ $ ps aux
  2767   0.0  0.1 408703664  17584 s007  S+    4:55PM   0:52.16 ./server -port 7001
 ```
 
-### frp dev branch 42745a3
+#### frp dev branch 42745a3
 
 ```shell
 $ wrk -c 100 -d 30s -t 10 http://pi.example.com:7000
@@ -449,6 +500,123 @@ $ ps aux
   PID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND
  2975   0.3  0.5 408767328  88768 s004  S+    5:01PM   0:21.88 ./frps -c ./frps.ini
  2976   0.0  0.4 408712832  66112 s005  S+    5:01PM   1:06.51 ./frpc -c ./frpc.ini
+```
+
+### 第二组（Ubuntu环境+nginx测试）
+
+通过 wrk 进行压力测试本项目与 frp 进行对比，内网服务指向在本地运行 nginx 的测试页面，测试结果如下：
+
+```text
+System: Ubuntu 22.04
+Chip: Intel i9-12900
+Total Number of Cores: 16 (8 performance and 8 efficiency)
+Memory: 32 GB
+```
+
+#### GT-TCP
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote tcp://id1.example.com:12080 -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080
+Running 30s test @ http://id1.example.com:12080
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   558.51us    2.05ms  71.54ms   99.03%
+    Req/Sec    24.29k     2.28k   49.07k    95.74%
+  7264421 requests in 30.10s, 5.81GB read
+Requests/sec: 241344.46
+Transfer/sec:    197.70MB
+```
+
+#### GT-QUIC
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080
+Running 30s test @ http://id1.example.com:12080
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   826.65us    1.14ms  66.29ms   98.68%
+    Req/Sec    12.91k     1.36k   23.53k    79.43%
+  3864241 requests in 30.10s, 3.09GB read
+Requests/sec: 128380.49
+Transfer/sec:    105.16MB
+```
+
+#### frp v0.52.1
+
+```shell
+$ ./frps -c ./frps.toml
+$ ./frpc -c ./frpc.toml
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080/
+Running 30s test @ http://id1.example.com:12080/
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.49ms    8.27ms 154.62ms   92.43%
+    Req/Sec     4.02k     2.08k    7.51k    53.21%
+  1203236 requests in 30.08s, 0.93GB read
+Requests/sec:  40003.03
+Transfer/sec:     31.82MB
+```
+
+### 第三组(Ubuntu环境+short request测试)
+
+通过 wrk 进行压力测试本项目与 frp 进行对比，每次请求只会返回小于10字节的字段回复，用于模拟HTTP short request，测试结果如下：
+
+#### GT-TCP
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote tcp://id1.example.com:12080 -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080/
+Running 30s test @ http://id1.example.com:12080/
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.55ms   13.48ms 220.23ms   95.31%
+    Req/Sec     5.23k     2.11k   12.40k    76.10%
+  1557980 requests in 30.06s, 191.67MB read
+Requests/sec:  51822.69
+Transfer/sec:      6.38MB
+```
+
+#### GT-QUIC
+
+```shell
+$ ./release/linux-amd64-server -addr 12080 -quicAddr 443 -certFile /root/openssl_crt/tls.crt -keyFile /root/openssl_crt/tls.key -id id1 -secret secret1
+$ ./release/linux-amd64-client -local http://127.0.0.1:80 -remote quic://id1.example.com:443 -remoteCertInsecure -id id1 -secret secret1
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080/
+Running 30s test @ http://id1.example.com:12080/
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.84ms    6.75ms 168.93ms   98.47%
+    Req/Sec     9.33k     2.13k   22.86k    78.54%
+  2787908 requests in 30.10s, 342.98MB read
+Requests/sec:  92622.63
+Transfer/sec:     11.39MB
+```
+
+#### frp v0.52.1
+
+```shell
+$ ./frps -c ./frps.toml
+$ ./frpc -c ./frpc.toml
+
+$ wrk -c 100 -d 30s -t 10 http://id1.example.com:12080/
+Running 30s test @ http://id1.example.com:12080/
+  10 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.95ms    3.74ms 136.09ms   91.10%
+    Req/Sec     4.16k     1.22k   12.86k    87.85%
+  1243103 requests in 30.07s, 152.93MB read
+Requests/sec:  41334.52
+Transfer/sec:      5.09MB
 ```
 
 ## 运行
