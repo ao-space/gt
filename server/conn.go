@@ -16,9 +16,9 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"errors"
-	"github.com/quic-go/quic-go"
 	"io"
 	"net"
 	"runtime/debug"
@@ -35,6 +35,7 @@ import (
 	connection "github.com/isrc-cas/gt/conn"
 	"github.com/isrc-cas/gt/pool"
 	"github.com/isrc-cas/gt/predef"
+	"github.com/quic-go/quic-go"
 )
 
 var (
@@ -174,7 +175,7 @@ func (c *conn) handle(handleFunc func() bool) {
 				timer := time.AfterFunc(3*time.Second, func() {
 					c.Logger.Info().Msg("closing QUIC probe connection")
 				})
-				if buf, err = c.Connection.Conn.(*connection.QuicConnection).ReceiveMessage(); err != nil {
+				if buf, err = c.Connection.Conn.(*connection.QuicConnection).ReceiveDatagram(context.Background()); err != nil {
 					if err.Error() == probeCloseError.Error() {
 						break
 					} else {
@@ -182,7 +183,7 @@ func (c *conn) handle(handleFunc func() bool) {
 						return
 					}
 				}
-				err = c.Connection.Conn.(*connection.QuicConnection).SendMessage(buf)
+				err = c.Connection.Conn.(*connection.QuicConnection).SendDatagram(buf)
 				if err != nil {
 					c.Logger.Warn().Err(err).Msg("failed to use QUIC probe connection to send message")
 					return

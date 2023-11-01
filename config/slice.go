@@ -16,6 +16,7 @@ package config
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"reflect"
 	"time"
 )
@@ -68,4 +69,30 @@ func (s *Slice[T]) Get() interface{} {
 func (s *Slice[T]) IsBoolFlag() bool {
 	_, ok := any(s).(*Slice[bool])
 	return ok
+}
+
+type slice[T BasicType] []T
+
+func (s *Slice[T]) UnmarshalYAML(node *yaml.Node) (err error) {
+	switch node.Kind {
+	case yaml.ScalarNode:
+		var t T
+		err = node.Decode(&t)
+		if err != nil {
+			return
+		}
+		*s = make(Slice[T], 1)
+		(*s)[0] = t
+	default:
+		var sv slice[T]
+		err = node.Decode(&sv)
+		if err != nil || len(sv) == 0 {
+			return
+		}
+		*s = make(Slice[T], len(sv))
+		for i, t := range sv {
+			(*s)[i] = t
+		}
+	}
+	return
 }

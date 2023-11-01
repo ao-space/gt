@@ -40,8 +40,8 @@ import (
 
 // 多线程安全
 type safeBuffer struct {
-	buf     *bytes.Buffer
-	rwMutex *sync.RWMutex
+	buf     bytes.Buffer
+	rwMutex sync.RWMutex
 }
 
 func (sb *safeBuffer) Write(p []byte) (int, error) {
@@ -52,14 +52,11 @@ func (sb *safeBuffer) Write(p []byte) (int, error) {
 }
 
 func newStringWriter() (io.Writer, func() string) {
-	buf := new(bytes.Buffer)
-	rwMutex := &sync.RWMutex{}
-
-	return &safeBuffer{buf: buf, rwMutex: rwMutex}, func() string {
-		rwMutex.RLock()
-		defer rwMutex.RUnlock()
-
-		return buf.String()
+	s := &safeBuffer{}
+	return s, func() string {
+		s.rwMutex.RLock()
+		defer s.rwMutex.RUnlock()
+		return s.buf.String()
 	}
 }
 
@@ -1579,31 +1576,37 @@ users:
 
 	// client1 成功
 	if !strings.Contains(client1Log(), "tunnel started") {
+		t.Log("client1Log", client1Log())
 		t.Fatal("client1 not successful")
 	}
 
 	// client2 失败
 	if !strings.Contains(client2Log(), "the number of tcp ports exceeded the upper limit") {
+		t.Log("client2Log", client2Log())
 		t.Fatal("client2 not failed")
 	}
 
 	// client3 失败
 	if !strings.Contains(client3Log(), "failed to open tcp port") {
+		t.Log("client3Log", client3Log())
 		t.Fatal("client3 not failed")
 	}
 
 	// client4 成功
 	if !strings.Contains(client4Log(), "tunnel started") {
+		t.Log("client4Log", client4Log())
 		t.Fatal("client4 not successful")
 	}
 
 	// client5 失败
 	if !strings.Contains(client5Log(), "failed to open tcp port") {
+		t.Log("client5Log", client5Log())
 		t.Fatal("client5 not failed")
 	}
 
 	// client6 失败
 	if !strings.Contains(client6Log(), "failed to open tcp port") {
+		t.Log("client6Log", client6Log())
 		t.Fatal("client6 not failed")
 	}
 }

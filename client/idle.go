@@ -67,9 +67,6 @@ func (m *idleManager) Init(id uint) (exit bool) {
 	m.statusMtx.Lock()
 	defer m.statusMtx.Unlock()
 
-	if v, ok := m.status[id]; ok && v == connecting {
-		return false
-	}
 	m.status[id] = connecting
 	var n uint
 	for _, s := range m.status {

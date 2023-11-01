@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/isrc-cas/gt/conn/msquic"
 	"io"
 	"net"
 	"net/http"
@@ -43,11 +42,12 @@ import (
 	"github.com/isrc-cas/gt/client/webrtc"
 	"github.com/isrc-cas/gt/config"
 	connection "github.com/isrc-cas/gt/conn"
+	"github.com/isrc-cas/gt/conn/msquic"
 	"github.com/isrc-cas/gt/logger"
 	"github.com/isrc-cas/gt/pool"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/util"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 // New parses the command line args and creates a Client. out 用于测试
@@ -386,7 +386,7 @@ func (c *Client) Start() (err error) {
 	if len(c.Config().Remote) > 0 {
 		var hasQuic bool
 		var enterSwitch bool
-		for index, _ := range c.Config().Remote {
+		for index := range c.Config().Remote {
 			if !strings.Contains(c.Config().Remote[index], "://") {
 				c.Config().Remote[index] = "tcp://" + c.Config().Remote[index]
 			}
@@ -633,12 +633,11 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 		c.idleManager.initMtx.Unlock()
 		c.Logger.Info().Uint("connID", connID).Msg("wait to connect to remote")
 	}
-
+	c.idleManager.SetWait(connID)
 	if atomic.LoadUint32(&c.closing) == 1 {
 		return true
 	}
 	time.Sleep(c.Config().ReconnectDelay.Duration)
-	c.idleManager.SetWait(connID)
 	c.idleManager.WaitIdle(connID)
 
 	for len(c.Config().RemoteAPI) > 0 {

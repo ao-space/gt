@@ -20,10 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	connection "github.com/isrc-cas/gt/conn"
-	"github.com/isrc-cas/gt/conn/msquic"
-	"github.com/pion/turn/v3"
-	"github.com/shirou/gopsutil/process"
 	"io"
 	"math"
 	"net"
@@ -42,12 +38,16 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/isrc-cas/gt/config"
+	connection "github.com/isrc-cas/gt/conn"
+	"github.com/isrc-cas/gt/conn/msquic"
 	"github.com/isrc-cas/gt/logger"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/server/api"
 	"github.com/isrc-cas/gt/server/sync"
 	"github.com/isrc-cas/gt/util"
 	"github.com/pion/logging"
+	"github.com/pion/turn/v3"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 // Server is a network agent server.

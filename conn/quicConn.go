@@ -8,12 +8,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"github.com/isrc-cas/gt/predef"
-	"github.com/quic-go/quic-go"
 	"math/big"
 	"net"
 	"sync/atomic"
 	"time"
+
+	"github.com/isrc-cas/gt/predef"
+	"github.com/quic-go/quic-go"
 )
 
 const probePacketLostTimeOutMs = 5
@@ -121,7 +122,7 @@ func GetQuicProbesResults(addr string) (avgRtt float64, pktLoss float64, err err
 
 	for i := 0; i < totalNum; i++ {
 		go func() {
-			err = conn.(*QuicConnection).SendMessage([]byte(time.Now().Format("2006-01-02 15:04:05.000000000")))
+			err = conn.(*QuicConnection).SendDatagram([]byte(time.Now().Format("2006-01-02 15:04:05.000000000")))
 			if err != nil {
 				return
 			}
@@ -135,7 +136,7 @@ func GetQuicProbesResults(addr string) (avgRtt float64, pktLoss float64, err err
 				return
 			}
 		})
-		buf, err = conn.(*QuicConnection).ReceiveMessage()
+		buf, err = conn.(*QuicConnection).ReceiveDatagram(context.Background())
 		if err != nil {
 			// QUIC的stream关闭时会返回io.EOF，但是QUIC的不可靠数据包Datagram是在connection层面进行发送的
 			// 因此需要通过quic.ApplicationError判断QUIC connection是否由于应用程序主动关闭
