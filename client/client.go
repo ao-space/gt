@@ -95,6 +95,7 @@ func New(args []string, out io.Writer) (c *Client, err error) {
 	c.tunnelsCond = sync.NewCond(c.tunnelsRWMtx.RLocker())
 	c.apiServer = api.NewServer(l.With().Str("scope", "api").Logger())
 	c.apiServer.ReadTimeout = 30 * time.Second
+	c.webrtcThreadPool = webrtc.NewThreadPool(3)
 	return
 }
 func getDefaultConfig(args []string) (conf Config) {
@@ -475,6 +476,11 @@ func (c *Client) Start() (err error) {
 	} else if c.Config().RemoteIdleConnections > c.Config().RemoteConnections {
 		c.Config().RemoteIdleConnections = c.Config().RemoteConnections
 	}
+	if c.Config().WebRTCRemoteConnections < 1 {
+		c.Config().WebRTCRemoteConnections = 1
+	} else if c.Config().WebRTCRemoteConnections > 50 {
+		c.Config().WebRTCRemoteConnections = 50
+	}
 	c.idleManager = newIdleManager(c.Config().RemoteIdleConnections)
 
 	conf4Log := *c.Config()
@@ -491,8 +497,6 @@ func (c *Client) Start() (err error) {
 	// tcpforward
 	if c.Config().TCPForwardConnections < 1 {
 		c.Config().TCPForwardConnections = 1
-	} else if c.Config().TCPForwardConnections > 10 {
-		c.Config().TCPForwardConnections = 10
 	}
 	if c.Config().TCPForwardHostPrefix != "" {
 		c.tcpForwardListener, err = net.Listen("tcp", c.Config().TCPForwardAddr)
@@ -554,6 +558,7 @@ func (c *Client) Close() {
 	if c.tcpForwardListener != nil {
 		_ = c.tcpForwardListener.Close()
 	}
+	//c.webrtcThreadPool.Close()
 }
 
 // Shutdown stops the client gracefully.
@@ -587,6 +592,7 @@ func (c *Client) ShutdownWithoutClosingLogger() {
 	if c.tcpForwardListener != nil {
 		_ = c.tcpForwardListener.Close()
 	}
+	//c.webrtcThreadPool.Close()
 }
 
 func (c *Client) initConn(d dialer, connID uint) (result *conn, err error) {

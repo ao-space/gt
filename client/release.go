@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build release
-// +build release
 
 package client
 
@@ -23,6 +22,7 @@ import (
 	"sync/atomic"
 
 	"github.com/isrc-cas/gt/client/api"
+	"github.com/isrc-cas/gt/client/webrtc"
 	"github.com/isrc-cas/gt/logger"
 )
 
@@ -41,6 +41,7 @@ type Client struct {
 	apiServer           *api.Server
 	services            atomic.Pointer[services]
 	tcpForwardListener  net.Listener
+	webrtcThreadPool    *webrtc.ThreadPool
 	waitTunnelsShutdown sync.WaitGroup
 	configChecksum      atomic.Pointer[[32]byte]
 	reloadWaitGroup     sync.WaitGroup

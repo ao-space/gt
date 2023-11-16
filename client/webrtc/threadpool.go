@@ -12,9 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build release
+package webrtc
 
-package predef
+/*
+#include "threadpool.h"
+*/
+import "C"
+import "unsafe"
 
-// Debug enables the logs of read and write operations
-const Debug = false
+type ThreadPool struct {
+	p unsafe.Pointer
+}
+
+func NewThreadPool(threadNum uint32) *ThreadPool {
+	return &ThreadPool{p: C.NewThreadPool(C.uint32_t(threadNum))}
+}
+
+func (tp *ThreadPool) GetThread() unsafe.Pointer {
+	return C.GetThreadPoolThread(tp.p)
+}
+
+func (tp *ThreadPool) GetSocketThread() unsafe.Pointer {
+	return C.GetThreadPoolSocketThread(tp.p)
+}
+
+func (tp *ThreadPool) Close() {
+	C.DeleteThreadPool(tp.p)
+}

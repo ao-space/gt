@@ -21,18 +21,14 @@
 #include "datachannel.hpp"
 #include "peerconnection.h"
 
-using namespace std;
-using namespace webrtc;
-using namespace rtc;
-
 class SetLocalDescriptionObserver : public webrtc::SetLocalDescriptionObserverInterface {
   public:
     SetLocalDescriptionObserver(void *userData) : userData(userData) {}
 
-    void OnSetLocalDescriptionComplete(RTCError error) override {
+    void OnSetLocalDescriptionComplete(webrtc::RTCError error) override {
         char *err = nullptr;
         if (!error.ok()) {
-            stringstream ss;
+            std::stringstream ss;
             ss << "type:'" << ToString(error.type()) << "' message:'" << error.message()
                << "' error_detail:'" << ToString(error.error_detail()) << "'";
             err = (char *)ss.str().c_str();
@@ -48,10 +44,10 @@ class SetRemoteDescriptionObserver : public webrtc::SetRemoteDescriptionObserver
   public:
     SetRemoteDescriptionObserver(void *userData) : userData(userData) {}
 
-    void OnSetRemoteDescriptionComplete(RTCError error) override {
+    void OnSetRemoteDescriptionComplete(webrtc::RTCError error) override {
         char *err = nullptr;
         if (!error.ok()) {
-            stringstream ss;
+            std::stringstream ss;
             ss << "type:'" << ToString(error.type()) << "' message:'" << error.message()
                << "' error_detail:'" << ToString(error.error_detail()) << "'";
             err = (char *)ss.str().c_str();
@@ -63,20 +59,20 @@ class SetRemoteDescriptionObserver : public webrtc::SetRemoteDescriptionObserver
     void *userData;
 };
 
-class CreateOfferObserver : public CreateSessionDescriptionObserver {
+class CreateOfferObserver : public webrtc::CreateSessionDescriptionObserver {
   public:
     CreateOfferObserver(void *userData) : userData(userData) {}
 
   protected:
-    void OnSuccess(SessionDescriptionInterface *desc) {
-        string descStr;
+    void OnSuccess(webrtc::SessionDescriptionInterface *desc) {
+        std::string descStr;
         desc->ToString(&descStr);
         onOffer((char *)descStr.c_str(), nullptr, userData);
     }
 
-    void OnFailure(RTCError error) {
+    void OnFailure(webrtc::RTCError error) {
         if (!error.ok()) {
-            stringstream ss;
+            std::stringstream ss;
             ss << "type:'" << ToString(error.type()) << "' message:'" << error.message()
                << "' error_detail:'" << ToString(error.error_detail()) << "'";
             onOffer(nullptr, (char *)ss.str().c_str(), userData);
@@ -87,20 +83,20 @@ class CreateOfferObserver : public CreateSessionDescriptionObserver {
     void *userData;
 };
 
-class CreateAnswerObserver : public CreateSessionDescriptionObserver {
+class CreateAnswerObserver : public webrtc::CreateSessionDescriptionObserver {
   public:
     CreateAnswerObserver(void *userData) : userData(userData) {}
 
   protected:
-    void OnSuccess(SessionDescriptionInterface *desc) {
-        string descStr;
+    void OnSuccess(webrtc::SessionDescriptionInterface *desc) {
+        std::string descStr;
         desc->ToString(&descStr);
         onAnswer((char *)descStr.c_str(), nullptr, userData);
     }
 
-    void OnFailure(RTCError error) {
+    void OnFailure(webrtc::RTCError error) {
         if (!error.ok()) {
-            stringstream ss;
+            std::stringstream ss;
             ss << "type:'" << ToString(error.type()) << "' message:'" << error.message()
                << "' error_detail:'" << ToString(error.error_detail()) << "'";
             onAnswer(nullptr, (char *)ss.str().c_str(), userData);
@@ -114,8 +110,8 @@ class CreateAnswerObserver : public CreateSessionDescriptionObserver {
 class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
   public:
     PeerConnectionObserver(void *userData) : userData(userData) {
-        createOfferObserver = make_ref_counted<CreateOfferObserver>(userData);
-        createAnswerObserver = make_ref_counted<CreateAnswerObserver>(userData);
+        createOfferObserver = rtc::make_ref_counted<CreateOfferObserver>(userData);
+        createAnswerObserver = rtc::make_ref_counted<CreateAnswerObserver>(userData);
     }
 
     void Delete() {
@@ -124,20 +120,30 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
                                    // 的同时也会释放 this
     }
 
-    char *Start(char **iceServers, int iceServersLen, uint16_t *minPort, uint16_t *maxPort) {
-        signalingThread = Thread::Create();
-        auto ok = signalingThread->Start();
-        if (!ok) {
-            return (char *)"failed to start signal thread";
+    char *Start(char **iceServers, int iceServersLen, uint16_t *minPort, uint16_t *maxPort,
+                void *signalingThreadOutside, void *networkThreadOutside,
+                void *workerThreadOutside) {
+        if (signalingThreadOutside == nullptr) {
+            ownedSignalingThread = rtc::Thread::Create();
+            auto ok = ownedSignalingThread->Start();
+            if (!ok) {
+                return (char *)"signalingThread start failed";
+            }
+            signalingThread = ownedSignalingThread.get();
+        } else {
+            signalingThread = (rtc::Thread *)signalingThreadOutside;
         }
 
-        PeerConnectionFactoryDependencies dependencies;
-        dependencies.signaling_thread = signalingThread.get();
-        auto peerConnectionFactory = CreateModularPeerConnectionFactory(move(dependencies));
+        webrtc::PeerConnectionFactoryDependencies dependencies;
+        dependencies.signaling_thread = signalingThread;
+        dependencies.network_thread = (rtc::Thread *)networkThreadOutside;
+        dependencies.worker_thread = (rtc::Thread *)workerThreadOutside;
+        auto peerConnectionFactory =
+            webrtc::CreateModularPeerConnectionFactory(std::move(dependencies));
 
-        PeerConnectionInterface::RTCConfiguration configuration;
+        webrtc::PeerConnectionInterface::RTCConfiguration configuration;
         if (iceServersLen > 0) {
-            PeerConnectionInterface::IceServer iceServer;
+            webrtc::PeerConnectionInterface::IceServer iceServer;
             for (int i = 0; i < iceServersLen; i++) {
                 iceServer.urls.push_back(iceServers[i]);
             }
@@ -150,12 +156,12 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
             configuration.set_max_port(*maxPort);
         }
 
-        PeerConnectionDependencies connectionDependencies(this);
+        webrtc::PeerConnectionDependencies connectionDependencies(this);
 
         auto peerConnectionOrError = peerConnectionFactory->CreatePeerConnectionOrError(
-            configuration, move(connectionDependencies));
+            configuration, std::move(connectionDependencies));
         if (!peerConnectionOrError.ok()) {
-            stringstream ss;
+            std::stringstream ss;
             ss << "type:'" << ToString(peerConnectionOrError.error().type()) << "' message:'"
                << peerConnectionOrError.error().message() << "' error_detail:'"
                << ToString(peerConnectionOrError.error().error_detail()) << "'";
@@ -173,14 +179,14 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
                             void *dataChannelUserData) {
         char *err = nullptr;
         signalingThread->BlockingCall([&] {
-            DataChannelInit config;
+            webrtc::DataChannelInit config;
             config.negotiated = negotiated;
             auto dataChannelOrError = peerConnection->CreateDataChannelOrError(label, &config);
             if (!dataChannelOrError.ok()) {
-                stringstream ss;
-                ss << "type:'" << ToString(dataChannelOrError.error().type()) << "' message:'"
-                   << dataChannelOrError.error().message() << "' error_detail:'"
-                   << ToString(dataChannelOrError.error().error_detail()) << "'";
+                std::stringstream ss;
+                ss << "type:'" << webrtc::ToString(dataChannelOrError.error().type())
+                   << "' message:'" << dataChannelOrError.error().message() << "' error_detail:'"
+                   << webrtc::ToString(dataChannelOrError.error().error_detail()) << "'";
                 auto str = ss.str();
                 auto buf = calloc(str.size() + 1, 1);
                 memcpy(buf, str.data(), str.size());
@@ -199,24 +205,24 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
 
     void CreateOffer() {
         signalingThread->BlockingCall([&] {
-            PeerConnectionInterface::RTCOfferAnswerOptions options;
+            webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
             peerConnection->CreateOffer(createOfferObserver.get(), options);
         });
     }
 
     void CreateAnswer() {
         signalingThread->BlockingCall([&] {
-            PeerConnectionInterface::RTCOfferAnswerOptions options;
+            webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
             peerConnection->CreateAnswer(createAnswerObserver.get(), options);
         });
     }
 
     void SetDescription(int isLocal, int sdpType, char *sdp) {
         signalingThread->BlockingCall([&] {
-            SdpParseError error;
-            auto desc = CreateSessionDescription((SdpType)sdpType, sdp, &error);
+            webrtc::SdpParseError error;
+            auto desc = webrtc::CreateSessionDescription((webrtc::SdpType)sdpType, sdp, &error);
             if (desc == nullptr) {
-                stringstream ss;
+                std::stringstream ss;
                 ss << "line:'" << error.line << "' description:'" << error.description << "'";
                 if (isLocal) {
                     ::onSetLocalDescription((char *)ss.str().c_str(), userData);
@@ -227,10 +233,12 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
             }
             if (isLocal) {
                 peerConnection->SetLocalDescription(
-                    move(desc), make_ref_counted<::SetLocalDescriptionObserver>(userData));
+                    std::move(desc),
+                    rtc::make_ref_counted<::SetLocalDescriptionObserver>(userData));
             } else {
                 peerConnection->SetRemoteDescription(
-                    move(desc), make_ref_counted<::SetRemoteDescriptionObserver>(userData));
+                    std::move(desc),
+                    rtc::make_ref_counted<::SetRemoteDescriptionObserver>(userData));
             }
         });
     }
@@ -243,7 +251,7 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
             } else {
                 desc = peerConnection->remote_description();
             }
-            string descStr;
+            std::string descStr;
             *sdpType = (int)desc->GetType();
             desc->ToString(&descStr);
             *sdp = (char *)calloc(1, descStr.size() + 1);
@@ -254,10 +262,10 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
     char *AddICECandidate(char *sdpMid, int sdpMLineIndex, char *sdp) {
         char *err = nullptr;
         signalingThread->BlockingCall([&] {
-            SdpParseError sdpParseError;
+            webrtc::SdpParseError sdpParseError;
             auto candidate = CreateIceCandidate(sdpMid, sdpMLineIndex, sdp, &sdpParseError);
             if (candidate == nullptr) {
-                stringstream ss;
+                std::stringstream ss;
                 ss << "line:'" << sdpParseError.line << "' description:'"
                    << sdpParseError.description << "'";
                 auto str = ss.str();
@@ -272,11 +280,11 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
     }
 
   protected:
-    void OnSignalingChange(PeerConnectionInterface::SignalingState new_state) {
+    void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) {
         ::onSignalingChange((int)new_state, userData);
     }
 
-    void OnDataChannel(scoped_refptr<DataChannelInterface> data_channel) {
+    void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
         auto dataChannelReleased = data_channel.release();
         ::onDataChannel((char *)dataChannelReleased->label().c_str(), dataChannelReleased->id(),
                         (void *)dataChannelReleased, userData);
@@ -290,7 +298,8 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
         }
     }
 
-    void OnStandardizedIceConnectionChange(PeerConnectionInterface::IceConnectionState new_state) {
+    void OnStandardizedIceConnectionChange(
+        webrtc::PeerConnectionInterface::IceConnectionState new_state) {
         ::onStandardizedICEConnectionChange((int)new_state, userData);
     }
 
@@ -300,39 +309,42 @@ class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
                               (char *)error_text.c_str(), userData);
     }
 
-    void OnIceConnectionChange(PeerConnectionInterface::IceConnectionState new_state) {
+    void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) {
         ::onICEConnectionChange(new_state, userData);
     }
 
-    void OnConnectionChange(PeerConnectionInterface::PeerConnectionState new_state) {
+    void OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState new_state) {
         ::onConnectionChange(int(new_state), userData);
     }
 
-    void OnIceGatheringChange(PeerConnectionInterface::IceGatheringState new_state) {
+    void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) {
         ::onICEGatheringChange((int)new_state, userData);
     }
 
-    void OnIceCandidate(const IceCandidateInterface *candidate) {
-        string sdp;
+    void OnIceCandidate(const webrtc::IceCandidateInterface *candidate) {
+        std::string sdp;
         candidate->ToString(&sdp);
         ::onICECandidate((char *)candidate->sdp_mid().c_str(), candidate->sdp_mline_index(),
                          (char *)sdp.c_str(), userData);
     }
 
   private:
-    scoped_refptr<PeerConnectionInterface> peerConnection;
-    unique_ptr<Thread> signalingThread;
-    scoped_refptr<CreateOfferObserver> createOfferObserver;
-    scoped_refptr<CreateAnswerObserver> createAnswerObserver;
+    rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
+    rtc::Thread *signalingThread;
+    std::unique_ptr<rtc::Thread> ownedSignalingThread;
+    rtc::scoped_refptr<CreateOfferObserver> createOfferObserver;
+    rtc::scoped_refptr<CreateAnswerObserver> createAnswerObserver;
     void *userData;
 };
 
 char *NewPeerConnection(void **peerConnectionOutside, char **iceServers, int iceServersLen,
-                        uint16_t *minPort, uint16_t *maxPort, void *userData) {
-    auto peerConnectionObserver = make_ref_counted<::PeerConnectionObserver>(userData);
+                        uint16_t *minPort, uint16_t *maxPort, void *signalingThread,
+                        void *networkThread, void *workerThread, void *userData) {
+    auto peerConnectionObserver = rtc::make_ref_counted<::PeerConnectionObserver>(userData);
     *peerConnectionOutside = (void *)peerConnectionObserver.release();
     auto err = (*(::PeerConnectionObserver **)peerConnectionOutside)
-                   ->Start(iceServers, iceServersLen, minPort, maxPort);
+                   ->Start(iceServers, iceServersLen, minPort, maxPort, signalingThread,
+                           networkThread, workerThread);
     return err;
 }
 

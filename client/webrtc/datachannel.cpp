@@ -17,11 +17,8 @@
 #include "datachannel.h"
 #include "datachannel.hpp"
 
-using namespace std;
-using namespace rtc;
-using namespace webrtc;
-
-::DataChannelObserver::DataChannelObserver(DataChannelInterface *dataChannel, void *userData)
+::DataChannelObserver::DataChannelObserver(webrtc::DataChannelInterface *dataChannel,
+                                           void *userData)
     : dataChannel(dataChannel), userData(userData) {}
 
 ::DataChannelObserver::~DataChannelObserver() {
@@ -34,7 +31,7 @@ void ::DataChannelObserver::OnStateChange() {
     onDataChannelStateChange((int)dataChannel->state(), dataChannel->id(), (void *)this, userData);
 }
 
-void ::DataChannelObserver::OnMessage(const DataBuffer &buffer) {
+void ::DataChannelObserver::OnMessage(const webrtc::DataBuffer &buffer) {
     onDataChannelMessage((void *)buffer.data.data(), buffer.size(), (void *)this, userData);
 }
 
@@ -50,12 +47,12 @@ void DeleteDataChannel(void *dataChannel) {
 bool DataChannelSend(void *buf, int bufLen, void *dataChannel) {
     auto dataChannelObserverInternal = (::DataChannelObserver *)dataChannel;
     return dataChannelObserverInternal->dataChannel->Send(
-        DataBuffer(CopyOnWriteBuffer((char *)buf, (size_t)bufLen), true));
+        webrtc::DataBuffer(rtc::CopyOnWriteBuffer((char *)buf, (size_t)bufLen), true));
 }
 
 void SetDataChannelCallback(void *dataChannelWithoutCallback, void **dataChannelOutside,
                             void *userData) {
-    auto dataChannel = (DataChannelInterface *)dataChannelWithoutCallback;
+    auto dataChannel = (webrtc::DataChannelInterface *)dataChannelWithoutCallback;
     auto dataChannelObserver = new ::DataChannelObserver(dataChannel, userData);
     *dataChannelOutside = (void *)dataChannelObserver;
     dataChannel->RegisterObserver(dataChannelObserver);
@@ -94,7 +91,7 @@ char *GetDataChannelError(void *DataChannel) {
     auto dataChannelObserverInternal = (::DataChannelObserver *)DataChannel;
     char *err = nullptr;
     if (!dataChannelObserverInternal->dataChannel->error().ok()) {
-        stringstream ss;
+        std::stringstream ss;
         ss << "type:'" << ToString(dataChannelObserverInternal->dataChannel->error().type())
            << "' message:'" << dataChannelObserverInternal->dataChannel->error().message()
            << "' error_detail:'"

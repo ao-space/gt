@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build !release
-// +build !release
 
 package predef
 
@@ -27,7 +26,7 @@ import (
 )
 
 // Debug enables the logs of read and write operations
-var Debug = true
+var Debug = false
 
 func init() {
 	env, ok := os.LookupEnv("DEBUG_REQ")

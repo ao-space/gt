@@ -134,7 +134,10 @@ func (pt *peerTask) init(c *conn) (err error) {
 		OnICECandidate:                    pt.OnICECandidate,
 		OnICECandidateError:               pt.OnICECandidateError,
 	}
-	err = webrtc.NewPeerConnection(&peerConnectionConfig, &pt.conn)
+	signalingThread := pt.tunnel.client.webrtcThreadPool.GetThread()
+	networkThread := pt.tunnel.client.webrtcThreadPool.GetSocketThread()
+	workerThread := pt.tunnel.client.webrtcThreadPool.GetThread()
+	err = webrtc.NewPeerConnection(&peerConnectionConfig, &pt.conn, signalingThread, networkThread, workerThread)
 	return
 }
 

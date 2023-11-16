@@ -155,7 +155,7 @@ func (d *DataChannel) Send(message []byte) bool {
 
 func (d *DataChannel) Close() {
 	if d.closed.CompareAndSwap(false, true) {
-		d.bufferedAmountChangeCond.Signal()
+		d.bufferedAmountChangeCond.Broadcast()
 		C.DeleteDataChannel(d.dataChannel)
 		pointer.Unref(d.pointerID)
 	}
@@ -186,9 +186,9 @@ func (d *DataChannel) State() DataState {
 
 func (d *DataChannel) Error() string {
 	errorC := C.GetDataChannelError(d.dataChannel)
-	err := C.GoString(errorC)
+	error := C.GoString(errorC)
 	C.free(unsafe.Pointer(errorC))
-	return err
+	return error
 }
 
 func (d *DataChannel) MessageSent() uint32 {
@@ -231,5 +231,9 @@ func (d *DataChannelWithoutCallback) SetCallback(config *DataChannelConfig, data
 	channel.bufferedAmountChangeCond = sync.NewCond(&channel.bufferedAmountMtx)
 	*dataChannelPointer = channel
 	(*dataChannelPointer).pointerID = pointer.Save(*dataChannelPointer)
-	C.SetDataChannelCallback(d.pointer, &(*dataChannelPointer).dataChannel, (*dataChannelPointer).pointerID)
+	C.SetDataChannelCallback(
+		d.pointer,
+		&(*dataChannelPointer).dataChannel,
+		(*dataChannelPointer).pointerID,
+	)
 }

@@ -160,7 +160,13 @@ type PeerConnectionConfig struct {
 }
 
 // NewPeerConnection 使用 peerConnectionPointer 是为了防止回调时值还没有被设置，因为是不同的线程
-func NewPeerConnection(config *PeerConnectionConfig, peerConnectionPointer **PeerConnection) (err error) {
+func NewPeerConnection(
+	config *PeerConnectionConfig,
+	peerConnectionPointer **PeerConnection,
+	signalingThread unsafe.Pointer,
+	networkThread unsafe.Pointer,
+	workerThread unsafe.Pointer,
+) (err error) {
 	iceServers := C.malloc(C.size_t(len(config.ICEServers)) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	iceServersPointer := (*[1<<30 - 1]*C.char)(iceServers)
 	for i, stun := range config.ICEServers {
@@ -186,7 +192,17 @@ func NewPeerConnection(config *PeerConnectionConfig, peerConnectionPointer **Pee
 		remoteDescriptionErrChan: make(chan error, 1),
 	}
 	(*peerConnectionPointer).pointerID = pointer.Save(*peerConnectionPointer)
-	errC := C.NewPeerConnection(&(*peerConnectionPointer).peerConnection, (**C.char)(iceServers), C.int(len(config.ICEServers)), (*C.uint16_t)(config.MinPort), (*C.uint16_t)(config.MaxPort), (*peerConnectionPointer).pointerID)
+	errC := C.NewPeerConnection(
+		&(*peerConnectionPointer).peerConnection,
+		(**C.char)(iceServers),
+		C.int(len(config.ICEServers)),
+		(*C.uint16_t)(config.MinPort),
+		(*C.uint16_t)(config.MaxPort),
+		signalingThread,
+		networkThread,
+		workerThread,
+		(*peerConnectionPointer).pointerID,
+	)
 	if errC != nil {
 		err = errors.New(C.GoString(errC))
 		C.free(unsafe.Pointer(errC))
@@ -332,14 +348,27 @@ func onICECandidate(sdpMid *C.char, sdpMLineIndex C.int, sdp *C.char, userData u
 }
 
 //export onICECandidateError
-func onICECandidateError(address *C.char, port C.int, url *C.char, errorCode C.int, errorText *C.char, userData unsafe.Pointer) {
+func onICECandidateError(
+	address *C.char,
+	port C.int,
+	url *C.char,
+	errorCode C.int,
+	errorText *C.char,
+	userData unsafe.Pointer,
+) {
 	p, ok := pointer.Restore(userData).(*PeerConnection)
 	if !ok || p == nil {
 		return
 	}
 
 	if p.config != nil && p.config.OnICECandidateError != nil {
-		p.config.OnICECandidateError(C.GoString(address), int(port), C.GoString(url), int(errorCode), C.GoString(errorText))
+		p.config.OnICECandidateError(
+			C.GoString(address),
+			int(port),
+			C.GoString(url),
+			int(errorCode),
+			C.GoString(errorText),
+		)
 	}
 }
 
@@ -493,7 +522,13 @@ func (p *PeerConnection) CreateDataChannel(label string, negotiated bool, config
 	(*dataChannelPointer).pointerID = pointer.Save(*dataChannelPointer)
 
 	labelC := C.CString(label)
-	errC := C.CreateDataChannel(&(*dataChannelPointer).dataChannel, labelC, C.bool(negotiated), (*dataChannelPointer).pointerID, p.peerConnection)
+	errC := C.CreateDataChannel(
+		&(*dataChannelPointer).dataChannel,
+		labelC,
+		C.bool(negotiated),
+		(*dataChannelPointer).pointerID,
+		p.peerConnection,
+	)
 	C.free(unsafe.Pointer(labelC))
 	if errC != nil {
 		err = errors.New(C.GoString(errC))

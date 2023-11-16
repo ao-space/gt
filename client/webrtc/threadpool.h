@@ -12,9 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build release
+#ifndef THREADPOOL_H
+#define THREADPOOL_H
 
-package predef
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// Debug enables the logs of read and write operations
-const Debug = false
+#include <stdint.h>
+
+void *NewThreadPool(uint32_t threadNum);
+void *GetThreadPoolThread(void *threadPool);
+void *GetThreadPoolSocketThread(void *threadPool);
+void DeleteThreadPool(void *threadPool);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* THREADPOOL_H */

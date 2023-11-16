@@ -17,7 +17,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"net/url"
 	"strconv"
 	"strings"
@@ -26,6 +25,7 @@ import (
 	"github.com/isrc-cas/gt/config"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/rs/zerolog"
+	"gopkg.in/yaml.v3"
 )
 
 // Config is a client config.
@@ -66,6 +66,7 @@ type Options struct {
 	SentryDebug       bool                 `yaml:"sentryDebug,omitempty" json:",omitempty" usage:"Sentry debug mode, the debug information is printed to help you understand what sentry is doing"`
 
 	WebRTCConnectionIdleTimeout config.Duration `yaml:"webrtcConnectionIdleTimeout,omitempty" usage:"The timeout of WebRTC connection. Supports values like '30s', '5m'"`
+	WebRTCRemoteConnections     uint          `yaml:"webrtcConnections" usage:"The max number of webrtc connections. Valid value is 1 to 50"`
 	WebRTCLogLevel              string          `yaml:"webrtcLogLevel,omitempty" json:",omitempty" usage:"WebRTC log level: verbose, info, warning, error"`
 	WebRTCMinPort               uint16          `yaml:"webrtcMinPort,omitempty" json:",omitempty" usage:"The min port of WebRTC peer connection"`
 	WebRTCMaxPort               uint16          `yaml:"webrtcMaxPort,omitempty" json:",omitempty" usage:"The max port of WebRTC peer connection"`
@@ -108,6 +109,7 @@ func defaultConfig() Config {
 			SentryRelease:    predef.Version,
 
 			WebRTCConnectionIdleTimeout: config.Duration{Duration: 5 * time.Minute},
+			WebRTCRemoteConnections:     30,
 			WebRTCLogLevel:              "warning",
 
 			TCPForwardConnections: 3,

@@ -100,7 +100,7 @@ func TestP2PGetOffer(t *testing.T) {
 		OnICECandidateError: func(addrss string, port int, url string, errorCode int, errorText string) {
 		},
 	}
-	err = webrtc.NewPeerConnection(&peerConnectionConfig, &peerConnection)
+	err = webrtc.NewPeerConnection(&peerConnectionConfig, &peerConnection, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -469,7 +469,7 @@ func initOffer(t *testing.T, addr string) (*webrtc.PeerConnection, context.Conte
 		},
 	}
 	var err error
-	err = webrtc.NewPeerConnection(&config, &peerConnection)
+	err = webrtc.NewPeerConnection(&config, &peerConnection, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
