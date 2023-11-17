@@ -192,94 +192,100 @@ func sig(sig syscall.Signal) (err error) {
 }
 
 type dialer struct {
-	host      string
-	stun      string
-	tlsConfig *tls.Config
-	dialFn    func() (conn net.Conn, err error)
+	tcp        string
+	tls        string
+	quic       string
+	bbr        bool
+	preferQuic bool
+	stuns      []string
+	tlsConfig  *tls.Config
 }
 
-func (d *dialer) init(c *Client, remote string, stun string) (err error) {
-	var u *url.URL
-	u, err = url.Parse(remote)
-	if err != nil {
-		err = fmt.Errorf("remote url (-remote option) '%s' is invalid, cause %s", remote, err.Error())
-		return
+func (d *dialer) isReady() (ready bool) {
+	if len(d.tls) > 0 {
+		return true
 	}
-	d.stun = stun
-	c.Logger.Info().Str("remote", remote).Str("stun", stun).Msg("remote url")
-	switch u.Scheme {
-	case "tls":
-		if len(u.Port()) < 1 {
-			u.Host = net.JoinHostPort(u.Host, "443")
+	if len(d.quic) > 0 {
+		return true
+	}
+	if len(d.tcp) > 0 {
+		return true
+	}
+
+	return false
+}
+
+func (d *dialer) init(c *Client, remotes []string, stuns []string) (err error) {
+	d.stuns = stuns
+	for _, remote := range remotes {
+		var u *url.URL
+		u, err = url.Parse(remote)
+		if err != nil {
+			err = fmt.Errorf("remote url (-remote option) '%s' is invalid, cause %s", remote, err.Error())
+			return
 		}
-		tlsConfig := &tls.Config{}
-		if len(c.Config().RemoteCert) > 0 {
-			var cf []byte
-			cf, err = os.ReadFile(c.Config().RemoteCert)
-			if err != nil {
-				err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
-				return
+		c.Logger.Info().Str("remote", remote).Strs("stuns", stuns).Msg("remote url")
+		switch u.Scheme {
+		case "tls":
+			if len(u.Port()) < 1 {
+				u.Host = net.JoinHostPort(u.Host, "443")
 			}
-			roots := x509.NewCertPool()
-			ok := roots.AppendCertsFromPEM(cf)
-			if !ok {
-				err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
-				return
+			tlsConfig := &tls.Config{}
+			if len(c.Config().RemoteCert) > 0 {
+				var cf []byte
+				cf, err = os.ReadFile(c.Config().RemoteCert)
+				if err != nil {
+					err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
+					return
+				}
+				roots := x509.NewCertPool()
+				ok := roots.AppendCertsFromPEM(cf)
+				if !ok {
+					err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
+					return
+				}
+				tlsConfig.RootCAs = roots
 			}
-			tlsConfig.RootCAs = roots
-		}
-		if c.Config().RemoteCertInsecure {
-			tlsConfig.InsecureSkipVerify = true
-		}
-		d.host = u.Host
-		d.tlsConfig = tlsConfig
-		d.dialFn = d.tlsDial
-	case "tcp":
-		if len(u.Port()) < 1 {
-			u.Host = net.JoinHostPort(u.Host, "80")
-		}
-		d.host = u.Host
-		d.dialFn = d.dial
-	case "quic":
-		if len(u.Port()) < 1 {
-			u.Host = net.JoinHostPort(u.Host, "443")
-		}
-		tlsConfig := &tls.Config{}
-		if len(c.Config().RemoteCert) > 0 {
-			var cf []byte
-			cf, err = os.ReadFile(c.Config().RemoteCert)
-			if err != nil {
-				err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
-				return
+			if c.Config().RemoteCertInsecure {
+				tlsConfig.InsecureSkipVerify = true
 			}
-			roots := x509.NewCertPool()
-			ok := roots.AppendCertsFromPEM(cf)
-			if !ok {
-				err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
-				return
+			d.tls = u.Host
+			d.tlsConfig = tlsConfig
+		case "tcp":
+			if len(u.Port()) < 1 {
+				u.Host = net.JoinHostPort(u.Host, "80")
 			}
-			tlsConfig.RootCAs = roots
+			d.tcp = u.Host
+		case "quic":
+			if len(u.Port()) < 1 {
+				u.Host = net.JoinHostPort(u.Host, "443")
+			}
+			tlsConfig := &tls.Config{}
+			if len(c.Config().RemoteCert) > 0 {
+				var cf []byte
+				cf, err = os.ReadFile(c.Config().RemoteCert)
+				if err != nil {
+					err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
+					return
+				}
+				roots := x509.NewCertPool()
+				ok := roots.AppendCertsFromPEM(cf)
+				if !ok {
+					err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
+					return
+				}
+				tlsConfig.RootCAs = roots
+			}
+			if c.Config().RemoteCertInsecure {
+				tlsConfig.InsecureSkipVerify = true
+			}
+			d.quic = u.Host
+			d.tlsConfig = tlsConfig
+		default:
+			err = fmt.Errorf("remote url (-remote option) '%s' is invalid", remote)
 		}
-		if c.Config().RemoteCertInsecure {
-			tlsConfig.InsecureSkipVerify = true
-		}
-		d.host = u.Host
-		d.tlsConfig = tlsConfig
-		//quic-go只有Cubic一种拥塞控制算法
-		//msquic默认使用bbr作为拥塞控制算法
-		if c.Config().OpenBBR {
-			d.dialFn = d.msquicDial
-		} else {
-			d.dialFn = d.quicDial
-		}
-	default:
-		err = fmt.Errorf("remote url (-remote option) '%s' is invalid", remote)
 	}
 	return
-}
-
-func (d *dialer) initWithRemote(c *Client) (err error) {
-	return d.init(c, c.Config().Remote[c.chosenRemoteLabel], c.Config().RemoteSTUN)
 }
 
 func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
@@ -317,24 +323,74 @@ func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
 			return
 		}
 	}
-	err = d.init(c, addr, stunAddr)
+	err = d.init(c, []string{addr}, []string{stunAddr})
 	return
 }
 
-func (d *dialer) dial() (conn net.Conn, err error) {
-	return net.Dial("tcp", d.host)
+func (d *dialer) tcpDial() (conn net.Conn, err error) {
+	return net.Dial("tcp", d.tcp)
 }
 
 func (d *dialer) tlsDial() (conn net.Conn, err error) {
-	return tls.Dial("tcp", d.host, d.tlsConfig)
+	return tls.Dial("tcp", d.tls, d.tlsConfig)
 }
 
 func (d *dialer) quicDial() (conn net.Conn, err error) {
-	return connection.QuicDial(d.host, d.tlsConfig)
+	return connection.QuicDial(d.quic, d.tlsConfig)
 }
 
 func (d *dialer) msquicDial() (conn net.Conn, err error) {
-	return msquic.MsquicDial(d.host, d.tlsConfig)
+	return msquic.MsquicDial(d.quic, d.tlsConfig)
+}
+
+func (d *dialer) dial() (conn net.Conn, err error) {
+	if !d.preferQuic && len(d.tls) > 0 {
+		return d.tlsDial()
+	}
+	if len(d.quic) > 0 {
+		if d.bbr {
+			return d.msquicDial()
+		}
+		return d.quicDial()
+	}
+	if len(d.tcp) > 0 {
+		return d.tcpDial()
+	}
+
+	return nil, errors.New("no dialer available")
+}
+
+func (c *Client) processRemotes() (result []dialer, err error) {
+	m := make(map[string][]string)
+	for index, remote := range c.Config().Remote {
+		if !strings.Contains(remote, "://") {
+			remote = "tcp://" + remote
+			c.Config().Remote[index] = remote
+		}
+		var u *url.URL
+		u, err = url.Parse(remote)
+		if err != nil {
+			return
+		}
+		hostname := u.Hostname()
+		value, ok := m[hostname]
+		if ok {
+			value = append(value, remote)
+			m[hostname] = value
+		} else {
+			m[hostname] = []string{remote}
+		}
+	}
+	result = make([]dialer, 0, len(m))
+	for _, remotes := range m {
+		var d dialer
+		err = d.init(c, remotes, c.Config().RemoteSTUN)
+		if err != nil {
+			return
+		}
+		result = append(result, d)
+	}
+	return
 }
 
 // Start runs the client agent.
@@ -383,61 +439,9 @@ func (c *Client) Start() (err error) {
 		return
 	}
 
-	var dialer dialer
+	var ds []dialer
 	if len(c.Config().Remote) > 0 {
-		var hasQuic bool
-		var enterSwitch bool
-		for index := range c.Config().Remote {
-			if !strings.Contains(c.Config().Remote[index], "://") {
-				c.Config().Remote[index] = "tcp://" + c.Config().Remote[index]
-			}
-		}
-		if len(c.Config().Remote) >= 2 {
-			enterSwitch = true
-			for index, remote := range c.Config().Remote {
-				var u *url.URL
-				u, err = url.Parse(remote)
-				if err != nil {
-					err = fmt.Errorf("remote url (-remote option) '%s' is invalid, cause %s", remote, err.Error())
-					return
-				}
-				if u.Scheme == "quic" {
-					c.Logger.Info().Str("remote", remote).Msg("waiting...intelligent switch are sending probes to get network conditions...")
-					hasQuic = true
-					if len(u.Port()) < 1 {
-						u.Host = net.JoinHostPort(u.Host, "443")
-					}
-					var avgRtt, pktLoss float64
-					avgRtt, pktLoss, err = connection.GetQuicProbesResults(u.Host)
-					if err != nil {
-						c.Logger.Error().Err(err).Msg("can not use QUIC connection to detect network conditions")
-						return err
-					}
-
-					c.Logger.Info().Float64("averageRTT", avgRtt).Float64("lossRate", pktLoss).Msg("QUIC probes get network conditions with")
-					var networkCondition = []float64{0, 0, 0, 0, avgRtt, pktLoss, 0, 0, 0, 0}
-					result := connection.PredictWithRttAndLoss(networkCondition)
-					if result[1] > result[0] {
-						c.chosenRemoteLabel = index
-					} else {
-						if index == 0 {
-							c.chosenRemoteLabel = 1
-						} else {
-							c.chosenRemoteLabel = 0
-						}
-					}
-				}
-			}
-			if !hasQuic {
-				c.chosenRemoteLabel = 0
-			}
-		} else {
-			c.chosenRemoteLabel = 0
-		}
-		if enterSwitch {
-			c.Logger.Info().Str("remote", c.Config().Remote[c.chosenRemoteLabel]).Msg("intelligent switch strategy finally choose to establish with")
-		}
-		err = dialer.initWithRemote(c)
+		ds, err = c.processRemotes()
 		if err != nil {
 			return
 		}
@@ -448,20 +452,22 @@ func (c *Client) Start() (err error) {
 			err = fmt.Errorf("remote api url (-remoteAPI option) '%s' must begin with http:// or https://", c.Config().RemoteAPI)
 			return
 		}
-		for len(dialer.host) == 0 {
+		var dialer dialer
+		for len(ds) == 0 {
 			if atomic.LoadUint32(&c.closing) == 1 {
 				err = errors.New("client is closing")
 				return
 			}
 			err = dialer.initWithRemoteAPI(c)
 			if err == nil {
+				ds = append(ds, dialer)
 				break
 			}
 			c.Logger.Error().Err(err).Msg("failed to query server address")
 			time.Sleep(c.Config().ReconnectDelay.Duration)
 		}
 	}
-	if len(dialer.host) == 0 {
+	if len(ds) == 0 {
 		err = errors.New("option -remote or -remoteAPI must be specified")
 		return
 	}
@@ -488,9 +494,13 @@ func (c *Client) Start() (err error) {
 	conf4Log.Password = "******"
 	conf4Log.SigningKey = "******"
 	c.Logger.Info().Msg(spew.Sdump(conf4Log))
-	for i := uint(1); i <= c.Config().RemoteConnections; i++ {
-		go c.connectLoop(dialer, i)
-		c.waitTunnelsShutdown.Add(1)
+	connID := uint(0)
+	for _, dialer := range ds {
+		for i := uint(1); i <= c.Config().RemoteConnections; i++ {
+			connID += 1
+			go c.connectLoop(dialer, connID)
+			c.waitTunnelsShutdown.Add(1)
+		}
 	}
 	c.apiServer.Start()
 
@@ -505,7 +515,9 @@ func (c *Client) Start() (err error) {
 			return
 		}
 		c.Logger.Info().Str("addr", c.tcpForwardListener.Addr().String()).Msg("Listening TCP forward")
-		go c.tcpForwardStart(dialer)
+		for _, dialer := range ds {
+			go c.tcpForwardStart(dialer)
+		}
 	}
 
 	return
@@ -599,12 +611,12 @@ func (c *Client) initConn(d dialer, connID uint) (result *conn, err error) {
 	c.initConnMtx.Lock()
 	defer c.initConnMtx.Unlock()
 
-	conn, err := d.dialFn()
+	conn, err := d.dial()
 	if err != nil {
 		return
 	}
 	result = newConn(conn, c)
-	result.stuns = append(result.stuns, d.stun)
+	result.stuns = append(result.stuns, d.stuns...)
 	result.Logger = c.Logger.With().Uint("connID", connID).Logger()
 	err = result.init()
 	if err != nil {

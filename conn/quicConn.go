@@ -7,17 +7,15 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/binary"
 	"encoding/pem"
 	"math/big"
 	"net"
-	"sync/atomic"
 	"time"
 
 	"github.com/isrc-cas/gt/predef"
 	"github.com/quic-go/quic-go"
 )
-
-const probePacketLostTimeOutMs = 5
 
 type QuicConnection struct {
 	quic.Connection
@@ -97,66 +95,57 @@ func GenerateTLSConfig() *tls.Config {
 	}
 }
 
-func GetQuicProbesResults(addr string) (avgRtt float64, pktLoss float64, err error) {
-	totalNum := 100
-	var totalSuccessNum int64 = 0
-	var totalDelay int64 = 0
-	var buf []byte
-	probeCloseError := &quic.ApplicationError{
-		Remote:       false,
-		ErrorCode:    0x42,
-		ErrorMessage: "close QUIC probe connection",
-	}
-	tlsConfig := &tls.Config{}
-	tlsConfig.InsecureSkipVerify = true
+const ProbeTimes = 10
 
+func GetQuicProbesResults(addr string, timeout time.Duration) (avgRtt float64, pktLoss float64, err error) {
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
 	conn, err := QuicDial(addr, tlsConfig)
 	if err != nil {
 		return
 	}
-	sendBuffer := []byte{predef.MagicNumber, 0x02}
+	defer func() {
+		_ = conn.Close()
+	}()
+	sendBuffer := []byte{predef.MagicNumber, 0x02, 0x00}
 	_, err = conn.Write(sendBuffer)
 	if err != nil {
 		return
 	}
 
-	for i := 0; i < totalNum; i++ {
-		go func() {
-			err = conn.(*QuicConnection).SendDatagram([]byte(time.Now().Format("2006-01-02 15:04:05.000000000")))
-			if err != nil {
-				return
-			}
-		}()
-	}
-
-	for {
-		timer := time.AfterFunc(probePacketLostTimeOutMs*time.Second, func() {
-			err = conn.(*QuicConnection).CloseWithError(0x42, "close QUIC probe connection")
-			if err != nil {
-				return
-			}
-		})
-		buf, err = conn.(*QuicConnection).ReceiveDatagram(context.Background())
+	var totalSuccessNum int64
+	var totalDelay int64
+	var buf []byte
+	for i := 0; i < ProbeTimes; i++ {
+		bs := [9]byte{}
+		bs[0] = byte(i)
+		now := time.Now().UnixMilli()
+		binary.BigEndian.PutUint64(bs[1:], uint64(now))
+		err = conn.(*QuicConnection).SendDatagram(bs[:])
 		if err != nil {
-			// QUIC的stream关闭时会返回io.EOF，但是QUIC的不可靠数据包Datagram是在connection层面进行发送的
-			// 因此需要通过quic.ApplicationError判断QUIC connection是否由于应用程序主动关闭
-			if err.Error() == probeCloseError.Error() {
-				err = nil
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		buf, err = conn.(*QuicConnection).ReceiveDatagram(ctx)
+		cancel()
+		if err != nil {
+			return
+		}
+		if len(buf) >= 9 {
+			no := buf[0]
+			u := binary.BigEndian.Uint64(buf[1:])
+			interval := time.Now().Sub(time.UnixMilli(int64(u))).Milliseconds()
+			totalSuccessNum += 1
+			totalDelay += interval
+			if no == ProbeTimes-1 {
 				break
-			} else {
-				return
 			}
 		}
-		if buf != nil {
-			sendTine, _ := time.ParseInLocation("2006-01-02 15:04:05.000000000", string(buf), time.Local)
-			interval := time.Now().Sub(sendTine).Microseconds()
-			atomic.AddInt64(&totalSuccessNum, 1)
-			atomic.AddInt64(&totalDelay, interval)
-		}
-		timer.Stop()
 	}
-
-	avgRtt = float64(atomic.LoadInt64(&totalDelay)) / (float64(1000 * totalNum))
-	pktLoss = 1 - float64(atomic.LoadInt64(&totalSuccessNum))/float64(totalNum)
+	avgRtt = float64(totalDelay) / (float64(ProbeTimes))
+	pktLoss = 1 - float64(totalSuccessNum)/float64(ProbeTimes)
+	_, err = conn.Write([]byte{0xFF})
 	return
 }

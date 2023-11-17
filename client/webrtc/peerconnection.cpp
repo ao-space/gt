@@ -349,6 +349,8 @@ char *NewPeerConnection(void **peerConnectionOutside, char **iceServers, int ice
 }
 
 void DeletePeerConnection(void *peerConnectionOutside) {
+    if (peerConnectionOutside == nullptr)
+        return;
     auto peerConnectionObserver = (::PeerConnectionObserver *)peerConnectionOutside;
     peerConnectionObserver->Delete();
 }

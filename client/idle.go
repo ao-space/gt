@@ -71,8 +71,6 @@ func (m *idleManager) Init(id uint) (exit bool) {
 	var n uint
 	for _, s := range m.status {
 		switch s {
-		case running:
-			n++
 		case idle:
 			n++
 		}

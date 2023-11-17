@@ -538,6 +538,10 @@ func (p *PeerConnection) CreateDataChannel(label string, negotiated bool, config
 }
 
 func (p *PeerConnection) Close() {
-	C.DeletePeerConnection(p.peerConnection)
-	pointer.Unref(p.pointerID)
+	if p.peerConnection != nil {
+		C.DeletePeerConnection(p.peerConnection)
+	}
+	if p.pointerID != nil {
+		pointer.Unref(p.pointerID)
+	}
 }

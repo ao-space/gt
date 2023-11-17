@@ -35,7 +35,6 @@ import (
 	connection "github.com/isrc-cas/gt/conn"
 	"github.com/isrc-cas/gt/pool"
 	"github.com/isrc-cas/gt/predef"
-	"github.com/quic-go/quic-go"
 )
 
 var (
@@ -165,36 +164,46 @@ func (c *conn) handle(handleFunc func() bool) {
 			handled = c.handleTunnelLoop(remoteIP)
 			return
 		case 0x02:
-			var buf []byte
-			probeCloseError := &quic.ApplicationError{
-				Remote:       true,
-				ErrorCode:    0x42,
-				ErrorMessage: "close QUIC probe connection",
+			_, err = reader.Discard(2)
+			if err != nil {
+				c.Logger.Warn().Err(err).Msg("failed to discard version field")
+				return
 			}
-			for {
-				timer := time.AfterFunc(3*time.Second, func() {
-					c.Logger.Info().Msg("closing QUIC probe connection")
-				})
-				if buf, err = c.Connection.Conn.(*connection.QuicConnection).ReceiveDatagram(context.Background()); err != nil {
-					if err.Error() == probeCloseError.Error() {
-						break
-					} else {
-						c.Logger.Warn().Err(err).Msg("failed to use QUIC probe connection to receive message")
-						return
-					}
-				}
-				err = c.Connection.Conn.(*connection.QuicConnection).SendDatagram(buf)
-				if err != nil {
-					c.Logger.Warn().Err(err).Msg("failed to use QUIC probe connection to send message")
-					return
-				}
-				timer.Stop()
-			}
-			handled = true
+			handled = c.handleProbe(reader)
 			return
 		}
 	}
 	handled = handleFunc()
+}
+
+func (c *conn) handleProbe(r *bufio.Reader) (handled bool) {
+	op, err := r.ReadByte()
+	if err != nil {
+		c.Logger.Warn().Err(err).Msg("handleProbe read op error")
+		return
+	}
+	switch op {
+	case 0x00:
+		for i := 0; i < connection.ProbeTimes; i++ {
+			ctx, cancel := context.WithTimeout(context.Background(), c.server.config.Timeout.Duration)
+			buf, err := c.Connection.Conn.(*connection.QuicConnection).ReceiveDatagram(ctx)
+			cancel()
+			if err != nil {
+				c.Logger.Warn().Err(err).Msg("handleProbe ReceiveDatagram error")
+				return
+			}
+			err = c.Connection.Conn.(*connection.QuicConnection).SendDatagram(buf)
+			if err != nil {
+				c.Logger.Warn().Err(err).Msg("handleProbe SendDatagram error")
+				return
+			}
+			no := buf[0]
+			if no == connection.ProbeTimes-1 {
+				break
+			}
+		}
+	}
+	return true
 }
 
 func (c *conn) handleSNI() (handled bool) {

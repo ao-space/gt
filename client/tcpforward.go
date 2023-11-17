@@ -230,7 +230,7 @@ func (c *Client) createPeerConnection(dialer dialer) (peerConnection *webrtc.Pee
 	dataChannelUnused.Close()
 
 	// 发送 offer
-	conn, err := dialer.dialFn()
+	conn, err := dialer.dial()
 	if err != nil {
 		return
 	}

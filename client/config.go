@@ -37,18 +37,18 @@ type Config struct {
 
 // Options is the config options for a client.
 type Options struct {
-	Config                string          `arg:"config" yaml:"-" json:"-" usage:"The config file path to load"`
-	ID                    string          `yaml:"id,omitempty" json:",omitempty" usage:"The unique id used to connect to server. Now it's the prefix of the domain."`
-	Secret                string          `yaml:"secret,omitempty" json:",omitempty" usage:"The secret used to verify the id"`
-	ReconnectDelay        config.Duration `yaml:"reconnectDelay,omitempty" json:",omitempty" usage:"The delay before reconnect. Supports values like '30s', '5m'"`
-	Remote                config.Slice[string]          `yaml:"remote,omitempty" json:",omitempty" usage:"The remote server url. Supports tcp:// and tls:// and quic://, default tcp://"`
-	RemoteSTUN            string          `yaml:"remoteSTUN,omitempty" json:",omitempty" usage:"The remote STUN server address"`
-	RemoteAPI             string          `yaml:"remoteAPI,omitempty" json:",omitempty" usage:"The API to get remote server url"`
-	RemoteCert            string          `yaml:"remoteCert,omitempty" json:",omitempty" usage:"The path to remote cert"`
-	RemoteCertInsecure    bool            `yaml:"remoteCertInsecure,omitempty" json:",omitempty" usage:"Accept self-signed SSL certs from remote"`
-	RemoteConnections     uint            `yaml:"remoteConnections,omitempty" json:",omitempty" usage:"The max number of server connections in the pool. Valid value is 1 to 10"`
-	RemoteIdleConnections uint            `yaml:"remoteIdleConnections,omitempty" json:",omitempty" usage:"The number of idle server connections kept in the pool"`
-	RemoteTimeout         config.Duration `yaml:"remoteTimeout,omitempty" json:",omitempty" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
+	Config                string               `arg:"config" yaml:"-" json:"-" usage:"The config file path to load"`
+	ID                    string               `yaml:"id,omitempty" json:",omitempty" usage:"The unique id used to connect to server. Now it's the prefix of the domain."`
+	Secret                string               `yaml:"secret,omitempty" json:",omitempty" usage:"The secret used to verify the id"`
+	ReconnectDelay        config.Duration      `yaml:"reconnectDelay,omitempty" json:",omitempty" usage:"The delay before reconnect. Supports values like '30s', '5m'"`
+	Remote                config.Slice[string] `yaml:"remote,omitempty" json:",omitempty" usage:"The remote server url. Supports tcp:// and tls:// and quic://, default tcp://"`
+	RemoteSTUN            config.Slice[string] `yaml:"remoteSTUN,omitempty" json:",omitempty" usage:"The remote STUN server address"`
+	RemoteAPI             string               `yaml:"remoteAPI,omitempty" json:",omitempty" usage:"The API to get remote server url"`
+	RemoteCert            string               `yaml:"remoteCert,omitempty" json:",omitempty" usage:"The path to remote cert"`
+	RemoteCertInsecure    bool                 `yaml:"remoteCertInsecure,omitempty" json:",omitempty" usage:"Accept self-signed SSL certs from remote"`
+	RemoteConnections     uint                 `yaml:"remoteConnections,omitempty" json:",omitempty" usage:"The max number of server connections in the pool. Valid value is 1 to 10"`
+	RemoteIdleConnections uint                 `yaml:"remoteIdleConnections,omitempty" json:",omitempty" usage:"The number of idle server connections kept in the pool"`
+	RemoteTimeout         config.Duration      `yaml:"remoteTimeout,omitempty" json:",omitempty" usage:"The timeout of remote connections. Supports values like '30s', '5m'"`
 
 	HostPrefix         config.PositionSlice[string]        `yaml:"-" json:"-" arg:"hostPrefix"  usage:"The server will recognize this host prefix and forward data to local"`
 	RemoteTCPPort      config.PositionSlice[uint16]        `yaml:"-" json:"-" arg:"remoteTCPPort" usage:"The TCP port that the remote server will open"`
@@ -92,7 +92,6 @@ type Options struct {
 	Signal string `arg:"s" yaml:"-" json:"-" usage:"Send signal to client processes. Supports values: reload, restart, stop, kill"`
 
 	OpenBBR bool `yaml:"bbr" usage:"Use bbr as congestion control algorithm (through msquic) when GT use QUIC connection. Default algorithm is Cubic (through quic-go)."`
-
 }
 
 // if you enable web service, it will set 'Config' if not specified

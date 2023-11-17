@@ -115,6 +115,7 @@ update_submodule:
 	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/tlslite-ng
 	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/wycheproof
 	$(UPDATE_SUBMODULE_COMMAND)
+	@git apply dep/patch/* && echo "patches applied" || echo "no patch applied"
 
 docker_create_image: update_submodule
 	docker images | grep -cim1 -E "^gtbuild\s+?v1" || docker build -t gtbuild:v1 .
@@ -260,9 +261,6 @@ check_msquic_dependencies:
 
 compile_msquic: check_msquic_dependencies update_submodule
 	mkdir -p ./dep/_msquic/$(TARGET)
-	sed 's|\(^ *msquic_lib\)$$|\1 ALL|g' ./dep/_msquic/src/bin/CMakeLists.txt > ./dep/_msquic/src/bin/CMakeLists.txt.tmp
-	cat ./dep/_msquic/src/bin/CMakeLists.txt.tmp > ./dep/_msquic/src/bin/CMakeLists.txt
-	rm ./dep/_msquic/src/bin/CMakeLists.txt.tmp
 	cmake -B./dep/_msquic/$(TARGET) -S./dep/_msquic -DQUIC_BUILD_SHARED=OFF -DCMAKE_TARGET_ARCHITECTURE=$(TARGET_CPU)
 	make -C./dep/_msquic/$(TARGET) -j$(shell nproc)
 	@renameSymbols=$$(objdump -t ./dep/_msquic/$(TARGET)/bin/Release/libmsquic.a | awk -v RS= '/_YB80VJ/{next}1' | grep -E 'g +(F|O) ' | grep -Evi ' (ms){0,1}quic' | awk '{print " --redefine-sym " $$NF "=" $$NF "_YB80VJ"}') && \
