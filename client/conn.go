@@ -510,12 +510,14 @@ func (c *conn) processP2P(id uint32, r *bufio.LimitedReader) {
 func (c *conn) newPeerTask(id uint32) (t *peerTask, ok bool) {
 	c.client.peersRWMtx.Lock()
 	defer c.client.peersRWMtx.Unlock()
-	l := uint(len(c.client.peers))
-	if l >= c.client.Config().WebRTCRemoteConnections {
-		respAndClose(id, c, [][]byte{
-			[]byte("HTTP/1.1 403 Forbidden\r\nConnection: Closed\r\n\r\n"),
-		})
-		return
+	if !predef.Debug {
+		l := uint(len(c.client.peers))
+		if l >= c.client.Config().WebRTCRemoteConnections {
+			respAndClose(id, c, [][]byte{
+				[]byte("HTTP/1.1 403 Forbidden\r\nConnection: Closed\r\n\r\n"),
+			})
+			return
+		}
 	}
 
 	t = &peerTask{}

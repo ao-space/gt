@@ -240,8 +240,10 @@ func (pt *peerTask) process(r io.Reader, writer http.ResponseWriter, initFn func
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 		}
-		if e := recover(); e != nil {
-			pt.Logger.Info().Interface("panic", e).Msg("processOffer panic")
+		if !predef.Debug {
+			if e := recover(); e != nil {
+				pt.Logger.Info().Interface("panic", e).Msg("processOffer panic")
+			}
 		}
 		pt.Logger.Info().Err(err).Msg("processOffer done")
 	}()

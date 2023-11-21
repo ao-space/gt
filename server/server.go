@@ -494,10 +494,6 @@ func (s *Server) startSTUNServer() (err error) {
 		Realm:         "ao.space",
 		LoggerFactory: factory,
 		AuthHandler: func(username, realm string, srcAddr net.Addr) (key []byte, ok bool) {
-			value, ok := s.users.Load(username)
-			if ok {
-				key = []byte(value.(string))
-			}
 			return
 		},
 		PacketConnConfigs: []turn.PacketConnConfig{

@@ -147,7 +147,7 @@ func (m *idleManager) SetRunningWithTaskCount(id uint, taskCount uint32) {
 	m.statusMtx.RUnlock()
 	if s == running {
 		if taskCount >= 3 {
-			m.statusCond.Signal()
+			m.statusCond.Broadcast()
 		}
 		return
 	}
@@ -176,14 +176,18 @@ func (m *idleManager) WaitIdle(id uint) {
 	defer m.statusMtx.Unlock()
 
 	for !m.close.Load() {
-		wait := false
-		for _, s := range m.status {
+		m.status[id] = wait
+		w := false
+		for i, s := range m.status {
+			if i == id {
+				continue
+			}
 			if s == idle {
-				wait = true
+				w = true
 				break
 			}
 		}
-		if wait {
+		if w {
 			m.statusCond.Wait()
 			continue
 		}

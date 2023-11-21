@@ -29,7 +29,7 @@ import (
 var Debug = false
 
 func init() {
-	env, ok := os.LookupEnv("DEBUG_REQ")
+	env, ok := os.LookupEnv("DEBUG_VAR")
 	if ok {
 		if strings.ToLower(env) == "true" {
 			Debug = true

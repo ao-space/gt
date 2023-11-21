@@ -484,7 +484,7 @@ func (c *Client) Start() (err error) {
 	}
 	if c.Config().WebRTCRemoteConnections < 1 {
 		c.Config().WebRTCRemoteConnections = 1
-	} else if c.Config().WebRTCRemoteConnections > 50 {
+	} else if !predef.Debug && c.Config().WebRTCRemoteConnections > 50 {
 		c.Config().WebRTCRemoteConnections = 50
 	}
 	c.idleManager = newIdleManager(c.Config().RemoteIdleConnections)
