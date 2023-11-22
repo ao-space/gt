@@ -28,7 +28,6 @@ import (
 	"time"
 )
 
-//go:embed dist/*
 var FS embed.FS
 
 type Server struct {
