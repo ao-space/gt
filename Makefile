@@ -67,7 +67,7 @@ export CGO_LDFLAGS= $(PWD)/dep/_google-webrtc/src/out/release-$(TARGET)/obj/libw
 	-ldl -pthread
 export CGO_ENABLED=1
 
-.PHONY: all build docker_build_linux_arm64 fmt build_client docker_build_linux_arm64_client gofumpt build_server docker_build_linux_arm64_server golangci-lint check_webrtc_dependencies docker_release_linux_amd64 release clean docker_release_linux_amd64_client release_client compile_webrtc docker_release_linux_amd64_server release_server docker_create_image docker_build_linux_amd64 docker_release_linux_arm64 revive docker_build_linux_amd64_client docker_release_linux_arm64_client test docker_build_linux_amd64_server docker_release_linux_arm64_server update_submodule  build_web_server build_web_client release_web_server release_web_client check_npm front_release duplicate_dist_server clean_duplication_client clean_web clean_dist clean_duplication clean_duplication_server clean_duplication_client  check_msquic_dependencies compile_msquic
+.PHONY: all build docker_build_linux_arm64 fmt build_client docker_build_linux_arm64_client gofumpt build_server docker_build_linux_arm64_server golangci-lint check_webrtc_dependencies docker_release_linux_amd64 release clean docker_release_linux_amd64_client release_client compile_webrtc docker_release_linux_amd64_server release_server docker_create_image docker_build_linux_amd64 docker_release_linux_arm64 revive docker_build_linux_amd64_client docker_release_linux_arm64_client test docker_build_linux_amd64_server docker_release_linux_arm64_server set_safe_directories update_submodule  build_web_server build_web_client release_web_server release_web_client check_npm front_release duplicate_dist_server clean_duplication_client clean_web clean_dist clean_duplication clean_duplication_server clean_duplication_client  check_msquic_dependencies compile_msquic
 
 all: gofumpt golangci-lint test release
 
@@ -81,6 +81,10 @@ test: compile_webrtc compile_msquic
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	go test -race -cover -count 1 ./...
 
+test_without_static: compile_webrtc compile_msquic
+	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
+	go test -tags nostatic -race -cover -count 1 ./...
+
 golangci-lint:
 	golangci-lint --version || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	golangci-lint run \
@@ -93,29 +97,41 @@ golangci-lint:
 		--exclude 'SA6002: argument should be pointer-like to avoid allocations' \
 		--exclude 'S1000: should use a simple channel send/receive instead of `select` with a single case'
 
-update_submodule:
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_google-webrtc
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/clog
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/googletest
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/boringssl
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/gost-engine
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/krb5
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/gost-engine/libprov
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/pyca-cryptography
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/krb5
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/wycheproof
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/oqs-provider
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/pyca-cryptography
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/python-ecdsa
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/tlsfuzzer
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/tlslite-ng
-	git config --global --add safe.directory /go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/wycheproof
+update_submodule: set_safe_directories
 	$(UPDATE_SUBMODULE_COMMAND)
 	@git apply dep/patch/* && echo "patches applied" || echo "no patch applied"
+
+set_safe_directories:
+	@echo "Setting safe directories..."
+	@dirs="\
+			/go/src/github.com/isrc-cas/gt \
+			/go/src/github.com/isrc-cas/gt/dep/_google-webrtc \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/clog \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/googletest \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/boringssl \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3 \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/gost-engine \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/krb5 \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/gost-engine/libprov \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/pyca-cryptography \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/krb5 \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/wycheproof \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/oqs-provider \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/pyca-cryptography \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/python-ecdsa \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/tlsfuzzer \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/tlslite-ng \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/wycheproof ";\
+	for dir in $$dirs; do \
+		if git config --global --get-regexp '^safe\.directory$$' | grep -q "^safe.directory $$dir$$"; then \
+			echo "$$dir is already in safe.directory"; \
+		else \
+			git config --global --add safe.directory $$dir; \
+			echo "Added $$dir to safe.directory"; \
+		fi; \
+	done
 
 docker_create_image: update_submodule
 	docker images | grep -cim1 -E "^gtbuild\s+?v1" || docker build -t gtbuild:v1 .
@@ -152,7 +168,7 @@ docker_release_linux_arm64_server: docker_create_image
 
 build: build_server build_client
 release: release_server release_client
-build_client: $(SOURCES) Makefile compile_msquic compile_webrtc build_web_client
+build_client: $(SOURCES) Makefile compile_msquic compile_webrtc
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/client
@@ -160,7 +176,7 @@ release_client: $(SOURCES) Makefile compile_msquic compile_webrtc release_web_cl
 	$(eval CGO_CXXFLAGS+=-O3)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/client
-build_server: $(SOURCES) Makefile compile_msquic compile_webrtc build_web_server
+build_server: $(SOURCES) Makefile compile_msquic compile_webrtc
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/server
@@ -168,9 +184,6 @@ release_server: $(SOURCES) Makefile compile_msquic compile_webrtc release_web_se
 	$(eval CGO_CXXFLAGS+=-O3)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/server
-
-build_web_server: $(SOURCES_FRONT) Makefile check_npm front_build duplicate_dist_server
-build_web_client: $(SOURCES_FRONT) Makefile check_npm front_build duplicate_dist_client
 
 release_web_server: $(SOURCES_FRONT) Makefile check_npm front_release duplicate_dist_server
 release_web_client: $(SOURCES_FRONT) Makefile check_npm front_release duplicate_dist_client
