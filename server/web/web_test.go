@@ -1,3 +1,5 @@
+//go:build !nostatic
+
 package web
 
 import (
