@@ -962,6 +962,12 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 			buf[4] = byte(predef.Close >> 8)
 			buf[5] = byte(predef.Close)
 			_, wErr = c.Write(buf[:6])
+			if wErr == nil &&
+				c.server.config.Timeout.Duration > 0 &&
+				!c.server.config.TimeoutOnUnidirectionalTraffic {
+				dl := time.Now().Add(c.server.config.Timeout.Duration)
+				wErr = c.SetReadDeadline(dl)
+			}
 		}
 		pool.BytesPool.Put(buf)
 		if rErr != nil || wErr != nil {
@@ -1010,6 +1016,13 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 	_, wErr = c.Write(buf[:l])
 	if wErr != nil {
 		return
+	}
+	if c.server.config.Timeout.Duration > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
+		dl := time.Now().Add(c.server.config.Timeout.Duration)
+		wErr = c.SetReadDeadline(dl)
+		if wErr != nil {
+			return
+		}
 	}
 
 	bufIndex -= 4
