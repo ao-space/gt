@@ -34,7 +34,7 @@ type Client struct {
 	closing             uint32
 	tunnels             map[*conn]struct{}
 	tunnelsRWMtx        sync.RWMutex
-	peers               map[uint32]*peerTask
+	peers               map[uint32]PeerTask
 	peersRWMtx          sync.RWMutex
 	tunnelsCond         *sync.Cond
 	idleManager         *idleManager

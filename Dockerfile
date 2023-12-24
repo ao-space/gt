@@ -14,20 +14,26 @@
 
 FROM golang:1.20-bookworm
 
+# 安装 gnu 编译链
+# 安装 msquic 依赖
+# 安装 nodejs 20
 RUN apt update && \
-    apt install xz-utils bzip2 sudo lsb-release ninja-build generate-ninja file patch -y
+    apt install -y xz-utils bzip2 sudo lsb-release ninja-build generate-ninja file patch \
+        gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
+        cmake build-essential liblttng-ust-dev lttng-tools libssl-dev \
+        ca-certificates curl gnupg
 
-# 安装nodejs 20
-RUN apt-get install -y ca-certificates curl gnupg && \
-    mkdir -p /etc/apt/keyrings && \
+RUN mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
     NODE_MAJOR=20 && \
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
-    apt-get update && \
-    apt-get install nodejs -y
+    apt update && \
+    apt install nodejs -y
 
-# 安装msquic依赖
-RUN apt-get install -y cmake build-essential liblttng-ust-dev lttng-tools libssl-dev
+# 安装 rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    . "$HOME/.cargo/env" && \
+    rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
 
 # golang 切换国内源并且提前安装好依赖
 ENV GO111MODULE=on
@@ -36,9 +42,6 @@ ADD ./go.mod /go/src/github.com/isrc-cas/gt/
 RUN cd /go/src/github.com/isrc-cas/gt && \
     go mod download && \
     rm -rf /go/src/github.com/isrc-cas/gt
-
-# 安装 gnu 编译链
-RUN apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu
 
 # 安装 google webrtc 依赖
 ADD ./dep/_google-webrtc/src/build /root/build

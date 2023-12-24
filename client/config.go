@@ -66,10 +66,11 @@ type Options struct {
 	SentryDebug       bool                 `yaml:"sentryDebug,omitempty" json:",omitempty" usage:"Sentry debug mode, the debug information is printed to help you understand what sentry is doing"`
 
 	WebRTCConnectionIdleTimeout config.Duration `yaml:"webrtcConnectionIdleTimeout,omitempty" usage:"The timeout of WebRTC connection. Supports values like '30s', '5m'"`
-	WebRTCRemoteConnections     uint          `yaml:"webrtcConnections" usage:"The max number of webrtc connections. Valid value is 1 to 50"`
+	WebRTCRemoteConnections     uint            `yaml:"webrtcConnections" usage:"The max number of webrtc connections. Valid value is 1 to 50"`
 	WebRTCLogLevel              string          `yaml:"webrtcLogLevel,omitempty" json:",omitempty" usage:"WebRTC log level: verbose, info, warning, error"`
 	WebRTCMinPort               uint16          `yaml:"webrtcMinPort,omitempty" json:",omitempty" usage:"The min port of WebRTC peer connection"`
 	WebRTCMaxPort               uint16          `yaml:"webrtcMaxPort,omitempty" json:",omitempty" usage:"The max port of WebRTC peer connection"`
+	WebRTCThread                bool            `yaml:"webrtcThreadMode,omitempty" json:",omitempty" usage:"Use thread mode of WebRTC peer connection"`
 
 	TCPForwardAddr        string `yaml:"tcpForwardAddr,omitempty" json:",omitempty" usage:"The address of TCP forward"`
 	TCPForwardHostPrefix  string `yaml:"tcpForwardHostPrefix,omitempty" json:",omitempty" usage:"The host prefix of TCP forward"`
@@ -168,6 +169,8 @@ type service struct {
 	LocalURL           clientURL       `yaml:"local,omitempty" json:",omitempty"`
 	LocalTimeout       config.Duration `yaml:"localTimeout,omitempty" json:",omitempty"`
 	UseLocalAsHTTPHost bool            `yaml:"useLocalAsHTTPHost,omitempty" json:",omitempty"`
+
+	remoteTCPPort uint32
 }
 
 func (s *service) String() string {

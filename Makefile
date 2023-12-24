@@ -40,6 +40,9 @@ TARGET_OS=$(shell echo $(TARGET) | awk -F '-' '{print $$2}')
 ifeq ($(TARGET_OS), native)
 	TARGET_OS=
 endif
+ifeq ($(TARGET_OS), linux)
+	RUST_TARGET?=$(shell echo $(TARGET) | awk -F '-' '{print $$1 "-unknown-" $$2 "-" $$3}')
+endif
 TARGET_CPU=$(shell echo $(TARGET) | awk -F '-' '{print $$1}')
 ifeq ($(TARGET_CPU), native)
 	TARGET_CPU=
@@ -136,8 +139,12 @@ set_safe_directories:
 docker_create_image: update_submodule
 	docker images | grep -cim1 -E "^gtbuild\s+?v1" || docker build -t gtbuild:v1 .
 
-docker_build_linux_amd64: docker_build_linux_amd64_server docker_build_linux_amd64_client
-docker_release_linux_amd64: docker_release_linux_amd64_server docker_release_linux_amd64_client
+docker_build_linux_amd64: docker_create_image
+	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build'
+docker_release_linux_amd64: docker_create_image
+	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release'
 docker_build_linux_amd64_client: docker_create_image
 	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
 	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_client'
@@ -151,8 +158,12 @@ docker_release_linux_amd64_server: docker_create_image
 	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
 	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release_server'
 
-docker_build_linux_arm64: docker_build_linux_arm64_server docker_build_linux_arm64_client
-docker_release_linux_arm64: docker_release_linux_arm64_server docker_release_linux_arm64_client
+docker_build_linux_arm64: docker_create_image
+	$(eval MAKE_ENV=TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build'
+docker_release_linux_arm64: docker_create_image
+	$(eval MAKE_ENV=TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release'
 docker_build_linux_arm64_client: docker_create_image
 	$(eval MAKE_ENV=TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
 	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_client'
@@ -168,12 +179,14 @@ docker_release_linux_arm64_server: docker_create_image
 
 build: build_server build_client
 release: release_server release_client
-build_client: $(SOURCES) Makefile compile_msquic compile_webrtc
+build_client: $(SOURCES) Makefile compile_msquic compile_webrtc compile_p2p
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
+	$(eval CGO_LDFLAGS+=$(PWD)/dep/p2p/target/$(RUST_TARGET)/release/libp2p.a)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/client
-release_client: $(SOURCES) Makefile compile_msquic compile_webrtc release_web_client
+release_client: $(SOURCES) Makefile compile_msquic compile_webrtc compile_p2p release_web_client
 	$(eval CGO_CXXFLAGS+=-O3)
+	$(eval CGO_LDFLAGS+=$(PWD)/dep/p2p/target/$(RUST_TARGET)/release/libp2p.a)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/client
 build_server: $(SOURCES) Makefile compile_msquic compile_webrtc
@@ -203,7 +216,7 @@ duplicate_dist_server:
 duplicate_dist_client:
 	cp -r $(FRONTEND_DIR)/dist $(CLIENT_FRONT_DIR)/dist
 
-clean: clean_web
+clean: clean_web clean_p2p
 	rm -rf build/* release/*
 	rm -rf dep/_google-webrtc/src/out/*
 
@@ -278,3 +291,13 @@ compile_msquic: check_msquic_dependencies update_submodule
 	make -C./dep/_msquic/$(TARGET) -j$(shell nproc)
 	@renameSymbols=$$(objdump -t ./dep/_msquic/$(TARGET)/bin/Release/libmsquic.a | awk -v RS= '/_YB80VJ/{next}1' | grep -E 'g +(F|O) ' | grep -Evi ' (ms){0,1}quic' | awk '{print " --redefine-sym " $$NF "=" $$NF "_YB80VJ"}') && \
     		$(TARGET)-objcopy $$renameSymbols ./dep/_msquic/$(TARGET)/bin/Release/libmsquic.a
+
+compile_p2p:
+	cd ./dep/p2p && \
+    . "$$HOME/.cargo/env" && \
+	cargo build -r --target $(RUST_TARGET)
+
+clean_p2p:
+	cd ./dep/p2p && \
+    . "$$HOME/.cargo/env" && \
+	cargo clean

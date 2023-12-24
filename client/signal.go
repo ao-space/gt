@@ -2,6 +2,7 @@ package client
 
 import (
 	connection "github.com/isrc-cas/gt/conn"
+	"sync/atomic"
 )
 
 func handleError(tunnel *conn) (err error) {
@@ -91,6 +92,7 @@ func handleInfo(tunnel *conn) (err error) {
 		var local string
 		if s := tunnel.client.services.Load(); s != nil && serviceIndex < uint16(len(*s)) {
 			local = (*s)[serviceIndex].LocalURL.String()
+			atomic.StoreUint32(&(*s)[serviceIndex].remoteTCPPort, uint32(tcpPort))
 		}
 		tunnel.Logger.Info().Uint16("serviceIndex", serviceIndex).
 			Str("local", local).

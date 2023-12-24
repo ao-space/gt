@@ -55,6 +55,14 @@ type peerTask struct {
 	waitNegotiationNeeded chan struct{}
 }
 
+func (pt *peerTask) APIConn() *api.Conn {
+	return pt.apiConn
+}
+
+func (pt *peerTask) APIWriter() *std.PipeWriter {
+	return pt.apiConn.PipeWriter
+}
+
 func (pt *peerTask) OnSignalingChange(state webrtc.SignalingState) {
 	pt.Logger.Info().Str("state", state.String()).Msg("signaling state changed")
 }
@@ -492,7 +500,7 @@ func (pt *peerTask) processAnswer(r *http.Request, writer http.ResponseWriter) {
 			err = errors.New("invalid task id")
 			return
 		}
-		task = pt
+		task = pt.(*peerTask)
 	}
 	task.process(r.Body, writer, func() (err error) {
 		var answer webrtc.SessionDescription

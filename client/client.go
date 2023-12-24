@@ -89,7 +89,7 @@ func New(args []string, out io.Writer) (c *Client, err error) {
 	c = &Client{
 		Logger:  l,
 		tunnels: make(map[*conn]struct{}),
-		peers:   make(map[uint32]*peerTask),
+		peers:   make(map[uint32]PeerTask),
 	}
 	c.config.Store(&conf)
 	c.tunnelsCond = sync.NewCond(c.tunnelsRWMtx.RLocker())

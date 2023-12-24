@@ -461,9 +461,10 @@ func (c *conn) processData(taskID uint32, r *bufio.LimitedReader) (readErr, writ
 				})
 				return
 			}
-			_, err := r.WriteTo(pt.apiConn.PipeWriter)
+			_, err := r.WriteTo(pt.APIWriter())
 			if err != nil {
-				pt.Logger.Error().Err(err).Msg("processP2P WriteTo failed")
+				c.Logger.Info().
+					Uint32("peerTask", taskID).Msg("got closed because task with same id is received")
 			}
 			return
 		}
@@ -494,17 +495,65 @@ func (c *conn) processData(taskID uint32, r *bufio.LimitedReader) (readErr, writ
 }
 
 func (c *conn) processP2P(id uint32, r *bufio.LimitedReader) {
-	t, ok := c.newPeerTask(id)
+	var t PeerTask
+	var ok bool
+	if c.client.Config().WebRTCThread {
+		t, ok = c.newPeerTask(id)
+	} else {
+		t, ok = c.newPeerProcTask(id)
+	}
 	if !ok {
 		return
 	}
 
-	c.client.apiServer.Listener.AcceptCh() <- t.apiConn
-	t.Logger.Info().Msg("peer task started")
-	_, err := r.WriteTo(t.apiConn.PipeWriter)
+	c.client.apiServer.Listener.AcceptCh() <- t.APIConn()
+	c.Logger.Info().
+		Uint32("peerTask", id).Msg("peer task started")
+	_, err := r.WriteTo(t.APIWriter())
 	if err != nil {
-		t.Logger.Error().Err(err).Msg("processP2P WriteTo failed")
+		c.Logger.Error().
+			Uint32("peerTask", id).Err(err).Msg("processP2P WriteTo failed")
 	}
+}
+
+func (c *conn) newPeerProcTask(id uint32) (t *peerProcessTask, ok bool) {
+	c.client.peersRWMtx.Lock()
+	defer c.client.peersRWMtx.Unlock()
+	if !predef.Debug {
+		l := uint(len(c.client.peers))
+		if l >= c.client.Config().WebRTCRemoteConnections {
+			respAndClose(id, c, [][]byte{
+				[]byte("HTTP/1.1 403 Forbidden\r\nConnection: Closed\r\n\r\n"),
+			})
+			return
+		}
+	}
+
+	t = &peerProcessTask{}
+	t.id = id
+	t.tunnel = c
+	t.apiConn = api.NewConn(id, "", c)
+	t.apiConn.ProcessOffer = t.processOffer
+	t.apiConn.GetOffer = t.getOffer
+	t.apiConn.ProcessAnswer = t.processAnswer
+	t.data = pool.BytesPool.Get().([]byte)
+	t.Logger = c.Logger.With().
+		Uint32("peerTask", id).
+		Logger()
+	t.timer = time.AfterFunc(120*time.Second, func() {
+		t.Logger.Info().Msg("peer task timeout")
+		t.CloseWithLock()
+	})
+
+	ot, ok := c.client.peers[id]
+	if ok && ot != nil {
+		ot.CloseWithLock()
+		c.Logger.Info().
+			Uint32("peerTask", id).Msg("got closed because task with same id is received")
+	}
+	c.client.peers[id] = t
+	ok = true
+	return
 }
 
 func (c *conn) newPeerTask(id uint32) (t *peerTask, ok bool) {
@@ -542,7 +591,8 @@ func (c *conn) newPeerTask(id uint32) (t *peerTask, ok bool) {
 	ot, ok := c.client.peers[id]
 	if ok && ot != nil {
 		ot.CloseWithLock()
-		ot.Logger.Info().Msg("got closed because task with same id is received")
+		c.Logger.Info().
+			Uint32("peerTask", id).Msg("got closed because task with same id is received")
 	}
 	c.client.peers[id] = t
 	ok = true

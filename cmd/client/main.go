@@ -14,7 +14,26 @@
 
 package main
 
+/*
+#include <stdio.h>
+#include <stdlib.h>
+
+extern void create_peer_connection();
+
+__attribute__((constructor)) void init(int argc, char *argv[]) {
+  if (argc < 2) {
+    return;
+  }
+  if (strcmp(argv[1], "p2p") == 0) {
+    create_peer_connection();
+    exit(0);
+  }
+}
+
+*/
+import "C"
 import (
+	"github.com/isrc-cas/gt/client"
 	"github.com/isrc-cas/gt/client/web"
 	"github.com/isrc-cas/gt/config"
 	"github.com/isrc-cas/gt/predef"
@@ -26,11 +45,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/isrc-cas/gt/client"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
+	if len(os.Args) >= 2 {
+		if "p2p" == os.Args[1] {
+			C.create_peer_connection()
+			return
+		}
+	}
 	c, err := client.New(os.Args, nil)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create client")
