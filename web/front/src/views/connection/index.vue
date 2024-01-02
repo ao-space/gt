@@ -11,7 +11,7 @@
     <el-row v-if="poolForServer.length != 0">
       <el-card>
         <template #header>
-          <div class="card_header">Server Pool Info</div>
+          <div class="card_header">{{ $t("view_connection.Server_Pool_Info") }}</div>
         </template>
         <ConnectionTable :table-data="poolForServer" :show-i-d="true" />
       </el-card>
@@ -21,7 +21,7 @@
     <el-row>
       <el-card>
         <template #header>
-          <div class="card_header">External Connection</div>
+          <div class="card_header">{{ $t("view_connection.External_Connection") }}</div>
         </template>
         <ConnectionTable :table-data="connection" :show-i-d="false" />
       </el-card>

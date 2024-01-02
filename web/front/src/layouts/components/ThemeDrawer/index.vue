@@ -21,8 +21,8 @@
     </div>
     <div class="theme-item">
       <span>
-        Inverted Aside Color
-        <el-tooltip effect="dark" content="Switch Aside color to Dark mode" placement="top">
+        {{ $t("layout_theme.InvertedAsideColor") }}
+        <el-tooltip effect="dark" :content="$t('layout_theme.SwitchAside')" placement="top">
           <el-icon><QuestionFilled /></el-icon>
         </el-tooltip>
       </span>
@@ -31,52 +31,52 @@
     <!-- Global Theme -->
     <el-divider class="divider" content-position="center">
       <el-icon><ColdDrink /></el-icon>
-      Theme
+      {{ $t("layout_theme.Theme") }}
     </el-divider>
     <div class="theme-item">
-      <span>Theme Color</span>
+      <span>{{ $t("layout_theme.ThemeColor") }}</span>
       <el-color-picker v-model="primary" :predefine="colorList" @change="changePrimary" />
     </div>
     <div class="theme-item">
-      <span>Dark Mode</span>
+      <span>{{ $t("layout_theme.DarkMode") }}</span>
       <SwitchDark />
     </div>
     <div class="theme-item">
-      <span>Grey Mode</span>
+      <span>{{ $t("layout_theme.GreyMode") }}</span>
       <el-switch v-model="isGrey" @change="changeGreyOrWeak('grey', !!$event)" />
     </div>
     <div class="theme-item mb40">
-      <span>Color Accessibility Mode</span>
+      <span>{{ $t("layout_theme.ColorAccessibilityMode") }}</span>
       <el-switch v-model="isWeak" @change="changeGreyOrWeak('weak', !!$event)" />
     </div>
 
     <!-- UI Settings -->
     <el-divider class="divider" content-position="center">
       <el-icon><Setting /></el-icon>
-      UI Settings
+      {{ $t("layout_theme.UISettings") }}
     </el-divider>
     <div class="theme-item">
-      <span>Collapse Menu</span>
+      <span>{{ $t("layout_theme.CollapseMenu") }}</span>
       <el-switch v-model="isCollapse" />
     </div>
     <div class="theme-item">
-      <span>Breadcrumb</span>
+      <span>{{ $t("layout_theme.Breadcrumb") }}</span>
       <el-switch v-model="breadcrumb" />
     </div>
     <div class="theme-item">
-      <span>Breadcrumb Icon</span>
+      <span>{{ $t("layout_theme.BreadcrumbIcon") }}</span>
       <el-switch v-model="breadcrumbIcon" />
     </div>
     <div class="theme-item">
-      <span>Tab</span>
+      <span>{{ $t("layout_theme.Tab") }}</span>
       <el-switch v-model="tabs" />
     </div>
     <div class="theme-item">
-      <span>Tab Icon</span>
+      <span>{{ $t("layout_theme.TabIcon") }}</span>
       <el-switch v-model="tabsIcon" />
     </div>
     <div class="theme-item">
-      <span>Footer</span>
+      <span>{{ $t("layout_theme.Footer") }}</span>
       <el-switch v-model="footer" />
     </div>
   </el-drawer>

@@ -4,11 +4,11 @@
     <div class="card content-box">
       <!-- Log -->
       <el-descriptions :column="2" :border="true">
-        <template #title> Log Setting </template>
+        <template #title> {{ $t("cconfig.LogSetting") }} </template>
         <el-descriptions-item>
           <template #label>
-            LogFile
-            <UsageTooltip :usage-text="ClientConfig.usage['LogFile']" />
+            {{ $t("cconfig.LogFile") }}
+            <UsageTooltip :usage-text="$t('cusage[\'LogFile\']')" />
           </template>
           <el-form-item prop="LogFile">
             <el-input v-model="localSetting.LogFile"></el-input>
@@ -16,8 +16,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            LogFileMaxSize
-            <UsageTooltip :usage-text="ClientConfig.usage['LogFileMaxSize']" />
+            {{ $t("cconfig.LogFileMaxSize") }}
+            <UsageTooltip :usage-text="$t('cusage[\'LogFileMaxSize\']')" />
           </template>
           <el-form-item prop="LogFileMaxSize">
             <el-input-number v-model="localSetting.LogFileMaxSize" :min="0" />
@@ -25,8 +25,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            LogFileMaxCount
-            <UsageTooltip :usage-text="ClientConfig.usage['LogFileMaxCount']" />
+            {{ $t("cconfig.LogFileMaxCount") }}
+            <UsageTooltip :usage-text="$t('cusage[\'LogFileMaxCount\']')" />
           </template>
           <el-form-item prop="LogFileMaxCount">
             <el-input-number v-model="localSetting.LogFileMaxCount" :min="0" />
@@ -34,10 +34,10 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            LogLevel
-            <UsageTooltip :usage-text="ClientConfig.usage['LogLevel']" />
+            {{ $t("cconfig.LogLevel") }}
+            <UsageTooltip :usage-text="$t('cusage[\'LogLevel\']')" />
           </template>
-          <el-select v-model="localSetting.LogLevel" placeholder="Select log level">
+          <el-select v-model="localSetting.LogLevel" :placeholder="$t('cusage.SelectLogLevel')">
             <el-option label="trace" value="trace"></el-option>
             <el-option label="debug" value="debug"></el-option>
             <el-option label="info" value="info"></el-option>

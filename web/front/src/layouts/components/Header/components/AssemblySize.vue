@@ -20,14 +20,15 @@
 import { computed } from "vue";
 import { useGlobalStore } from "@/stores/modules/global";
 import { AssemblySizeType } from "@/stores/interface";
+import i18n from "@/languages";
 
 const globalStore = useGlobalStore();
 const assemblySize = computed(() => globalStore.assemblySize);
 
 const assemblySizeList = [
-  { label: "default", value: "default" },
-  { label: "large", value: "large" },
-  { label: "small", value: "small" }
+  { label: "default", value: i18n.global.t("default") },
+  { label: "large", value: i18n.global.t("large") },
+  { label: "small", value: i18n.global.t("small") }
 ];
 
 const setAssemblySize = (item: AssemblySizeType) => {

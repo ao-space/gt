@@ -4,10 +4,10 @@
     <div class="card content-box">
       <!-- TCP -->
       <el-descriptions :column="2" :border="true">
-        <template #title> TCPForward Setting</template>
+        <template #title>{{ $t("cconfig.TCPForwardSetting") }} </template>
         <el-descriptions-item>
           <template #label>
-            TcpForwardAddr
+            {{ $t("cconfig.TcpForwardAddr") }}
             <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardAddr']" />
           </template>
           <el-form-item prop="TCPForwardAddr">
@@ -16,7 +16,7 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            TcpForwardHostPrefix
+            {{ $t("cconfig.TcpForwardHostPrefix") }}
             <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardHostPrefix']" />
           </template>
           <el-form-item prop="TCPForwardHostPrefix">
@@ -25,7 +25,7 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            TcpForwardConnections
+            {{ $t("cconfig.TcpForwardConnections") }}
             <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardConnections']" />
           </template>
           <el-input-number v-model="localSetting.TCPForwardConnections" :min="1" :max="10" />

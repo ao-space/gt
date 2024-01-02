@@ -1,12 +1,12 @@
 <template>
   <el-card>
     <el-form ref="hostSettingRef" :model="form">
-      <el-divider content-position="left">Host Setting</el-divider>
+      <el-divider content-position="left">{{ $t("sconfig.HostSetting") }}</el-divider>
       <el-descriptions :column="2" :border="true">
         <el-descriptions-item>
           <template #label>
-            HostNumber
-            <UsageTooltip :usage-text="ServerConfig.usage['HostNumber']" />
+            {{ $t("sconfig.HostNumber") }}
+            <UsageTooltip :usage-text="$t('susage[\'HostNumber\']')" />
           </template>
           <el-form-item prop="Number" :rules="rules.Number">
             <el-input-number v-model="form.Number" :min="0" />
@@ -14,20 +14,20 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            WithID
-            <UsageTooltip :usage-text="ServerConfig.usage['HostWithID']" />
+            {{ $t("sconfig.WithID") }}
+            <UsageTooltip :usage-text="$t('susage[\'HostWithID\']')" />
           </template>
           <el-switch v-model="form.WithID" />
         </el-descriptions-item>
       </el-descriptions>
       <el-table :data="form.tableData" table-layout="auto" show-overflow-tooltip highlight-current-row>
-        <template #empty> Please Add A Host Regex</template>
+        <template #empty>{{ $t("sconfig.AddHostRegex") }}</template>
         <el-table-column type="index"></el-table-column>
         <el-table-column prop="Regex">
           <template #header>
             <div>
-              HostRegex
-              <UsageTooltip :usage-text="ServerConfig.usage['HostRegex']" />
+              {{ $t("sconfig.HostRegex") }}
+              <UsageTooltip :usage-text="$t('susage[\'HostRegex\']')" />
             </div>
           </template>
           <template #default="scope">
@@ -39,18 +39,18 @@
         </el-table-column>
         <el-table-column fixed="right">
           <template #header>
-            <div>Operation</div>
+            <div>{{ $t("sconfig.Operation") }}</div>
           </template>
           <template #default="scope">
             <el-button v-if="scope.row.isEdit" icon="Check" type="success" size="small" @click="finishEdit(scope.$index)">
-              Done
+              {{ $t("sconfig.Done") }}
             </el-button>
             <el-button v-else type="primary" icon="Edit" size="small" @click="editRow(scope.$index)">Edit</el-button>
             <el-button icon="Delete" type="danger" size="small" @click="deleteRow(scope.$index)" />
           </template>
         </el-table-column>
       </el-table>
-      <el-button icon="Plus" style="width: 100%" @click="addRow">Add</el-button>
+      <el-button icon="Plus" style="width: 100%" @click="addRow">{{ $t("sconfig.Add") }}</el-button>
     </el-form>
   </el-card>
 </template>

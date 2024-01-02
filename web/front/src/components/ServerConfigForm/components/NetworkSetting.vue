@@ -3,11 +3,11 @@
     <div class="card content-box">
       <!-- Network Setting -->
       <el-descriptions :column="2" :border="true">
-        <template #title> Network Setting </template>
+        <template #title> {{ $t("sconfig.NetworkSetting") }} </template>
         <el-descriptions-item>
           <template #label>
-            Addr
-            <UsageTooltip :usage-text="ServerConfig.usage['Addr']" />
+            {{ $t("sconfig.Addr") }}
+            <UsageTooltip :usage-text="$t('susage.Addr')" />
           </template>
           <el-form-item prop="Addr">
             <el-input v-model="localSetting.Addr" />
@@ -15,8 +15,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            TLSAddr
-            <UsageTooltip :usage-text="ServerConfig.usage['TLSAddr']" />
+            {{ $t("sconfig.TLSAddr") }}
+            <UsageTooltip :usage-text="$t('susage.TLSAddr')" />
           </template>
           <el-form-item prop="TLSAddr">
             <el-input v-model="localSetting.TLSAddr" />
@@ -24,11 +24,11 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            TLSMinVersion
-            <UsageTooltip :usage-text="ServerConfig.usage['TLSMinVersion']" />
+            {{ $t("sconfig.TLSMinVersion") }}
+            <UsageTooltip :usage-text="$t('susage.TLSMinVersion')" />
           </template>
           <el-form-item prop="TLSMinVersion">
-            <el-select v-model="localSetting.TLSMinVersion" placeholder="Select TLSMinVersion">
+            <el-select v-model="localSetting.TLSMinVersion" :placeholder="$t('sconfig.SelectTLSMin')">
               <el-option label="tls1.1" value="tls1.1" />
               <el-option label="tls1.2" value="tls1.2" />
               <el-option label="tls1.3" value="tls1.3" />
@@ -37,8 +37,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            STUNAddr
-            <UsageTooltip :usage-text="ServerConfig.usage['STUNAddr']" />
+            {{ $t("sconfig.STUNAddr") }}
+            <UsageTooltip :usage-text="$t('susage.STUNAddr')" />
           </template>
           <el-form-item prop="STUNAddr">
             <el-input v-model="localSetting.STUNAddr" />
@@ -46,10 +46,10 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            STUNLogLevel
-            <UsageTooltip :usage-text="ServerConfig.usage['STUNLogLevel']" />
+            {{ $t("sconfig.STUNLogLevel") }}
+            <UsageTooltip :usage-text="$t('susage.STUNLogLevel')" />
           </template>
-          <el-select v-model="localSetting.STUNLogLevel" placeholder="Select STUN log level">
+          <el-select v-model="localSetting.STUNLogLevel" :placeholder="$t('sconfig.SelectSTUNLogLevel')">
             <el-option label="trace" value="trace"></el-option>
             <el-option label="debug" value="debug"></el-option>
             <el-option label="info" value="info"></el-option>
@@ -60,8 +60,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            SNIAddr
-            <UsageTooltip :usage-text="ServerConfig.usage['SNIAddr']" />
+            {{ $t("sconfig.SNIAddr") }}
+            <UsageTooltip :usage-text="$t('susage.SNIAddr')" />
           </template>
           <el-form-item prop="SNIAddr">
             <el-input v-model="localSetting.SNIAddr" />
@@ -69,8 +69,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            HTTPMUXHeader
-            <UsageTooltip :usage-text="ServerConfig.usage['HTTPMUXHeader']" />
+            {{ $t("sconfig.HTTPMUXHeader") }}
+            <UsageTooltip :usage-text="$t('susage.HTTPMUXHeader')" />
           </template>
           <el-form-item prop="HTTPMUXHeader">
             <el-input v-model="localSetting.HTTPMUXHeader" />
@@ -78,8 +78,9 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            MaxHandShakeOptions
-            <UsageTooltip :usage-text="ServerConfig.usage['MaxHandShakeOptions']" />
+            {{ $t("sconfig.MaxHandShakeOptions") }}
+
+            <UsageTooltip :usage-text="$t('susage.MaxHandShakeOptions')" />
           </template>
           <el-input-number v-model="localSetting.MaxHandShakeOptions" :min="0" />
         </el-descriptions-item>

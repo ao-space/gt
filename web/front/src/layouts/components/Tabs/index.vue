@@ -26,6 +26,7 @@ import { useAuthStore } from "@/stores/modules/auth";
 import { useKeepAliveStore } from "@/stores/modules/keepAlive";
 import { TabsPaneContext, TabPaneName } from "element-plus";
 import MoreButton from "./components/MoreButton.vue";
+import { useMetadataStore } from "@/stores/modules/metadata";
 
 const route = useRoute();
 const router = useRouter();
@@ -61,6 +62,13 @@ watch(
   },
   { immediate: true }
 );
+let metadataStore = useMetadataStore();
+metadataStore.$subscribe(() => {
+  console.log("subscribe success!");
+  router.push("/");
+  tabStore.$reset();
+  initTabs();
+});
 
 // Drag and drop sorting for tabs
 const tabsDrop = () => {

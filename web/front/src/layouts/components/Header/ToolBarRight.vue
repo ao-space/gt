@@ -1,6 +1,7 @@
 <template>
   <div class="tool-bar-ri">
     <div class="header-icon">
+      <LanguageSelector id="language-selector" />
       <Guide id="guide" />
       <AssemblySize id="assemblySize" />
       <ThemeSetting id="themeSetting" />
@@ -18,6 +19,7 @@ import AssemblySize from "./components/AssemblySize.vue";
 import ThemeSetting from "./components/ThemeSetting.vue";
 import Fullscreen from "./components/Fullscreen.vue";
 import Avatar from "./components/Avatar.vue";
+import LanguageSelector from "@/layouts/components/Header/components/LanguageSelector.vue";
 </script>
 
 <style scoped lang="scss">

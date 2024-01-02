@@ -3,12 +3,12 @@
   <el-form ref="generalSettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title> General Setting </template>
+        <template #title> {{ $t("cconfig.GeneralSetting") }} </template>
         <!-- ID -->
         <el-descriptions-item>
           <template #label>
-            ID
-            <UsageTooltip :usage-text="ClientConfig.usage['ID']" />
+            {{ $t("cconfig.ID") }}
+            <UsageTooltip :usage-text="$t('cusage[\'ID\']')" />
           </template>
           <el-form-item prop="ID">
             <el-input v-model="localSetting.ID"></el-input>
@@ -17,8 +17,8 @@
         <!-- Secret -->
         <el-descriptions-item>
           <template #label>
-            Secret
-            <UsageTooltip :usage-text="ClientConfig.usage['Secret']" />
+            {{ $t("cconfig.Secret") }}
+            <UsageTooltip :usage-text="$t('cusage[\'Secret\']')" />
           </template>
           <el-form-item prop="Secret">
             <el-input v-model="localSetting.Secret" type="password" show-password></el-input>
@@ -27,8 +27,8 @@
         <!-- ReconnectDelay -->
         <el-descriptions-item>
           <template #label>
-            ReconnectDelay
-            <UsageTooltip :usage-text="ClientConfig.usage['ReconnectDelay']" />
+            {{ $t("cconfig.ReconnectDelay") }}
+            <UsageTooltip :usage-text="$t('cusage[\'ReconnectDelay\']')" />
           </template>
           <el-form-item prop="ReconnectDelay">
             <el-input v-model="localSetting.ReconnectDelay"></el-input>
@@ -37,8 +37,8 @@
         <!-- RemoteTimeout -->
         <el-descriptions-item>
           <template #label>
-            RemoteTimeout
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteTimeout']" />
+            {{ $t("cconfig.RemoteTimeout") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteTimeout\']')" />
           </template>
           <el-form-item prop="RemoteTimeout">
             <el-input v-model="localSetting.RemoteTimeout"></el-input>
@@ -47,8 +47,8 @@
         <!-- Remote -->
         <el-descriptions-item>
           <template #label>
-            Remote
-            <UsageTooltip :usage-text="ClientConfig.usage['Remote']" />
+            {{ $t("cconfig.Remote") }}
+            <UsageTooltip :usage-text="$t('cusage[\'Remote\']')" />
           </template>
           <el-form-item prop="Remote">
             <el-input v-model="localSetting.Remote" />
@@ -57,8 +57,8 @@
         <!-- RemoteSTUN -->
         <el-descriptions-item>
           <template #label>
-            RemoteSTUN
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteSTUN']" />
+            {{ $t("cconfig.RemoteSTUN") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteSTUN\']')" />
           </template>
           <el-form-item prop="RemoteSTUN">
             <el-input v-model="localSetting.RemoteSTUN"></el-input>
@@ -67,8 +67,8 @@
         <!-- RemoteAPI -->
         <el-descriptions-item>
           <template #label>
-            RemoteAPI
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteAPI']" />
+            {{ $t("cconfig.RemoteAPI") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteAPI\']')" />
           </template>
           <el-form-item prop="RemoteAPI">
             <el-input v-model="localSetting.RemoteAPI"></el-input>
@@ -77,8 +77,8 @@
         <!-- RemoteCert -->
         <el-descriptions-item>
           <template #label>
-            RemoteCert
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteCert']" />
+            {{ $t("cconfig.RemoteCert") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteCert\']')" />
           </template>
           <el-form-item prop="RemoteCert">
             <el-input v-model="localSetting.RemoteCert"></el-input>
@@ -87,16 +87,16 @@
         <!-- RemoteCertInsecure -->
         <el-descriptions-item>
           <template #label>
-            RemoteCertInsecure
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteCertInsecure']" />
+            {{ $t("cconfig.RemoteCertInsecure") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteCertInsecure\']')" />
           </template>
           <el-switch v-model="localSetting.RemoteCertInsecure" active-text="true" inactive-text="false" />
         </el-descriptions-item>
         <!-- RemoteConnections -->
         <el-descriptions-item>
           <template #label>
-            RemoteConnections
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteConnections']" />
+            {{ $t("cconfig.RemoteConnections") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteConnections\']')" />
           </template>
           <el-form-item prop="RemoteConnections">
             <el-input-number v-model="localSetting.RemoteConnections" :min="1" :max="10" />
@@ -105,8 +105,8 @@
         <!-- RemoteIdleConnections -->
         <el-descriptions-item>
           <template #label>
-            RemoteIdleConnections
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteIdleConnections']" />
+            {{ $t("cconfig.RemoteIdleConnections") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteIdleConnections\']')" />
           </template>
           <el-form-item prop="RemoteIdleConnections">
             <el-input-number v-model="localSetting.RemoteIdleConnections" :min="0" :max="localSetting.RemoteConnections" />

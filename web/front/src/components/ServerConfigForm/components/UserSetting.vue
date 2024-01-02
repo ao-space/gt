@@ -2,16 +2,16 @@
   <el-form ref="userSettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title> User {{ index + 1 }} Setting </template>
+        <template #title> {{ $t("sconfig.User") }} {{ index + 1 }} {{ $t("sconfig.Setting") }} </template>
         <template #extra>
-          <el-button v-if="isLast" type="primary" @click="emit('addUser')">Add User</el-button>
-          <el-button type="danger" @click="emit('removeUser', index)">Delete</el-button>
+          <el-button v-if="isLast" type="primary" @click="emit('addUser')">{{ $t("sconfig.AddUser") }}</el-button>
+          <el-button type="danger" @click="emit('removeUser', index)">{{ $t("sconfig.Delete") }}</el-button>
         </template>
         <!-- ID -->
         <el-descriptions-item>
           <template #label>
-            ID
-            <UsageTooltip :usage-text="ServerConfig.usage.user['ID']" />
+            {{ $t("sconfig.ID") }}
+            <UsageTooltip :usage-text="$t('susage.user[\'ID\']')" />
           </template>
           <el-form-item prop="ID">
             <el-input v-model="localSetting.ID"></el-input>
@@ -20,44 +20,55 @@
         <!-- Secret -->
         <el-descriptions-item>
           <template #label>
-            Secret
-            <UsageTooltip :usage-text="ServerConfig.usage.user['Secret']" />
+            {{ $t("sconfig.Secret") }}
+            <UsageTooltip :usage-text="$t('susage.user[\'Secret\']')" />
           </template>
           <el-form-item prop="Secret">
             <el-input v-model="localSetting.Secret" type="password" show-password></el-input>
           </el-form-item>
         </el-descriptions-item>
-        <!-- Speed -->
-        <el-descriptions-item>
-          <template #label>
-            Speed
-            <UsageTooltip :usage-text="ServerConfig.usage.user['Speed']" />
-          </template>
-          <el-form-item prop="Speed">
-            <el-input-number v-model="localSetting.Speed" />
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- Connections -->
-        <el-descriptions-item>
-          <template #label>
-            Connections
-            <UsageTooltip :usage-text="ServerConfig.usage.user['Connections']" />
-          </template>
-          <el-form-item prop="Connections">
-            <el-input-number v-model="localSetting.Connections" />
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- TCP Number -->
-        <el-descriptions-item>
-          <template #label>
-            TCPNumber
-            <UsageTooltip :usage-text="ServerConfig.usage['TCPNumber']" />
-          </template>
-          <el-form-item prop="TCPNumber">
-            <el-input-number v-model="localSetting.TCPNumber" :min="0" />
-          </el-form-item>
-        </el-descriptions-item>
       </el-descriptions>
+      <el-row style="width: 100%">
+        <el-collapse style="width: 100%">
+          <el-collapse-item name="1">
+            <template #title>
+              <el-text style="width: 100%" size="large">{{ $t("sconfig.DetailSettings") }} </el-text>
+            </template>
+            <el-descriptions :column="2" :border="true">
+              <!-- Speed -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("sconfig.Speed") }}
+                  <UsageTooltip :usage-text="$t('susage.user[\'Speed\']')" />
+                </template>
+                <el-form-item prop="Speed">
+                  <el-input-number v-model="localSetting.Speed" />
+                </el-form-item>
+              </el-descriptions-item>
+              <!-- Connections -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("sconfig.Connections") }}
+                  <UsageTooltip :usage-text="$t('susage.user[\'Connections\']')" />
+                </template>
+                <el-form-item prop="Connections">
+                  <el-input-number v-model="localSetting.Connections" />
+                </el-form-item>
+              </el-descriptions-item>
+              <!-- TCP Number -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("sconfig.TCPNumber") }}
+                  <UsageTooltip :usage-text="$t('susage[\'TCPNumber\']')" />
+                </template>
+                <el-form-item prop="TCPNumber">
+                  <el-input-number v-model="localSetting.TCPNumber" :min="0" />
+                </el-form-item>
+              </el-descriptions-item>
+            </el-descriptions>
+          </el-collapse-item>
+        </el-collapse>
+      </el-row>
       <el-row :gutter="10" style="width: 100%">
         <el-col :span="12">
           <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
@@ -83,7 +94,6 @@ const emit = defineEmits<{
   (e: "removeUser", index: number): void;
   (e: "addUser"): void;
 }>();
-
 interface UserSettingProps {
   setting: ServerConfig.UserSetting;
   index: number;

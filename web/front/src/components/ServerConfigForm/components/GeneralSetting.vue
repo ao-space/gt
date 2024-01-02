@@ -3,12 +3,12 @@
   <el-form ref="generalSettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title>General Setting</template>
+        <template #title>{{ $t("sconfig.GeneralSetting") }}</template>
         <!-- Users -->
         <el-descriptions-item>
           <template #label>
-            Users
-            <UsageTooltip :usage-text="ServerConfig.usage['Users']" />
+            {{ $t("sconfig.Users") }}
+            <UsageTooltip :usage-text="$t('susage[\'Users\']')" />
           </template>
           <el-form-item prop="Users">
             <el-input v-model="localSetting.UserPath"></el-input>
@@ -17,8 +17,8 @@
         <!-- AuthAPI -->
         <el-descriptions-item>
           <template #label>
-            AuthAPI
-            <UsageTooltip :usage-text="ServerConfig.usage['AuthAPI']" />
+            {{ $t("sconfig.AuthAPI") }}
+            <UsageTooltip :usage-text="$t('susage[\'AuthAPI\']')" />
           </template>
           <el-form-item prop="AuthAPI">
             <el-input v-model="localSetting.AuthAPI"></el-input>
@@ -27,8 +27,8 @@
         <!-- TCP Number -->
         <el-descriptions-item>
           <template #label>
-            TCPNumber
-            <UsageTooltip :usage-text="ServerConfig.usage['TCPNumber']" />
+            {{ $t("sconfig.TCPNumber") }}
+            <UsageTooltip :usage-text="$t('susage[\'TCPNumber\']')" />
           </template>
           <el-form-item prop="TCPNumber">
             <el-input-number v-model="localSetting.TCPNumber" :min="0" />

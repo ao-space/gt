@@ -4,19 +4,19 @@
     <template #dropdown>
       <el-dropdown-menu>
         <el-dropdown-item id="userSetting" @click="openDialog('infoRef')">
-          <el-icon><User /></el-icon>User Setting
+          <el-icon><User /></el-icon>{{ $t("layout_header.UserSetting") }}
         </el-dropdown-item>
         <el-dropdown-item @click="logout">
-          <el-icon><SwitchButton /></el-icon>Log out
+          <el-icon><SwitchButton /></el-icon>{{ $t("layout_header.Logout") }}
         </el-dropdown-item>
         <el-dropdown-item divided @click="restart">
-          <el-icon><Refresh /></el-icon>Restart System
+          <el-icon><Refresh /></el-icon>{{ $t("layout_header.RestartSystem") }}
         </el-dropdown-item>
         <el-dropdown-item @click="shutdown">
-          <el-icon><SwitchButton /></el-icon>Shutdown System
+          <el-icon><SwitchButton /></el-icon>{{ $t("layout_header.ShutdownSystem") }}
         </el-dropdown-item>
         <el-dropdown-item @click="kill">
-          <el-icon><SwitchButton /></el-icon>Terminate System
+          <el-icon><SwitchButton /></el-icon>{{ $t("layout_header.TerminateSystem") }}
         </el-dropdown-item>
       </el-dropdown-menu>
     </template>

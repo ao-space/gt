@@ -29,6 +29,7 @@ import pinia from "@/stores";
 // errorHandler
 import errorHandler from "@/utils/errorHandler";
 import ECharts from "vue-echarts";
+import i18n from "@/languages";
 
 const app = createApp(App);
 
@@ -42,4 +43,4 @@ Object.keys(Icons).forEach(key => {
 // eslint-disable-next-line vue/component-definition-name-casing
 app.component("v-chart", ECharts);
 
-app.use(ElementPlus).use(router).use(pinia).mount("#app");
+app.use(ElementPlus).use(router).use(pinia).use(i18n).mount("#app");

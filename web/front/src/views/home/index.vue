@@ -4,27 +4,27 @@
       <el-col :span="12">
         <el-card v-if="state.os" class="card_item">
           <template #header>
-            <div class="card_header">Runtime</div>
+            <div class="card_header">{{ $t("view_home.Runtime") }}</div>
           </template>
           <div>
             <el-row :gutter="10">
-              <el-col :span="12">os:</el-col>
+              <el-col :span="12">{{ $t("view_home.os") }}:</el-col>
               <el-col :span="12">{{ state.os.goos }}</el-col>
             </el-row>
             <el-row :gutter="10">
-              <el-col :span="12">cpu nums:</el-col>
+              <el-col :span="12">{{ $t("view_home.cpu_nums") }}:</el-col>
               <el-col :span="12">{{ state.os.numCpu }}</el-col>
             </el-row>
             <el-row :gutter="10">
-              <el-col :span="12">compiler:</el-col>
+              <el-col :span="12">{{ $t("view_home.compiler") }}:</el-col>
               <el-col :span="12">{{ state.os.compiler }}</el-col>
             </el-row>
             <el-row :gutter="10">
-              <el-col :span="12">go version:</el-col>
+              <el-col :span="12">{{ $t("view_home.go_version") }}:</el-col>
               <el-col :span="12">{{ state.os.goVersion }}</el-col>
             </el-row>
             <el-row :gutter="10">
-              <el-col :span="12">goroutine nums:</el-col>
+              <el-col :span="12">{{ $t("view_home.goroutine_nums") }}:</el-col>
               <el-col :span="12">{{ state.os.numGoroutine }}</el-col>
             </el-row>
           </div>
@@ -33,25 +33,25 @@
       <el-col :span="12">
         <el-card v-if="state.disk" class="card_item">
           <template #header>
-            <div class="card_header">Disk</div>
+            <div class="card_header">{{ $t("view_home.Disk") }}</div>
           </template>
           <div>
             <el-row :gutter="10">
               <el-col :span="12">
                 <el-row :gutter="10">
-                  <el-col :span="12">total (MB)</el-col>
+                  <el-col :span="12">{{ $t("view_home.Total") }} (MB)</el-col>
                   <el-col :span="12">{{ state.disk.totalMb }}</el-col>
                 </el-row>
                 <el-row :gutter="10">
-                  <el-col :span="12">used (MB)</el-col>
+                  <el-col :span="12">{{ $t("view_home.Used") }} (MB)</el-col>
                   <el-col :span="12">{{ state.disk.usedMb }}</el-col>
                 </el-row>
                 <el-row :gutter="10">
-                  <el-col :span="12">total (GB)</el-col>
+                  <el-col :span="12">{{ $t("view_home.Total") }} (GB)</el-col>
                   <el-col :span="12">{{ state.disk.totalGb }}</el-col>
                 </el-row>
                 <el-row :gutter="10">
-                  <el-col :span="12">used (GB)</el-col>
+                  <el-col :span="12">{{ $t("view_home.Used") }} (GB)</el-col>
                   <el-col :span="12">{{ state.disk.usedGb }}</el-col>
                 </el-row>
               </el-col>
@@ -59,7 +59,7 @@
                 <el-progress type="dashboard" :percentage="state.disk.usedPercent" :color="colors">
                   <template #default="{ percentage }">
                     <span class="percentage-value">{{ percentage }}%</span>
-                    <span class="percentage-label">Used</span>
+                    <span class="percentage-label">{{ $t("view_home.Used") }}</span>
                   </template>
                 </el-progress>
               </el-col>
@@ -72,15 +72,15 @@
       <el-col :span="12">
         <el-card v-if="state.cpu" class="card_item" :body-style="{ height: '180px', 'overflow-y': 'scroll' }">
           <template #header>
-            <div class="card_header">CPU</div>
+            <div class="card_header">{{ $t("view_home.CPU") }}</div>
           </template>
           <div>
             <el-row :gutter="10">
-              <el-col :span="12">physical number of cores:</el-col>
+              <el-col :span="12">{{ $t("view_home.Core_Number") }}:</el-col>
               <el-col :span="12">{{ state.cpu.cores }}</el-col>
             </el-row>
             <el-row v-for="(item, index) in state.cpu.cpus" :key="index" :gutter="10">
-              <el-col :span="12">core {{ index }}:</el-col>
+              <el-col :span="12">{{ $t("view_home.core") }} {{ index }}:</el-col>
               <el-col :span="12"><el-progress type="line" :percentage="+item.toFixed(0)" :color="colors" /></el-col>
             </el-row>
           </div>
@@ -89,25 +89,25 @@
       <el-col :span="12">
         <el-card v-if="state.ram" class="card_item">
           <template #header>
-            <div class="card_header">Ram</div>
+            <div class="card_header">{{ $t("view_home.Ram") }}</div>
           </template>
           <div>
             <el-row :gutter="10">
               <el-col :span="12">
                 <el-row :gutter="10">
-                  <el-col :span="12">total (MB)</el-col>
+                  <el-col :span="12">{{ $t("view_home.Total") }} (MB)</el-col>
                   <el-col :span="12">{{ state.ram.totalMb }}</el-col>
                 </el-row>
                 <el-row :gutter="10">
-                  <el-col :span="12">used (MB)</el-col>
+                  <el-col :span="12">{{ $t("view_home.Used") }} (MB)</el-col>
                   <el-col :span="12">{{ state.ram.usedMb }}</el-col>
                 </el-row>
                 <el-row :gutter="10">
-                  <el-col :span="12">total (GB)</el-col>
+                  <el-col :span="12">{{ $t("view_home.Total") }} (GB)</el-col>
                   <el-col :span="12">{{ (state.ram.totalMb / 1024).toFixed(2) }}</el-col>
                 </el-row>
                 <el-row :gutter="10">
-                  <el-col :span="12">used (GB)</el-col>
+                  <el-col :span="12">{{ $t("view_home.Used") }} (GB)</el-col>
                   <el-col :span="12">{{ (state.ram.usedMb / 1024).toFixed(2) }}</el-col>
                 </el-row>
               </el-col>
@@ -115,7 +115,7 @@
                 <el-progress type="dashboard" :percentage="state.ram.usedPercent" :color="colors">
                   <template #default="{ percentage }">
                     <span class="percentage-value">{{ percentage }}%</span>
-                    <span class="percentage-label">Used</span>
+                    <span class="percentage-label">{{ $t("view_home.Used") }}</span>
                   </template>
                 </el-progress>
               </el-col>

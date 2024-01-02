@@ -1,7 +1,7 @@
 <template>
   <el-form ref="infoFormRef" :model="infoForm" :rules="infoFormRules" size="large">
     <el-form-item prop="username">
-      <el-input v-model="infoForm.username" placeholder="Username:">
+      <el-input v-model="infoForm.username" :placeholder="$t('layout_header.Username')">
         <template #prefix>
           <el-icon>
             <user />
@@ -10,7 +10,7 @@
       </el-input>
     </el-form-item>
     <el-form-item prop="password">
-      <el-input v-model="infoForm.password" type="password" placeholder="Password:" show-password>
+      <el-input v-model="infoForm.password" type="password" :placeholder="$t('layout_header.Password')" show-password>
         <template #prefix>
           <el-icon>
             <lock />
@@ -19,13 +19,15 @@
       </el-input>
     </el-form-item>
     <div>
-      <span style="padding-right: 1em; font-weight: bolder">EnablePprof:</span>
+      <span style="padding-right: 1em; font-weight: bolder">{{ $t("layout_header.EnablePprof") }}:</span>
       <el-switch v-model="infoForm.enablePprof" active-text="true" inactive-text="false" />
     </div>
   </el-form>
   <div style="text-align: right">
-    <el-button :icon="CircleClose" round size="large" @click="resetForm(infoFormRef)">Reset</el-button>
-    <el-button :icon="UserFilled" round size="large" type="primary" @click="changeInfo"> Change </el-button>
+    <el-button :icon="CircleClose" round size="large" @click="resetForm(infoFormRef)">{{ $t("layout_header.Reset") }}</el-button>
+    <el-button :icon="UserFilled" round size="large" type="primary" @click="changeInfo">
+      >{{ $t("layout_header.Change") }}
+    </el-button>
   </div>
 </template>
 
@@ -37,14 +39,15 @@ import { changeInfoApi, getInfoApi } from "@/api/modules/userInfo";
 import { useUserStore } from "@/stores/modules/user";
 import { CircleClose, UserFilled } from "@element-plus/icons-vue";
 import type { ElForm } from "element-plus";
+import i18n from "@/languages";
 
 const userStore = useUserStore();
 
 type FormInstance = InstanceType<typeof ElForm>;
 const infoFormRef = ref<FormInstance>();
 const infoFormRules = reactive({
-  username: [{ required: true, message: "Please enter username", trigger: "blur" }],
-  password: [{ required: true, message: "Please enter password", trigger: "blur" }]
+  username: [{ required: true, message: i18n.global.t("layout_header.UsernameRequired"), trigger: "blur" }],
+  password: [{ required: true, message: i18n.global.t("layout_header.PasswordRequired"), trigger: "blur" }]
 });
 
 const infoForm = reactive<Register.ReqRegisterForm>({
@@ -62,32 +65,28 @@ const update = async () => {
 };
 
 const changeInfo = async () => {
-  ElMessageBox.confirm(
-    "Are you sure you want to change your account information? If you want to apply this new change please restart the system!",
-    "Warning",
-    {
-      confirmButtonText: "OK",
-      cancelButtonText: "Cancel",
-      type: "warning"
-    }
-  )
+  ElMessageBox.confirm(i18n.global.t("layout_header.ChangeInfoWarning"), i18n.global.t("layout_header.Warning"), {
+    confirmButtonText: i18n.global.t("layout_header.OK"),
+    cancelButtonText: i18n.global.t("layout_header.Cancel"),
+    type: "warning"
+  })
     .then(async () => {
       try {
         await infoFormRef.value?.validate();
         const { data } = await changeInfoApi(infoForm);
         userStore.setToken(data.token);
         console.log(data.token);
-        ElMessage.success("Change account information success");
+        ElMessage.success(i18n.global.t("layout_header.ChangeInfoSuccess"));
       } catch (e) {
         if (e instanceof Error) {
           ElMessage.error(e.message);
         } else {
-          ElMessage.error("Failed to change account information");
+          ElMessage.error(i18n.global.t("layout_header.ChangeInfoFailure"));
         }
       }
     })
     .catch(() => {
-      ElMessage.info("Cancel change account information");
+      ElMessage.info(i18n.global.t("layout_header.CancelChangeInfo"));
     });
 };
 

@@ -5,13 +5,13 @@
       <el-descriptions :column="2" :border="true">
         <template #title> Service {{ index + 1 }} Setting </template>
         <template #extra>
-          <el-button v-if="isLast" type="primary" @click="emit('addService')">Add Service</el-button>
-          <el-button type="danger" @click="emit('removeService', props.index)">Delete</el-button>
+          <el-button v-if="isLast" type="primary" @click="emit('addService')">{{ $t("cconfig.AddService") }}</el-button>
+          <el-button type="danger" @click="emit('removeService', props.index)">{{ $t("cconfig.Delete") }}</el-button>
         </template>
         <el-descriptions-item>
           <template #label>
-            HostPrefix
-            <UsageTooltip :usage-text="ClientConfig.usage['HostPrefix']" />
+            {{ $t("cconfig.HostPrefix") }}
+            <UsageTooltip :usage-text="$t('cusage[\'HostPrefix\']')" />
           </template>
           <el-form-item prop="HostPrefix">
             <el-input v-model="localSetting.HostPrefix"></el-input>
@@ -19,22 +19,22 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            RemoteTCPPort
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteTCPPort']" />
+            {{ $t("cconfig.RemoteTCPPort") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteTCPPort\']')" />
           </template>
           <el-input-number v-model="localSetting.RemoteTCPPort" :min="0" :max="65535" />
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            RemoteTCPRandom
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteTCPRandom']" />
+            {{ $t("cconfig.RemoteTCPRandom") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteTCPRandom\']')" />
           </template>
           <el-switch v-model="localSetting.RemoteTCPRandom" active-text="true" inactive-text="false" />
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            LocalURL
-            <UsageTooltip :usage-text="ClientConfig.usage['LocalURL']" />
+            {{ $t("cconfig.LocalURL") }}
+            <UsageTooltip :usage-text="$t('cusage[\'LocalURL\']')" />
           </template>
           <el-form-item prop="LocalURL">
             <el-input v-model="localSetting.LocalURL"></el-input>
@@ -42,8 +42,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            LocalTimeout
-            <UsageTooltip :usage-text="ClientConfig.usage['LocalTimeout']" />
+            {{ $t("cconfig.LocalTimeout") }}
+            <UsageTooltip :usage-text="$t('cusage[\'LocalTimeout\']')" />
           </template>
           <el-form-item prop="LocalTimeout">
             <el-input v-model="localSetting.LocalTimeout"></el-input>
@@ -51,8 +51,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            UseLocalAsHTTPHost
-            <UsageTooltip :usage-text="ClientConfig.usage['UseLocalAsHTTPHost']" />
+            {{ $t("cconfig.UseLocalAsHTTPHost") }}
+            <UsageTooltip :usage-text="$t('cusage[\'UseLocalAsHTTPHost\']')" />
           </template>
           <el-switch v-model="localSetting.UseLocalAsHTTPHost" active-text="true" inactive-text="false" />
         </el-descriptions-item>

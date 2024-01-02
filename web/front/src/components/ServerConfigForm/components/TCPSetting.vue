@@ -1,15 +1,15 @@
 <template>
   <el-card>
     <el-form ref="tcpSettingRef" :model="form">
-      <el-divider content-position="left">TCP Setting</el-divider>
+      <el-divider content-position="left">{{ $t("sconfig.TCPSetting") }}</el-divider>
       <el-table :data="form.tableData" table-layout="auto" show-overflow-tooltip highlight-current-row>
-        <template #empty> Please Add TCP Ranges and Numbers </template>
+        <template #empty> {{ $t("sconfig.AddTcpRanges") }} </template>
         <el-table-column type="index"></el-table-column>
         <el-table-column prop="Range">
           <template #header>
             <div>
-              TCPRanges
-              <UsageTooltip :usage-text="ServerConfig.usage['TCPRanges']" />
+              {{ $t("sconfig.TCPRanges") }}
+              <UsageTooltip :usage-text="$t('susage[\'TCPRanges\']')" />
             </div>
           </template>
           <template #default="scope">
@@ -21,18 +21,20 @@
         </el-table-column>
         <el-table-column fixed="right">
           <template #header>
-            <div>Operation</div>
+            <div>{{ $t("sconfig.Operation") }}</div>
           </template>
           <template #default="scope">
             <el-button v-if="scope.row.isEdit" icon="Check" type="success" size="small" @click="finishEdit(scope.$index)">
-              Done
+              {{ $t("sconfig.Done") }}
             </el-button>
-            <el-button v-else type="primary" icon="Edit" size="small" @click="editRow(scope.$index)">Edit</el-button>
+            <el-button v-else type="primary" icon="Edit" size="small" @click="editRow(scope.$index)">{{
+              $t("sconfig.Edit")
+            }}</el-button>
             <el-button icon="Delete" type="danger" size="small" @click="deleteRow(scope.$index)" />
           </template>
         </el-table-column>
       </el-table>
-      <el-button icon="Plus" style="width: 100%" @click="addRow">Add</el-button>
+      <el-button icon="Plus" style="width: 100%" @click="addRow">{{ $t("sconfig.Add") }}</el-button>
     </el-form>
   </el-card>
 </template>

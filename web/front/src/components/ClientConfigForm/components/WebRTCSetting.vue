@@ -4,11 +4,11 @@
     <div class="card content-box">
       <!-- WebRTC -->
       <el-descriptions :column="2" :border="true">
-        <template #title> WebRTC Setting </template>
+        <template #title> {{ $t("cconfig.WebRTCSetting") }} </template>
         <el-descriptions-item>
           <template #label>
-            WebRTCConnectionIdleTimeout
-            <UsageTooltip :usage-text="ClientConfig.usage['WebRTCConnectionIdleTimeout']" />
+            {{ $t("cconfig.WebRTCConnectionIdleTimeout") }}
+            <UsageTooltip :usage-text="$t('cusage[\'WebRTCConnectionIdleTimeout\']')" />
           </template>
           <el-form-item prop="WebRTCConnectionIdleTimeout">
             <el-input v-model="localSetting.WebRTCConnectionIdleTimeout"></el-input>
@@ -16,8 +16,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            WebRTCLogLevel
-            <UsageTooltip :usage-text="ClientConfig.usage['WebRTCLogLevel']" />
+            {{ $t("cconfig.WebRTCLogLevel") }}
+            <UsageTooltip :usage-text="$t('cusage[\'WebRTCLogLevel\']')" />
           </template>
           <el-select v-model="localSetting.WebRTCLogLevel" placeholder="Select log level">
             <el-option v-for="option in WebRTCLogLevelOptions" :key="option" :label="option" :value="option" />
@@ -25,15 +25,15 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            WebRTCMinPort
-            <UsageTooltip :usage-text="ClientConfig.usage['WebRTCMinPort']" />
+            {{ $t("cconfig.WebRTCMinPort") }}
+            <UsageTooltip :usage-text="$t('cusage[\'WebRTCMinPort\']')" />
           </template>
           <el-input-number v-model="localSetting.WebRTCMinPort" :min="0" :max="65535" />
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            WebRTCMaxPort
-            <UsageTooltip :usage-text="ClientConfig.usage['WebRTCMaxPort']" />
+            {{ $t("cconfig.WebRTCMaxPort") }}
+            <UsageTooltip :usage-text="$t('cusage[\'WebRTCMaxPort\']')" />
           </template>
           <el-input-number v-model="localSetting.WebRTCMaxPort" :min="0" :max="65535" />
         </el-descriptions-item>

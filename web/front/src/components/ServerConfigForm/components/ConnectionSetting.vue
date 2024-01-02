@@ -2,11 +2,11 @@
   <el-form ref="ConnectionSettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title> Connection Setting </template>
+        <template #title> {{ $t("sconfig.ConnectionSetting") }} </template>
         <el-descriptions-item>
           <template #label>
-            Speed
-            <UsageTooltip :usage-text="ServerConfig.usage['Speed']" />
+            {{ $t("sconfig.Speed") }}
+            <UsageTooltip :usage-text="$t('susage[\'Speed\']')" />
           </template>
           <el-form-item prop="Speed">
             <el-input-number v-model="localSetting.Speed" />
@@ -14,8 +14,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            Connections
-            <UsageTooltip :usage-text="ServerConfig.usage['Connections']" />
+            {{ $t("sconfig.Connections") }}
+            <UsageTooltip :usage-text="$t('susage[\'Connections\']')" />
           </template>
           <el-form-item prop="Connections">
             <el-input-number v-model="localSetting.Connections" />
@@ -23,8 +23,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            ReconnectTimes
-            <UsageTooltip :usage-text="ServerConfig.usage['ReconnectTimes']" />
+            {{ $t("sconfig.ReconnectTimes") }}
+            <UsageTooltip :usage-text="$t('susage[\'ReconnectTimes\']')" />
           </template>
           <el-form-item prop="ReconnectTimes">
             <el-input-number v-model="localSetting.ReconnectTimes" />
@@ -32,8 +32,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            ReconnectDuration
-            <UsageTooltip :usage-text="ServerConfig.usage['ReconnectDuration']" />
+            {{ $t("sconfig.ReconnectDuration") }}
+            <UsageTooltip :usage-text="$t('susage[\'ReconnectDuration\']')" />
           </template>
           <el-form-item prop="ReconnectDuration">
             <el-input v-model="localSetting.ReconnectDuration" />
@@ -41,8 +41,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            Timeout
-            <UsageTooltip :usage-text="ServerConfig.usage['Timeout']" />
+            {{ $t("sconfig.Timeout") }}
+            <UsageTooltip :usage-text="$t('susage[\'Timeout\']')" />
           </template>
           <el-form-item prop="Timeout">
             <el-input v-model="localSetting.Timeout" />
@@ -50,8 +50,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            TimeoutOnUnidirectionalTraffic
-            <UsageTooltip :usage-text="ServerConfig.usage['TimeoutOnUnidirectionalTraffic']" />
+            {{ $t("sconfig.TimeoutOnUnidirectionalTraffic") }}
+            <UsageTooltip :usage-text="$t('susage[\'TimeoutOnUnidirectionalTraffic\']')" />
           </template>
           <el-form-item prop="TimeoutOnUnidirectionalTraffic">
             <el-switch v-model="localSetting.TimeoutOnUnidirectionalTraffic" />

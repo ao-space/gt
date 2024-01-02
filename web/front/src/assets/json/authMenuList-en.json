@@ -7,7 +7,7 @@
       "component": "/home/index",
       "meta": {
         "icon": "HomeFilled",
-        "title": "主页",
+        "title": "Home",
         "isHide": false,
         "isFull": false,
         "isAffix": true,
@@ -20,7 +20,7 @@
       "component": "/connection/index",
       "meta": {
         "icon": "Connection",
-        "title": "连接状态",
+        "title": "Connection Status",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
@@ -33,7 +33,7 @@
       "component": "/config/ClientConfig/index",
       "meta": {
         "icon": "Setting",
-        "title": "客户端",
+        "title": "Client",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
@@ -46,7 +46,7 @@
       "component": "/config/ServerConfig/index",
       "meta": {
         "icon": "Setting",
-        "title": "服务端",
+        "title": "Server",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
@@ -59,7 +59,7 @@
       "component": "/pprof/index",
       "meta": {
         "icon": "link",
-        "title": "性能分析",
+        "title": "pprof",
         "isLink": "http://localhost:8080/debug/pprof",
         "isHide": false,
         "isFull": false,

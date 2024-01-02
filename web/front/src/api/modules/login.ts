@@ -1,6 +1,8 @@
 import { Login } from "@/api/interface/index";
 import authMenuList from "@/assets/json/authMenuList.json";
+import authMenuListEn from "@/assets/json/authMenuList-en.json";
 import http from "@/api";
+import { useMetadataStore } from "@/stores/modules/metadata";
 
 /**
  * @name Login
@@ -18,10 +20,15 @@ export const verifyKeyApi = (params: Login.ReqKeyValue) => {
 
 //Get Menu Permission
 export const getAuthMenuListApi = () => {
-  return http.get<Menu.MenuOptions[]>(`/permission/menu`, {}, { noLoading: true });
+  let lang = useMetadataStore().language;
+
+  // return http.get<Menu.MenuOptions[]>(`/permission/menu`, { language: lang }, { noLoading: true });
 
   //If you want to make the menu a local data,
   //comment out the previous line of code and introduce the local authMenuList.json data
-
-  return authMenuList; //for test
+  if (lang == "zh") {
+    return authMenuList; //for test
+  } else {
+    return authMenuListEn;
+  }
 };

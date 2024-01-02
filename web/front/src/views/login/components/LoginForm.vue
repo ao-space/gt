@@ -1,7 +1,7 @@
 <template>
   <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" size="large">
     <el-form-item prop="username">
-      <el-input v-model="loginForm.username" placeholder="Username:">
+      <el-input v-model="loginForm.username" :placeholder="$t('view_login.Username')">
         <template #prefix>
           <el-icon class="el-input__icon">
             <user />
@@ -10,7 +10,13 @@
       </el-input>
     </el-form-item>
     <el-form-item prop="password">
-      <el-input v-model="loginForm.password" type="password" placeholder="Password:" show-password autocomplete="new-password">
+      <el-input
+        v-model="loginForm.password"
+        type="password"
+        :placeholder="$t('view_login.Password')"
+        show-password
+        autocomplete="new-password"
+      >
         <template #prefix>
           <el-icon class="el-input__icon">
             <lock />
@@ -20,9 +26,9 @@
     </el-form-item>
   </el-form>
   <div class="login-btn">
-    <el-button :icon="CircleClose" round size="large" @click="resetForm(loginFormRef)">Reset</el-button>
+    <el-button :icon="CircleClose" round size="large" @click="resetForm(loginFormRef)">{{ $t("view_login.Reset") }}</el-button>
     <el-button :icon="UserFilled" round size="large" type="primary" :loading="loading" @click="login(loginFormRef)">
-      Login
+      {{ $t("view_login.Login") }}
     </el-button>
   </div>
 </template>

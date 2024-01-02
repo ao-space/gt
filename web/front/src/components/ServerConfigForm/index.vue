@@ -22,9 +22,9 @@
       />
     </template>
   </Anchor>
-  <el-button type="primary" @click="submit">Submit</el-button>
-  <el-button type="primary" @click="getFromFile">Get From File</el-button>
-  <el-button type="primary" @click="getFromRunning">Get From Running</el-button>
+  <el-button type="primary" @click="submit">{{ $t("sconfig.Submit") }}</el-button>
+  <el-button type="primary" @click="getFromFile">{{ $t("sconfig.GetFromFile") }}</el-button>
+  <el-button type="primary" @click="getFromRunning">{{ $t("sconfig.GetFromRunning") }}</el-button>
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">
@@ -57,6 +57,8 @@ import {
   mapServerUserSetting
 } from "@/utils/map";
 import cloneDeep from "lodash/cloneDeep";
+import i18n from "@/languages";
+import { useMetadataStore } from "@/stores/modules/metadata";
 
 //Global Setting
 const tcps = reactive<ServerConfig.TCP[]>([]);
@@ -244,7 +246,7 @@ interface staticTabsType<T> {
 }
 const staticTabs = reactive([
   {
-    title: "General Setting",
+    title: i18n.global.t("sconfig.GeneralSetting"),
     name: "GeneralSetting",
     uuid: uuidv4(),
     component: markRaw(GeneralSetting),
@@ -253,7 +255,7 @@ const staticTabs = reactive([
     updateSetting: updateGeneralSetting
   } as staticTabsType<ServerConfig.GeneralSettingProps>,
   {
-    title: "Network Setting",
+    title: i18n.global.t("sconfig.NetworkSetting"),
     name: "NetworkSetting",
     uuid: uuidv4(),
     component: markRaw(NetworkSetting),
@@ -262,7 +264,7 @@ const staticTabs = reactive([
     updateSetting: updateNetworkSetting
   } as staticTabsType<ServerConfig.NetworkSetting>,
   {
-    title: "Security Setting",
+    title: i18n.global.t("sconfig.SecuritySetting"),
     name: "SecuritySetting",
     uuid: uuidv4(),
     component: markRaw(SecuritySetting),
@@ -271,7 +273,7 @@ const staticTabs = reactive([
     updateSetting: updateSecuritySetting
   } as staticTabsType<ServerConfig.SecuritySetting>,
   {
-    title: "Connection Setting",
+    title: i18n.global.t("sconfig.ConnectionSetting"),
     name: "ConnectionSetting",
     uuid: uuidv4(),
     component: markRaw(ConnectionSetting),
@@ -280,7 +282,7 @@ const staticTabs = reactive([
     updateSetting: updateConnectionSetting
   } as staticTabsType<ServerConfig.ConnectionSetting>,
   {
-    title: "API Setting",
+    title: i18n.global.t("sconfig.APISetting"),
     name: "APISetting",
     uuid: uuidv4(),
     component: markRaw(APISetting),
@@ -289,7 +291,7 @@ const staticTabs = reactive([
     updateSetting: updateAPISetting
   } as staticTabsType<ServerConfig.APISetting>,
   {
-    title: "Sentry Setting",
+    title: i18n.global.t("sconfig.SentrySetting"),
     name: "SentrySetting",
     uuid: uuidv4(),
     component: markRaw(SentrySetting),
@@ -298,7 +300,7 @@ const staticTabs = reactive([
     updateSetting: updateSentrySetting
   } as staticTabsType<ServerConfig.SentrySetting>,
   {
-    title: "Log Setting",
+    title: i18n.global.t("sconfig.LogSetting"),
     name: "LogSetting",
     uuid: uuidv4(),
     component: markRaw(LogSetting),
@@ -307,6 +309,13 @@ const staticTabs = reactive([
     updateSetting: updateLogSetting
   } as staticTabsType<ServerConfig.LogSetting>
 ]);
+let metadataStore = useMetadataStore();
+metadataStore.$subscribe(() => {
+  staticTabs.map(value => {
+    value.title = i18n.global.t("sconfig." + value.name);
+  });
+});
+
 interface dynamicTabType<T> {
   title: string;
   name: string;
@@ -320,7 +329,7 @@ interface dynamicTabType<T> {
 
 const dynamicTabs = computed<dynamicTabType<ServerConfig.UserSetting>[]>(() => {
   return userList.map((user, index) => ({
-    title: `User ${index + 1} Setting`,
+    title: i18n.global.t("sconfig.User") + `${index + 1}` + i18n.global.t("sconfig.Setting"),
     name: `User${index + 1}Setting`,
     uuid: uuids[index],
     component: markRaw(UserSetting),
@@ -359,14 +368,16 @@ const checkIDConflict = () => {
   const ids = userList.map(user => user.ID);
   const uniqueIDs = new Set(ids);
   if (uniqueIDs.size !== ids.length) {
-    throw new Error("ID conflict in user setting, please check.");
+    throw new Error(i18n.global.t("sconfig.IDConflictError"));
   }
 };
+
 const clearUsers = () => {
   for (const key of Object.keys(users)) {
     delete users[key];
   }
 };
+
 const updateUsersFormUserList = () => {
   userList.forEach(user => {
     users[user.ID] = {
@@ -380,12 +391,11 @@ const updateUsersFormUserList = () => {
   });
 };
 
-//submit the configuration to save in file
 const submit = async () => {
   try {
-    await ElMessageBox.confirm("Make sure you want to save the configuration file", "Save The Configuration", {
-      confirmButtonText: "Confirm",
-      cancelButtonText: "Cancel",
+    await ElMessageBox.confirm(i18n.global.t("sconfig.SaveConfigConfirm"), i18n.global.t("sconfig.SaveConfigTitle"), {
+      confirmButtonText: i18n.global.t("sconfig.SaveConfigConfirmBtn"),
+      cancelButtonText: i18n.global.t("sconfig.SaveConfigCancelBtn"),
       type: "info"
     });
     await validateAllForms([
@@ -402,58 +412,50 @@ const submit = async () => {
     clearUsers();
     updateUsersFormUserList();
     await saveServerConfigApi(serverConfig);
-    ElMessage.success("Submit success");
+    ElMessage.success(i18n.global.t("sconfig.SubmitSuccess"));
   } catch (e) {
     if (e instanceof Error) {
       ElMessage.error(e.message);
     } else {
-      ElMessage.error("Failed to save the configuration file!");
+      ElMessage.error(i18n.global.t("sconfig.FailedToSaveConfig"));
     }
   }
 };
 
-//get the configuration
 const getFromFile = async () => {
   try {
-    await ElMessageBox.confirm(
-      "Make sure you want to get the configuration from file, if you fail to get from file, it will get from the running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
-      "Get Configuration From File",
-      {
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        type: "info"
-      }
-    );
+    await ElMessageBox.confirm(i18n.global.t("sconfig.GetFromFileConfirm"), i18n.global.t("sconfig.GetFromFileTitle"), {
+      confirmButtonText: i18n.global.t("sconfig.GetFromFileConfirmBtn"),
+      cancelButtonText: i18n.global.t("sconfig.GetFromFileCancelBtn"),
+      type: "info"
+    });
     const { data } = await getServerConfigFromFileApi();
     updateData(data);
-    ElMessage.success("Get from file success");
+    ElMessage.success(i18n.global.t("sconfig.GetFromFileSuccess"));
   } catch (e) {
     if (e instanceof Error) {
       ElMessage.error(e.message);
     } else {
-      ElMessage.error("Failed to get from file!");
+      ElMessage.error(i18n.global.t("sconfig.FailedToGetFromFile"));
     }
   }
 };
+
 const getFromRunning = async () => {
   try {
-    await ElMessageBox.confirm(
-      "Make sure you want to get the configuration from running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
-      "Get Configuration From Running System",
-      {
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        type: "info"
-      }
-    );
+    await ElMessageBox.confirm(i18n.global.t("sconfig.GetFromRunningConfirm"), i18n.global.t("sconfig.GetFromRunningTitle"), {
+      confirmButtonText: i18n.global.t("sconfig.GetFromRunningConfirmBtn"),
+      cancelButtonText: i18n.global.t("sconfig.GetFromRunningCancelBtn"),
+      type: "info"
+    });
     const { data } = await getRunningServerConfigApi();
     updateData(data);
-    ElMessage.success("Get from running system success");
+    ElMessage.success(i18n.global.t("sconfig.GetFromRunningSuccess"));
   } catch (e) {
     if (e instanceof Error) {
       ElMessage.error(e.message);
     } else {
-      ElMessage.error("Failed to get from running system!");
+      ElMessage.error(i18n.global.t("sconfig.FailedToGetFromRunning"));
     }
   }
 };
