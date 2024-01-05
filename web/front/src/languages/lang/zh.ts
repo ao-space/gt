@@ -250,7 +250,7 @@ export namespace zh {
     WebRTCMaxPort: "WebRTC 最大端口",
     GeneralSetting: "通用设置",
     LogSetting: "日志设置",
-    SentrySetting: "监控设置",
+    SentrySetting: "Sentry设置",
     ServiceSetting: "服务设置",
     TCPForwardSetting: "TCP转发设置",
     WebRTCSetting: "WebRTC 设置",

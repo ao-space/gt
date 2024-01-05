@@ -9,6 +9,40 @@
       </template>
       <SubMenu :menu-list="subItem.children" />
     </el-sub-menu>
+    <el-sub-menu v-else-if="subItem.name == 'client'" :index="subItem.path">
+      <template #title>
+        <el-icon>
+          <component :is="subItem.meta.icon"></component>
+        </el-icon>
+        <span class="sle">{{ subItem.meta.title }}</span>
+      </template>
+      <template v-for="component in clientComponentList" :key="component.name">
+        <el-menu-item @click="scrollToMyComponent(component.name, subItem.path)">
+          <template #title>
+            <el-text>
+              {{ component.title }}
+            </el-text>
+          </template>
+        </el-menu-item>
+      </template>
+    </el-sub-menu>
+    <el-sub-menu v-else-if="subItem.name == 'server'" :index="subItem.path">
+      <template #title>
+        <el-icon>
+          <component :is="subItem.meta.icon"></component>
+        </el-icon>
+        <span class="sle">{{ subItem.meta.title }}</span>
+      </template>
+      <template v-for="component in serverComponentList" :key="component.name">
+        <el-menu-item index="" @click="scrollToMyComponent(component.name, subItem.path)">
+          <template #title>
+            <el-text>
+              {{ component.title }}
+            </el-text>
+          </template>
+        </el-menu-item>
+      </template>
+    </el-sub-menu>
     <el-menu-item v-else :index="subItem.path" @click="handleClickMenu(subItem)">
       <el-icon>
         <component :is="subItem.meta.icon"></component>
@@ -22,6 +56,8 @@
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { useMetadataStore } from "@/stores/modules/metadata";
+import { storeToRefs } from "pinia";
 
 defineProps<{ menuList: Menu.MenuOptions[] }>();
 
@@ -30,6 +66,16 @@ const handleClickMenu = (subItem: Menu.MenuOptions) => {
   if (subItem.meta.isLink) return window.open(subItem.meta.isLink, "_blank");
   router.push(subItem.path);
 };
+let metaStore = useMetadataStore();
+let { serverComponentList, clientComponentList } = storeToRefs(metaStore);
+function scrollToMyComponent(componentId: string, path: string) {
+  router.push(path).then(() => {
+    const element = document.getElementById(componentId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  });
+}
 </script>
 
 <style lang="scss">
@@ -37,30 +83,30 @@ const handleClickMenu = (subItem: Menu.MenuOptions) => {
   color: var(--el-menu-hover-text-color) !important;
   background-color: transparent !important;
 }
-.el-menu--collapse {
-  .is-active {
-    .el-sub-menu__title {
-      color: #ffffff !important;
-      background-color: var(--el-color-primary) !important;
-    }
-  }
-}
+//.el-menu--collapse {
+//  .is-active {
+//    .el-sub-menu__title {
+//      color: #ffffff !important;
+//      background-color: var(--el-color-primary) !important;
+//    }
+//  }
+//}
 .el-menu-item {
   &:hover {
     color: var(--el-menu-hover-text-color);
   }
-  &.is-active {
-    color: var(--el-menu-active-color) !important;
-    background-color: var(--el-menu-active-bg-color) !important;
-    &::before {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      content: "";
-      background-color: var(--el-color-primary);
-    }
-  }
+  //&.is-active {
+  //  color: var(--el-menu-active-color) !important;
+  //  background-color: var(--el-menu-active-bg-color) !important;
+  //  &::before {
+  //    position: absolute;
+  //    top: 0;
+  //    bottom: 0;
+  //    width: 4px;
+  //    content: "";
+  //    background-color: var(--el-color-primary);
+  //  }
+  //}
 }
 .vertical,
 .classic,

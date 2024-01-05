@@ -2,6 +2,7 @@
   <Anchor :tab-list="tabList">
     <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
       <component
+        :id="tab.name"
         :is="tab.component"
         :ref="(el: InstanceType<typeof tab.component> | null) => tab.ref = el"
         :setting="tab.setting"
@@ -11,6 +12,7 @@
 
     <template v-for="(tab, index) in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
+        :id="tab.name"
         :is="tab.component"
         :ref="userSettingRefs[index]"
         :index="index"
