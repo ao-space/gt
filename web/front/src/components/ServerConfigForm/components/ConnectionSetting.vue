@@ -67,6 +67,7 @@ import { reactive, ref, watchEffect } from "vue";
 import { ServerConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { validatorTimeFormat } from "@/utils/eleValidate";
+import i18n from "@/languages";
 
 interface ConnectionSettingProps {
   setting: ServerConfig.ConnectionSetting;
@@ -105,11 +106,11 @@ const validateForm = (): Promise<void> => {
         if (valid) {
           resolve();
         } else {
-          reject(new Error("ConnectionSetting validation failed, please check your input!"));
+          reject(new Error(i18n.global.t("serror.ConnectionSettingValidationFailed")));
         }
       });
     } else {
-      reject(new Error("Connection Setting is not ready!"));
+      reject(new Error(i18n.global.t("serror.ConnectionSettingNotReady")));
     }
   });
 };

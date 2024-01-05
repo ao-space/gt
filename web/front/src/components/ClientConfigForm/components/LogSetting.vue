@@ -58,6 +58,7 @@ import type { FormInstance, FormRules } from "element-plus";
 import { reactive, ref, watchEffect } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
+import i18n from "@/languages";
 
 interface LogSettingProps {
   setting: ClientConfig.LogSetting;
@@ -90,11 +91,11 @@ const validateForm = (): Promise<void> => {
         if (valid) {
           resolve();
         } else {
-          reject(new Error("Log Setting validation failed, please check your input"));
+          reject(new Error(i18n.global.t("LogSettingValidationFailedCheckInput")));
         }
       });
     } else {
-      reject(new Error("Log Setting is not ready"));
+      reject(new Error(i18n.global.t("LogSettingNotReady")));
     }
   });
 };

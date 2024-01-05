@@ -123,6 +123,7 @@ import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { validatorTimeFormat } from "@/utils/eleValidate";
+import i18n from "@/languages";
 
 interface GeneralSettingProps {
   setting: ClientConfig.GeneralSetting;
@@ -144,11 +145,10 @@ watchEffect(() => {
   emit("update:setting", localSetting);
 });
 
-//Form Related
 const generalSettingRef = ref<FormInstance>();
 const validatorRemoteIdleConnections = (rule: any, value: number, callback: any) => {
   if (value < 0 || value > localSetting.RemoteConnections) {
-    callback(new Error("Please input RemoteIdleConnections between 0 and RemoteConnections"));
+    callback(new Error(i18n.global.t("cerror.PleaseInputRemoteIdleConnections")));
   } else {
     callback();
   }
@@ -162,7 +162,7 @@ const validatorRemote = (rule: any, value: any, callback: any) => {
     callback();
   } else {
     console.log("Invalid remote format");
-    callback(new Error("Please enter a valid Remote format (tcp:// or tls://)"));
+    callback(new Error(i18n.global.t("cerror.PleaseEnterValidRemote")));
   }
 };
 const validatorRemoteAPI = (rule: any, value: any, callback: any) => {
@@ -174,28 +174,28 @@ const validatorRemoteAPI = (rule: any, value: any, callback: any) => {
     callback();
   } else {
     console.log("Invalid remoteAPI format");
-    callback(new Error("Please enter a valid RemoteAPI format (http:// or https://)"));
+    callback(new Error(i18n.global.t("cerror.PleaseEnterValidRemoteAPI")));
   }
 };
 const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
-  ID: [{ required: true, message: "Please input ID", trigger: "blur" }],
-  Secret: [{ message: "Please input Secret", trigger: "blur" }],
+  ID: [{ required: true, message: i18n.global.t("cerror.PleaseInputID"), trigger: "blur" }],
+  Secret: [{ message: i18n.global.t("cerror.PleaseInputSecret"), trigger: "blur" }],
   ReconnectDelay: [{ validator: validatorTimeFormat, trigger: "blur" }],
   RemoteTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }],
   Remote: [{ validator: validatorRemote, trigger: "blur" }],
   RemoteAPI: [{ validator: validatorRemoteAPI, trigger: "blur" }],
   RemoteConnections: [
-    { type: "number", message: "Please input RemoteConnections", trigger: "blur" },
+    { type: "number", message: i18n.global.t("cerror.PleaseInputRemoteConnections"), trigger: "blur" },
     {
       type: "number",
       min: 1,
       max: 10,
-      message: "Please input RemoteConnections between 1 and 10",
+      message: i18n.global.t("cerror.PleaseInputRemoteConnectionsBetween1And10"),
       trigger: "blur"
     }
   ],
   RemoteIdleConnections: [
-    { type: "number", message: "Please input RemoteIdleConnections", trigger: "blur" },
+    { type: "number", message: i18n.global.t("cerror.PleaseInputRemoteIdleConnections"), trigger: "blur" },
     {
       validator: validatorRemoteIdleConnections,
       trigger: "change"
@@ -209,7 +209,7 @@ const checkRemoteSetting = (): Promise<void> => {
     const isRemoteAPIEmpty = !localSetting.RemoteAPI?.trim();
 
     if (isRemoteEmpty && isRemoteAPIEmpty) {
-      reject(new Error("Please input Remote or RemoteAPI"));
+      reject(new Error(i18n.global.t("cerror.PleaseInputRemoteOrRemoteAPI")));
     } else {
       resolve();
     }
@@ -223,21 +223,21 @@ const validateForm = (): Promise<void> => {
       if (generalSettingRef.value) {
         generalSettingRef.value.validate(valid => {
           if (valid) {
-            console.log("General Setting validation passed!");
+            console.log(i18n.global.t("cerror.GeneralSettingValidationPassed"));
             resolve();
           } else {
-            console.log("General Setting validation failed!");
-            reject(new Error("General Setting validation failed, please check your input"));
+            console.log(i18n.global.t("cerror.GeneralSettingValidationFailed"));
+            reject(new Error(i18n.global.t("cerror.GeneralSettingValidationFailedCheckInput")));
           }
         });
       } else {
-        reject(new Error("General Setting is not ready"));
+        reject(new Error(i18n.global.t("cerror.GeneralSettingNotReady")));
       }
     })
   ];
   return Promise.all(validations).then(
     () => {
-      console.log("General Setting validation passed!");
+      console.log(i18n.global.t("cerror.GeneralSettingValidationPassed"));
       return Promise.resolve();
     },
     error => {

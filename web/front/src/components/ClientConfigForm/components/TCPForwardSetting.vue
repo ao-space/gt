@@ -8,7 +8,7 @@
         <el-descriptions-item>
           <template #label>
             {{ $t("cconfig.TcpForwardAddr") }}
-            <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardAddr']" />
+            <UsageTooltip :usage-text="$t('cusage[\'TCPForwardAddr\']')" />
           </template>
           <el-form-item prop="TCPForwardAddr">
             <el-input v-model="localSetting.TCPForwardAddr"></el-input>
@@ -17,7 +17,7 @@
         <el-descriptions-item>
           <template #label>
             {{ $t("cconfig.TcpForwardHostPrefix") }}
-            <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardHostPrefix']" />
+            <UsageTooltip :usage-text="$t('cusage[\'TCPForwardHostPrefix\']')" />
           </template>
           <el-form-item prop="TCPForwardHostPrefix">
             <el-input v-model="localSetting.TCPForwardHostPrefix"></el-input>
@@ -26,7 +26,7 @@
         <el-descriptions-item>
           <template #label>
             {{ $t("cconfig.TcpForwardConnections") }}
-            <UsageTooltip :usage-text="ClientConfig.usage['TCPForwardConnections']" />
+            <UsageTooltip :usage-text="$t('cusage[\'TCPForwardConnections\']')" />
           </template>
           <el-input-number v-model="localSetting.TCPForwardConnections" :min="1" :max="10" />
         </el-descriptions-item>
@@ -40,6 +40,7 @@ import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { FormInstance, FormRules } from "element-plus";
 import { validatorAddr } from "@/utils/eleValidate";
+import i18n from "@/languages";
 
 interface TCPForwardSettingProps {
   setting: ClientConfig.TCPForwardSetting;
@@ -74,11 +75,11 @@ const validateForm = (): Promise<void> => {
         if (valid) {
           resolve();
         } else {
-          reject(new Error("TCPForward Setting validation failed, please check your input"));
+          reject(new Error(i18n.global.t("cerror.TCPForwardSettingValidationFailedCheckInput")));
         }
       });
     } else {
-      reject(new Error("TCPForward Setting is not ready"));
+      reject(new Error(i18n.global.t("cerror.TCPForwardSettingNotReady")));
     }
   });
 };

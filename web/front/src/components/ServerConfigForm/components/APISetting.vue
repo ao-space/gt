@@ -53,6 +53,7 @@ import { reactive, ref, watchEffect } from "vue";
 import { ServerConfig } from "../interface";
 import { validatorAddr } from "@/utils/eleValidate";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
+import i18n from "@/languages";
 
 interface APISettingProps {
   setting: ServerConfig.APISetting;
@@ -87,11 +88,11 @@ const validateForm = (): Promise<void> => {
         if (valid) {
           resolve();
         } else {
-          reject(new Error("API Setting validation failed, please check your input!"));
+          reject(new Error(i18n.global.t("serror.APISettingValidationFailed")));
         }
       });
     } else {
-      reject(new Error("API Setting is not ready!"));
+      reject(new Error(i18n.global.t("serror.APISettingNotReady")));
     }
   });
 };

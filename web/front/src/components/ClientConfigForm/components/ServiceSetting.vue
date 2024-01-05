@@ -66,6 +66,7 @@ import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { FormInstance, FormRules } from "element-plus";
 import { validatorLocalURL, validatorTimeFormat } from "@/utils/eleValidate";
+import i18n from "@/languages";
 
 interface ServiceSettingProps {
   setting: ClientConfig.Service;
@@ -103,7 +104,7 @@ const serviceSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.Service>>({
   LocalURL: [
     { validator: validatorLocalURL, trigger: "blur" },
-    { required: true, message: "LocalURL is required", trigger: "blur" }
+    { required: true, message: i18n.global.t("cerror.LocalURLIsRequired"), trigger: "blur" }
   ],
   LocalTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }]
 });
@@ -112,7 +113,7 @@ const checkTCPSetting = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (localSetting.LocalURL?.startsWith("tcp://")) {
       if (!localSetting.RemoteTCPPort && !localSetting.RemoteTCPRandom) {
-        reject(new Error("RemoteTCPPort or RemoteTCPRandom option should be set when LocalURL begin with tcp://"));
+        reject(new Error(i18n.global.t("cerror.RemoteTCPPortOrRandomRequired")));
       }
     }
     resolve();
@@ -128,16 +129,16 @@ const validateForm = (): Promise<void> => {
           if (valid) {
             resolve();
           } else {
-            reject(new Error("Service Setting validation failed, please check your input"));
+            reject(new Error(i18n.global.t("cerror.ServiceSettingValidationFailedCheckInput")));
           }
         });
       } else {
-        reject(new Error("Service Setting is not ready"));
+        reject(new Error(i18n.global.t("cerror.ServiceSettingNotReady")));
       }
     })
   ];
   return Promise.all(validations).then(() => {
-    console.log("ServiceSetting validation passed!");
+    console.log(i18n.global.t("cerror.ServiceSettingValidationPassed"));
   });
 };
 

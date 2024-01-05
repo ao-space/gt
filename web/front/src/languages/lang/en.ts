@@ -1,5 +1,5 @@
 export namespace en {
-  export const usage = {
+  export const susage = {
     // General Setting
 
     Config: "The config file path to load",
@@ -264,7 +264,9 @@ export namespace en {
     Secret: "Secret",
     Service: "Service",
     Setting: "Setting",
+    DetailSettings: "DetailSettings",
     //sentences
+    SelectWebRtcLogLevel: "Select log level",
     SaveConfigConfirm: "Make sure you want to save the configuration to file.",
     SaveConfigTitle: "Save The Configuration",
     SaveConfigConfirmBtn: "Confirm",
@@ -290,6 +292,62 @@ export namespace en {
     ReloadServicesConfirmBtn: "Confirm",
     ReloadServicesCancelBtn: "Cancel",
     InconsistentOptionsWarning: "The options you changed are not consistent with the running system!"
+  };
+  export const serror = {
+    APISettingValidationFailed: "API Setting validation failed, please check your input!",
+    APISettingNotReady: "API Setting is not ready!",
+    ConnectionSettingValidationFailed: "Connection Setting validation failed, please check your input!",
+    ConnectionSettingNotReady: "Connection Setting is not ready!",
+    GeneralSettingValidationFailed: "General Setting validation failed, please check your input!",
+    GeneralSettingNotReady: "General Setting is not ready!",
+    GeneralSettingValidationPassed: "General Setting validation passed!",
+    PleaseInputHostNumber: "Please input host number",
+    PleaseInputANumber: "Please input a number",
+    PleaseInputHostRegex: "Please input host regex",
+    PleaseInputAValidRegex: "Please input a valid regex",
+    PleaseCheckYourHostRegexInput: "Please check your host regex input",
+    PleaseFinishEditingBeforeSubmit: "Please finish editing before submit",
+    HostSettingValidationFailed: "Host Setting validation failed, please check your input",
+    HostSettingNotReady: "Host Setting is not ready",
+    NetworkSettingValidationFailed: "Network Setting validation failed, please check your input!",
+    NetworkSettingNotReady: "Network Setting is not ready!",
+    SecuritySettingValidationFailed: "Security Setting validation failed, please check your input!",
+    SecuritySettingNotReady: "Security Setting is not ready!",
+    PleaseInputValidTCPRange: "Please input a valid TCPRange",
+    PleaseCheckYourInput: "Please check your input",
+    TCPSettingFormValidateFailed: "TCP Setting form validate failed, please check your input",
+    TCPSettingNotReady: "TCP Setting is not ready",
+    PleaseInputID: "Please input ID",
+    PleaseInputSecret: "Please input Secret",
+    UserSettingValidationFailed: "User Setting validation failed, please check your input",
+    UserSettingNotReady: "User Setting is not ready!",
+    UserSettingValidationPassed: "User Setting validation passed!"
+  };
+  export const cerror = {
+    PleaseInputRemoteIdleConnections: "Please input RemoteIdleConnections between 0 and RemoteConnections",
+    PleaseEnterValidRemote: "Please enter a valid Remote format (tcp:// or tls://)",
+    PleaseEnterValidRemoteAPI: "Please enter a valid RemoteAPI format (http:// or https://)",
+    PleaseInputID: "Please input ID",
+    PleaseInputSecret: "Please input Secret",
+    PleaseInputRemoteConnections: "Please input RemoteConnections",
+    PleaseInputRemoteConnectionsBetween1And10: "Please input RemoteConnections between 1 and 10",
+    PleaseInputRemoteOrRemoteAPI: "Please input Remote or RemoteAPI",
+    GeneralSettingValidationFailedCheckInput: "General Setting validation failed, please check your input",
+    GeneralSettingNotReady: "General Setting is not ready",
+    GeneralSettingValidationPassed: "General Setting validation passed",
+    LogSettingValidationFailedCheckInput: "Log Setting validation failed, please check your input",
+    LogSettingNotReady: "Log Setting is not ready",
+    SentrySettingValidationFailedCheckInput: "SentrySetting validation failed, please check your input",
+    SentrySettingNotReady: "SentrySetting is not ready",
+    LocalURLIsRequired: "LocalURL is required",
+    RemoteTCPPortOrRandomRequired: "RemoteTCPPort or RemoteTCPRandom option should be set when LocalURL begin with tcp://",
+    ServiceSettingValidationFailedCheckInput: "Service Setting validation failed, please check your input",
+    ServiceSettingNotReady: "Service Setting is not ready",
+    ServiceSettingValidationPassed: "ServiceSetting validation passed!",
+    TCPForwardSettingValidationFailedCheckInput: "TCPForward Setting validation failed, please check your input",
+    TCPForwardSettingNotReady: "TCPForward Setting is not ready",
+    WebRTCSettingValidationFailedCheckInput: "WebRTC Setting validation failed, please check your input",
+    WebRTCSettingNotReady: "WebRTC Setting is not ready"
   };
   export const view_home = {
     Runtime: "Runtime",

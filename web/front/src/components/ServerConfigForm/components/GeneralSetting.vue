@@ -55,6 +55,7 @@ import { FormInstance, FormRules } from "element-plus";
 import TCPSetting from "./TCPSetting.vue";
 import HostSetting from "./HostSetting.vue";
 import cloneDeep from "lodash/cloneDeep";
+import i18n from "@/languages";
 
 interface GeneralSettingProps {
   setting: ServerConfig.GeneralSettingProps;
@@ -126,16 +127,16 @@ const validateForm = (): Promise<void> => {
           if (valid) {
             resolve();
           } else {
-            reject(new Error("General Setting validation failed, please check your input!"));
+            reject(new Error(i18n.global.t("serror.GeneralSettingValidationFailed")));
           }
         });
       } else {
-        reject(new Error("General Setting is not ready!"));
+        reject(new Error(i18n.global.t("serror.GeneralSettingNotReady")));
       }
     })
   ];
   return Promise.all(validations).then(() => {
-    console.log("General Setting validation passed!");
+    console.log(i18n.global.t("serror.GeneralSettingValidationPassed"));
   });
 };
 

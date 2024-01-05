@@ -19,7 +19,7 @@
             {{ $t("cconfig.WebRTCLogLevel") }}
             <UsageTooltip :usage-text="$t('cusage[\'WebRTCLogLevel\']')" />
           </template>
-          <el-select v-model="localSetting.WebRTCLogLevel" placeholder="Select log level">
+          <el-select v-model="localSetting.WebRTCLogLevel" :placeholder="$t('cconfig.SelectWebRtcLogLevel')">
             <el-option v-for="option in WebRTCLogLevelOptions" :key="option" :label="option" :value="option" />
           </el-select>
         </el-descriptions-item>

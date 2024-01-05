@@ -40,6 +40,7 @@ import { FormInstance, FormRules } from "element-plus";
 import { reactive, ref, watchEffect } from "vue";
 import { ServerConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
+import i18n from "@/languages";
 
 interface SecuritySettingProps {
   setting: ServerConfig.SecuritySetting;
@@ -71,14 +72,15 @@ const validateForm = (): Promise<void> => {
         if (valid) {
           resolve();
         } else {
-          reject(new Error("Security Setting validation failed, please check your input!"));
+          reject(new Error(i18n.global.t("serror.SecuritySettingValidationFailed")));
         }
       });
     } else {
-      reject(new Error("Security Setting is not ready!"));
+      reject(new Error(i18n.global.t("serror.SecuritySettingNotReady")));
     }
   });
 };
+
 defineExpose({
   validateForm
 });

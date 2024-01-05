@@ -88,6 +88,7 @@ import TCPSetting from "./TCPSetting.vue";
 import HostSetting from "./HostSetting.vue";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import cloneDeep from "lodash/cloneDeep";
+import i18n from "@/languages";
 
 const emit = defineEmits<{
   (e: "update:setting", index: number, setting: ServerConfig.UserSetting): void;
@@ -153,14 +154,14 @@ const rules = reactive<FormRules<ServerConfig.UserSetting>>({
   ID: [
     {
       required: true,
-      message: "Please input ID",
+      message: i18n.global.t("serror.PleaseInputID"),
       transform(value) {
         return value.trim();
       },
       trigger: "blur"
     }
   ],
-  Secret: [{ required: true, message: "Please input Secret", trigger: "blur" }]
+  Secret: [{ required: true, message: i18n.global.t("serror.PleaseInputSecret"), trigger: "blur" }]
 });
 
 const validateForm = (): Promise<void> => {
@@ -173,16 +174,16 @@ const validateForm = (): Promise<void> => {
           if (valid) {
             resolve();
           } else {
-            reject(new Error("User Setting validation failed, please check your input"));
+            reject(new Error(i18n.global.t("serror.UserSettingValidationFailed")));
           }
         });
       } else {
-        reject(new Error("User Setting is not ready!"));
+        reject(new Error(i18n.global.t("serror.UserSettingNotReady")));
       }
     })
   ];
   return Promise.all(validations).then(() => {
-    console.log("UserSetting validation passed!");
+    console.log(i18n.global.t("serror.UserSettingValidationPassed"));
   });
 };
 
