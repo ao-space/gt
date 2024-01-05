@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/isrc-cas/gt/config"
-	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/server"
 	util2 "github.com/isrc-cas/gt/util"
 	"github.com/isrc-cas/gt/web/server/model/request"
@@ -211,7 +210,7 @@ func SaveConfigToFile(cfg *server.Config) (fullPath string, err error) {
 	if cfg.Options.Config != "" {
 		fullPath = cfg.Options.Config
 	} else {
-		fullPath = predef.GetDefaultServerConfigPath()
+		fullPath = util2.GetDefaultServerConfigPath()
 		cfg.Options.Config = fullPath
 	}
 	err = util2.WriteYamlToFile(fullPath, buff.Bytes())

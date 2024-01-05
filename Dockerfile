@@ -20,6 +20,7 @@ FROM golang:1.20-bookworm
 RUN apt update && \
     apt install -y xz-utils bzip2 sudo lsb-release ninja-build generate-ninja file patch \
         gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
+        gcc-riscv64-linux-gnu g++-riscv64-linux-gnu \
         cmake build-essential liblttng-ust-dev lttng-tools libssl-dev \
         ca-certificates curl gnupg
 
@@ -33,7 +34,7 @@ RUN mkdir -p /etc/apt/keyrings && \
 # 安装 rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     . "$HOME/.cargo/env" && \
-    rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
+    rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu riscv64gc-unknown-linux-gnu
 
 # golang 切换国内源并且提前安装好依赖
 ENV GO111MODULE=on

@@ -17,6 +17,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"github.com/libp2p/go-reuseport"
 	"net"
 	"strconv"
 	"sync"
@@ -430,7 +431,7 @@ func (c *client) openTCPPort(serviceIndex uint16, l *tcpListener, tunnel *conn) 
 }
 
 func (c *client) openSpecifiedTCPPort(serviceIndex uint16, l *tcpListener, tcpPort uint16, tunnel *conn) error {
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(int(tcpPort)))
+	listener, err := reuseport.Listen("tcp", ":"+strconv.Itoa(int(tcpPort)))
 	if err != nil {
 		return err
 	}

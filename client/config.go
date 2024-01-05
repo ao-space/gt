@@ -17,6 +17,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/isrc-cas/gt/util"
 	"net/url"
 	"strconv"
 	"strings"
@@ -127,7 +128,7 @@ func DefaultConfig() Config {
 
 func defaultConfigWithNoArgs() Config {
 	conf := DefaultConfig()
-	conf.Config = predef.GetDefaultClientConfigPath()
+	conf.Config = util.GetDefaultClientConfigPath()
 	conf.WebAddr = "127.0.0.1:7000"
 	return conf
 }

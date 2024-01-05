@@ -171,6 +171,10 @@ const char *StringEvent(QUIC_CONNECTION_EVENT_TYPE type) {
         return "resumption ticket received";
     case QUIC_CONNECTION_EVENT_PEER_CERTIFICATE_RECEIVED:
         return "peer certificate received";
+    case QUIC_CONNECTION_EVENT_RELIABLE_RESET_NEGOTIATED:
+        return "reliable reset negotiated";
+    case QUIC_CONNECTION_EVENT_ONE_WAY_DELAY_NEGOTIATED:
+        return "one way delay negotiated";
     }
     return "unknown";
 }

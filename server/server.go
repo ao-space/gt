@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/libp2p/go-reuseport"
 	"io"
 	"math"
 	"net"
@@ -85,12 +86,12 @@ type Server struct {
 // New parses the command line args and creates a Server. out 用于测试
 func New(args []string, out io.Writer) (s *Server, err error) {
 	var conf Config
-	if predef.IsNoArgs() {
+	if util.IsNoArgs() {
 		conf = defaultConfigWithNoArgs()
 	} else {
 		conf = DefaultConfig()
 		if util.Contains(args, "-webAddr") {
-			conf.Config = predef.GetDefaultServerConfigPath()
+			conf.Config = util.GetDefaultServerConfigPath()
 		}
 	}
 	err = config.ParseFlags(args, &conf, &conf.Options)
@@ -220,11 +221,12 @@ func (s *Server) tlsListen() (err error) {
 	if err != nil {
 		return
 	}
-	s.tlsListener, err = tls.Listen("tcp", s.config.TLSAddr, tlsConfig)
+	listener, err := reuseport.Listen("tcp", s.config.TLSAddr)
 	if err != nil {
 		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'tlsAddr'", s.config.TLSAddr, err.Error())
 		return
 	}
+	s.tlsListener = tls.NewListener(listener, tlsConfig)
 	s.Logger.Info().Str("addr", s.tlsListener.Addr().String()).Msg("Listening TLS")
 	go s.acceptLoop(s.tlsListener, func(c *conn) {
 		c.handle(c.handleHTTP)
@@ -233,7 +235,7 @@ func (s *Server) tlsListen() (err error) {
 }
 
 func (s *Server) listen() (err error) {
-	s.listener, err = net.Listen("tcp", s.config.Addr)
+	s.listener, err = reuseport.Listen("tcp", s.config.Addr)
 	if err != nil {
 		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.Addr, err.Error())
 		return
@@ -274,7 +276,7 @@ func (s *Server) quicListen(openBBR bool) (err error) {
 }
 
 func (s *Server) sniListen() (err error) {
-	s.sniListener, err = net.Listen("tcp", s.config.SNIAddr)
+	s.sniListener, err = reuseport.Listen("tcp", s.config.SNIAddr)
 	if err != nil {
 		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'sniAddr'", s.config.SNIAddr, err.Error())
 		return
@@ -470,7 +472,7 @@ func (s *Server) startSTUNServer() (err error) {
 	if strings.IndexByte(s.config.STUNAddr, ':') == -1 {
 		s.config.STUNAddr = ":" + s.config.STUNAddr
 	}
-	s.turnListener, err = net.ListenPacket("udp", s.config.STUNAddr)
+	s.turnListener, err = reuseport.ListenPacket("udp", s.config.STUNAddr)
 	if err != nil {
 		return
 	}
@@ -560,12 +562,13 @@ func (s *Server) startAPIServer() (err error) {
 		if err != nil {
 			return
 		}
-		s.apiListener, err = tls.Listen("tcp", s.config.APIAddr, tlsConfig)
+		ln, err := reuseport.Listen("tcp", s.config.APIAddr)
 		if err != nil {
 			return fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'tlsAddr'", s.config.APIAddr, err.Error())
 		}
+		s.apiListener = tls.NewListener(ln, tlsConfig)
 	} else {
-		s.apiListener, err = net.Listen("tcp", s.config.APIAddr)
+		s.apiListener, err = reuseport.Listen("tcp", s.config.APIAddr)
 		if err != nil {
 			return fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'apiAddr'", s.config.APIAddr, err.Error())
 		}

@@ -7,7 +7,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/isrc-cas/gt/client"
 	"github.com/isrc-cas/gt/config"
-	"github.com/isrc-cas/gt/predef"
 	util2 "github.com/isrc-cas/gt/util"
 	"github.com/isrc-cas/gt/web/server/model/request"
 	"github.com/isrc-cas/gt/web/server/util"
@@ -220,7 +219,7 @@ func SaveConfigToFile(cfg *client.Config) (fullPath string, err error) {
 	if cfg.Config != "" {
 		fullPath = cfg.Options.Config
 	} else {
-		fullPath = predef.GetDefaultClientConfigPath()
+		fullPath = util2.GetDefaultClientConfigPath()
 		cfg.Options.Config = fullPath
 	}
 	err = util2.WriteYamlToFile(fullPath, buff.Bytes())

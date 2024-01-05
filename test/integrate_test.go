@@ -70,7 +70,7 @@ func setupServer(args []string, out io.Writer) (s *server.Server, err error) {
 }
 
 func setupClient(args []string, out io.Writer) (c *client.Client, err error) {
-	c, err = client.New(args, out)
+	c, err = client.New(append(args, "-webrtcThreadMode"), out)
 	if err != nil {
 		return
 	}

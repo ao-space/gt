@@ -16,7 +16,6 @@ package main
 
 import (
 	"github.com/isrc-cas/gt/config"
-	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/server"
 	"github.com/isrc-cas/gt/server/web"
 	"github.com/isrc-cas/gt/util"
@@ -123,7 +122,7 @@ func shutdownWebServer(webServer *web.Server) (err error) {
 func checkConfigFile(s *server.Server) bool {
 	configPath := s.Config().Config
 	if len(configPath) == 0 {
-		configPath = predef.GetDefaultServerConfigPath()
+		configPath = util.GetDefaultServerConfigPath()
 	}
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return false
@@ -143,13 +142,13 @@ func checkAndSetLogPath(args []string, s *server.Server) []string {
 		return args
 	}
 
-	return append(args, "-logFile", predef.GetDefaultServerLogPath())
+	return append(args, "-logFile", util.GetDefaultServerLogPath())
 }
 
 func updateConfigLogPath(s *server.Server) error {
 	configPath := s.Config().Config
 	if len(configPath) == 0 {
-		configPath = predef.GetDefaultServerConfigPath()
+		configPath = util.GetDefaultServerConfigPath()
 	}
 
 	var tmp server.Config
@@ -165,7 +164,7 @@ func updateConfigLogPath(s *server.Server) error {
 		return nil
 	}
 
-	tmp.LogFile = predef.GetDefaultServerLogPath()
+	tmp.LogFile = util.GetDefaultServerLogPath()
 	yamlData, err := yaml.Marshal(&tmp)
 	if err != nil {
 		return err

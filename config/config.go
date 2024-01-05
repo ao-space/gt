@@ -17,7 +17,6 @@ package config
 import (
 	"flag"
 	"fmt"
-	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/util"
 	"os"
 	"reflect"
@@ -56,7 +55,7 @@ func ParseFlags(args []string, config, options interface{}) error {
 		err := Yaml2Interface(*configPath, config)
 		if err != nil {
 			// 如果是 (零配置启动/启用了web服务，&&配置文件不存在)，则忽略错误，否则返回错误
-			if !((predef.IsNoArgs() || util.Contains(args, "-webAddr")) && os.IsNotExist(err)) {
+			if !((util.IsNoArgs() || util.Contains(args, "-webAddr")) && os.IsNotExist(err)) {
 				return err
 			}
 		}
@@ -194,13 +193,4 @@ func registerFlags(flagSetName string, options interface{}) (flagSet *flag.FlagS
 		}
 	}
 	return
-}
-
-// ShowUsage generates and prints the usage document of options.
-func ShowUsage(options interface{}) {
-	if options == nil {
-		panic("options can not be nil")
-	}
-	flagSet, _, _ := registerFlags(os.Args[0], options)
-	flagSet.Usage()
 }

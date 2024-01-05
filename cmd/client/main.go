@@ -17,6 +17,7 @@ package main
 /*
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern void create_peer_connection();
 
@@ -36,7 +37,6 @@ import (
 	"github.com/isrc-cas/gt/client"
 	"github.com/isrc-cas/gt/client/web"
 	"github.com/isrc-cas/gt/config"
-	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/util"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -87,7 +87,7 @@ func main() {
 		switch sig {
 		case syscall.SIGHUP:
 			// reload the config
-			err := c.ReloadServices()
+			err := c.ReloadServices(os.Args)
 			c.Logger.Info().Err(err).Msg("reload services done")
 		case syscall.SIGTERM:
 			return
@@ -153,7 +153,7 @@ func shutdownWebServer(webServer *web.Server) (err error) {
 func checkConfigFile(c *client.Client) bool {
 	configPath := c.Config().Config
 	if len(configPath) == 0 {
-		configPath = predef.GetDefaultClientConfigPath()
+		configPath = util.GetDefaultClientConfigPath()
 	}
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return false
@@ -172,13 +172,13 @@ func checkAndSetLogPath(args []string, c *client.Client) []string {
 		return args
 	}
 
-	return append(args, "-logFile", predef.GetDefaultClientLogPath())
+	return append(args, "-logFile", util.GetDefaultClientLogPath())
 }
 
 func updateConfigLogPath(c *client.Client) error {
 	configPath := c.Config().Config
 	if len(configPath) == 0 {
-		configPath = predef.GetDefaultClientConfigPath()
+		configPath = util.GetDefaultClientConfigPath()
 	}
 
 	var tmp client.Config
@@ -194,7 +194,7 @@ func updateConfigLogPath(c *client.Client) error {
 		return nil
 	}
 
-	tmp.LogFile = predef.GetDefaultClientLogPath()
+	tmp.LogFile = util.GetDefaultClientLogPath()
 	yamlData, err := yaml.Marshal(&tmp)
 	if err != nil {
 		return err

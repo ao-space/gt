@@ -16,6 +16,10 @@ mod conn;
 #[no_mangle]
 pub extern "C" fn create_peer_connection() {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    start_peer_connection();
+}
+
+pub fn start_peer_connection() {
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()

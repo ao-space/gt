@@ -1,13 +1,12 @@
 package util
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestWriteYamlToFile(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "writeyamltest")
+	tmpDir, err := os.MkdirTemp("", "writeyamltest")
 	if err != nil {
 		t.Fatalf("Error creating temp directory: %s", err)
 	}
@@ -44,7 +43,7 @@ func TestWriteYamlToFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			if tt.name == "overwrite existing file" {
-				err := ioutil.WriteFile(tt.filePath, []byte("initial: data"), 0644)
+				err := os.WriteFile(tt.filePath, []byte("initial: data"), 0644)
 				if err != nil {
 					t.Fatalf("Failed to create file: %s", err)
 				}
@@ -64,7 +63,7 @@ func TestWriteYamlToFile(t *testing.T) {
 			}
 
 			// check the content of the file
-			content, readErr := ioutil.ReadFile(tt.filePath)
+			content, readErr := os.ReadFile(tt.filePath)
 			if readErr != nil {
 				t.Fatalf("Failed to read file: %s", readErr)
 			}

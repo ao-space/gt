@@ -17,6 +17,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"github.com/isrc-cas/gt/util"
 	"regexp"
 	"time"
 
@@ -128,7 +129,7 @@ func DefaultConfig() Config {
 
 			HostNumber: 0,
 
-			MaxHandShakeOptions: 30,
+			MaxHandShakeOptions: 600,
 
 			OpenBBR: false,
 		},
@@ -139,7 +140,7 @@ func DefaultConfig() Config {
 
 func defaultConfigWithNoArgs() Config {
 	conf := DefaultConfig()
-	conf.Options.Config = predef.GetDefaultServerConfigPath()
+	conf.Options.Config = util.GetDefaultServerConfigPath()
 	conf.Options.WebAddr = "127.0.0.1:8000"
 
 	return conf

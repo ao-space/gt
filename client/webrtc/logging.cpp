@@ -22,10 +22,10 @@ class LogSink : public rtc::LogSink {
   protected:
     void OnLogMessage(const std::string &message, rtc::LoggingSeverity severity, const char *tag) {
         auto messageStr = (std::string)message;
-        if (messageStr.back() = '\n') {
+        if (messageStr.back() == '\n') {
             messageStr.pop_back();
         }
-        if (messageStr.back() = '\r') {
+        if (messageStr.back() == '\r') {
             messageStr.pop_back();
         }
         onLogMessage(severity, (char *)messageStr.c_str(), (char *)tag);
@@ -33,10 +33,10 @@ class LogSink : public rtc::LogSink {
 
     void OnLogMessage(const std::string &message, rtc::LoggingSeverity severity) {
         auto messageStr = (std::string)message;
-        if (messageStr.back() = '\n') {
+        if (messageStr.back() == '\n') {
             messageStr.pop_back();
         }
-        if (messageStr.back() = '\r') {
+        if (messageStr.back() == '\r') {
             messageStr.pop_back();
         }
         onLogMessage(severity, (char *)messageStr.c_str(), nullptr);
@@ -44,10 +44,10 @@ class LogSink : public rtc::LogSink {
 
     void OnLogMessage(const std::string &message) {
         auto messageStr = (std::string)message;
-        if (messageStr.back() = '\n') {
+        if (messageStr.back() == '\n') {
             messageStr.pop_back();
         }
-        if (messageStr.back() = '\r') {
+        if (messageStr.back() == '\r') {
             messageStr.pop_back();
         }
         onLogMessage(rtc::LS_INFO, (char *)messageStr.c_str(), nullptr);
@@ -55,10 +55,10 @@ class LogSink : public rtc::LogSink {
 
     void OnLogMessage(absl::string_view message, rtc::LoggingSeverity severity, const char *tag) {
         auto messageStr = (std::string)message;
-        if (messageStr.back() = '\n') {
+        if (messageStr.back() == '\n') {
             messageStr.pop_back();
         }
-        if (messageStr.back() = '\r') {
+        if (messageStr.back() == '\r') {
             messageStr.pop_back();
         }
         onLogMessage(severity, (char *)messageStr.c_str(), (char *)tag);
@@ -66,10 +66,10 @@ class LogSink : public rtc::LogSink {
 
     void OnLogMessage(absl::string_view message, rtc::LoggingSeverity severity) {
         auto messageStr = (std::string)message;
-        if (messageStr.back() = '\n') {
+        if (messageStr.back() == '\n') {
             messageStr.pop_back();
         }
-        if (messageStr.back() = '\r') {
+        if (messageStr.back() == '\r') {
             messageStr.pop_back();
         }
         onLogMessage(severity, (char *)messageStr.c_str(), nullptr);
@@ -77,10 +77,10 @@ class LogSink : public rtc::LogSink {
 
     void OnLogMessage(absl::string_view message) {
         auto messageStr = (std::string)message;
-        if (messageStr.back() = '\n') {
+        if (messageStr.back() == '\n') {
             messageStr.pop_back();
         }
-        if (messageStr.back() = '\r') {
+        if (messageStr.back() == '\r') {
             messageStr.pop_back();
         }
         onLogMessage(rtc::LS_INFO, (char *)messageStr.c_str(), nullptr);

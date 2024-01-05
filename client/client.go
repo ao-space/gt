@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/libp2p/go-reuseport"
 	"io"
 	"net"
 	"net/http"
@@ -119,12 +120,12 @@ func MergeConfig(cfg *Config) (err error) {
 }
 
 func getDefaultConfig(args []string) (conf Config) {
-	if predef.IsNoArgs() {
+	if util.IsNoArgs() {
 		conf = defaultConfigWithNoArgs()
 	} else {
 		conf = DefaultConfig()
 		if util.Contains(args, "-webAddr") {
-			conf.Config = predef.GetDefaultClientConfigPath()
+			conf.Config = util.GetDefaultClientConfigPath()
 		}
 	}
 	return
@@ -529,7 +530,7 @@ func (c *Client) Start() (err error) {
 		c.Config().TCPForwardConnections = 1
 	}
 	if c.Config().TCPForwardHostPrefix != "" {
-		c.tcpForwardListener, err = net.Listen("tcp", c.Config().TCPForwardAddr)
+		c.tcpForwardListener, err = reuseport.Listen("tcp", c.Config().TCPForwardAddr)
 		if err != nil {
 			c.Logger.Error().Err(err).Msg("failed to listen TCP forward")
 			return
@@ -676,6 +677,9 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 		return true
 	}
 	time.Sleep(c.Config().ReconnectDelay.Duration)
+	if atomic.LoadUint32(&c.closing) == 1 {
+		return true
+	}
 	c.idleManager.WaitIdle(connID)
 
 	for len(c.Config().RemoteAPI) > 0 {
@@ -893,7 +897,7 @@ func (c *Client) GetTCPForwardListenerAddrPort() (addrPort netip.AddrPort) {
 }
 
 // ReloadServices reload services from config file
-func (c *Client) ReloadServices() (err error) {
+func (c *Client) ReloadServices(args []string) (err error) {
 	if !c.reloading.CompareAndSwap(false, true) {
 		return errors.New("already reloading services")
 	}
@@ -901,7 +905,7 @@ func (c *Client) ReloadServices() (err error) {
 		c.reloading.Store(false)
 	}()
 
-	conf := getDefaultConfig(os.Args)
+	conf := getDefaultConfig(args)
 	// ignore the webSetting
 	conf.WebAddr = c.Config().WebAddr
 	conf.WebKeyFile = c.Config().WebKeyFile
@@ -911,7 +915,7 @@ func (c *Client) ReloadServices() (err error) {
 	conf.Admin = c.Config().Admin
 	conf.Password = c.Config().Password
 
-	err = config.ParseFlags(os.Args, &conf, &conf.Options)
+	err = config.ParseFlags(args, &conf, &conf.Options)
 	if err != nil {
 		return
 	}

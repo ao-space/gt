@@ -497,6 +497,9 @@ func (c *conn) processData(taskID uint32, r *bufio.LimitedReader) (readErr, writ
 func (c *conn) processP2P(id uint32, r *bufio.LimitedReader) {
 	var t PeerTask
 	var ok bool
+	defer func() {
+		c.Logger.Info().Bool("ok", ok).Uint32("id", id).Msg("process p2p")
+	}()
 	if c.client.Config().WebRTCThread {
 		t, ok = c.newPeerTask(id)
 	} else {

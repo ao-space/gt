@@ -6,10 +6,10 @@ import (
 )
 
 func GetAppDir() string {
-	if path, err := filepath.Abs(filepath.Dir(os.Args[0])); err == nil {
+	if path, err := os.Getwd(); err == nil {
 		return path
 	}
-	return os.Args[0]
+	return "."
 }
 
 func WriteYamlToFile(fullPath string, data []byte) error {
@@ -35,4 +35,31 @@ func Contains(slice []string, target string) bool {
 		}
 	}
 	return false
+}
+
+var (
+	defaultClientConfigPath string
+	defaultClientLogPath    string
+	defaultServerConfigPath string
+	defaultServerLogPath    string
+)
+
+func init() {
+	defaultClientConfigPath = filepath.Join(GetAppDir(), "client.yaml")
+	defaultClientLogPath = filepath.Join(GetAppDir(), "client.log")
+	defaultServerConfigPath = filepath.Join(GetAppDir(), "server.yaml")
+	defaultServerLogPath = filepath.Join(GetAppDir(), "server.log")
+}
+
+func GetDefaultClientConfigPath() string {
+	return defaultClientConfigPath
+}
+func GetDefaultClientLogPath() string {
+	return defaultClientLogPath
+}
+func GetDefaultServerConfigPath() string {
+	return defaultServerConfigPath
+}
+func GetDefaultServerLogPath() string {
+	return defaultServerLogPath
 }

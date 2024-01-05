@@ -23,9 +23,6 @@ tokio = "1.34.0"
 url = "2.5.0"
 webrtc = "0.9.0"
 
-[build-dependencies]
-cbindgen = "0.26.0"
-
 [patch.crates-io]
 webrtc = { git = "https://github.com/vyloy/webrtc.git", branch = "master" }
 rcgen = { git = "https://github.com/vyloy/rcgen.git", branch = "main" }

@@ -15,6 +15,7 @@ import (
 	"github.com/isrc-cas/gt/web/server/middleware"
 	"github.com/isrc-cas/gt/web/server/model/request"
 	webUtil "github.com/isrc-cas/gt/web/server/util"
+	"github.com/libp2p/go-reuseport"
 	"io"
 	"io/fs"
 	"net"
@@ -22,7 +23,6 @@ import (
 	"net/http/pprof"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -63,29 +63,23 @@ func NewWebServer(s *server.Server) (*Server, error) {
 		return nil, err
 	}
 
-	serverErr := make(chan error, 1)
-	go ws.start(serverErr)
-	timeout := time.After(2 * time.Second)
-
-	select {
-	case err = <-serverErr:
-	case <-timeout:
-		enableHTTPS := ws.enableTLS
-		validURL, _ := webUtil.SwitchToValidWebURL(ws.server.Addr, enableHTTPS)
+	go ws.start(func() {
+		validURL, _ := webUtil.SwitchToValidWebURL(ws.server.Addr, ws.enableTLS)
 		if isFirstStart(s) {
 			tempKey, err := getTempKey(ws, s)
-			if err != nil {
-				return nil, err
+			if err == nil {
+				//add tempKey to url
+				validURL = webUtil.CreateUrlWithTempKey(validURL, tempKey)
+				s.Logger.Info().Str("url", validURL).Msg("first start, browser url")
+				s.Logger.Info().Msg("You have 3 chances to use this within the next 3 minutes. Please use it as soon as possible.")
+			} else {
+				s.Logger.Info().Err(err).Msg("failed to CreateUrlWithTempKey")
 			}
-			//add tempKey to url
-			validURL = webUtil.CreateUrlWithTempKey(validURL, tempKey)
-			s.Logger.Info().Str("url", validURL).Msg("first start, browser url")
-			s.Logger.Info().Msg("You have 3 chances to use this within the next 3 minutes. Please use it as soon as possible.")
 		}
 		if err := webUtil.OpenBrowser(validURL); err != nil {
-			s.Logger.Info().Msg("failed to open browser, please open it manually")
+			s.Logger.Info().Err(err).Msg("failed to open browser, please open it manually")
 		}
-	}
+	})
 	return ws, err
 }
 
@@ -98,7 +92,7 @@ func checkConfig(s *server.Server) error {
 		s.Config().WebAddr = ":" + s.Config().WebAddr
 	}
 	if len(s.Config().Config) == 0 {
-		s.Config().Config = predef.GetDefaultServerConfigPath()
+		s.Config().Config = util.GetDefaultServerConfigPath()
 		s.Logger.Info().Str("config", s.Config().Config).Msg("use default config path")
 	}
 	if len(s.Config().SigningKey) == 0 {
@@ -228,48 +222,81 @@ func setRoutes(s *server.Server, tm *wServer.TokenManager, r *gin.Engine) error 
 	return nil
 }
 
-func (s *Server) start(serverErr chan<- error) {
-	defer s.logger.Info().Msg("web server stopped")
-	if predef.IsNoArgs() {
-		startTime := time.Now()
+func (s *Server) start(readyCallback func()) {
+	var err error
+	defer s.logger.Info().Err(err).Msg("web server stopped")
+	var ln net.Listener
+	if util.IsNoArgs() {
+		addr := s.server.Addr
+		if addr == "" {
+			addr = ":http"
+		}
 		for {
-			s.logger.Info().Str("addr", s.server.Addr).Msg("web server started")
-			err := s.server.ListenAndServe()
-			if err == nil || errors.Is(err, http.ErrServerClosed) {
-				return
+			s.logger.Info().Str("addr", addr).Msg("web server started")
+			ln, err = reuseport.Listen("tcp", addr)
+			if err == nil {
+				break
 			}
-			if opErr, ok := err.(*net.OpError); ok {
-				if sysErr, ok := opErr.Err.(*os.SyscallError); ok {
-					if sysErr.Err == syscall.EADDRINUSE {
-						if time.Since(startTime) > 1*time.Second {
-							err = errors.New("retry timeout, web server stopped")
-							serverErr <- err
+			var opErr *net.OpError
+			if errors.As(err, &opErr) {
+				var sysErr *os.SyscallError
+				if errors.As(opErr.Err, &sysErr) {
+					if errors.Is(sysErr.Err, syscall.EADDRINUSE) {
+						s.logger.Warn().Err(err).Msg("web server address already in use, retrying...")
+						var host string
+						host, _, err = net.SplitHostPort(addr)
+						if err != nil {
 							return
 						}
-						s.logger.Error().Err(err).Msg("web server failed to serve")
-						s.logger.Warn().Msg("web server address already in use, retrying...")
-						//Try to use a random port
-						s.server.Addr = ":" + strconv.Itoa(util.RandomPort())
+						addr = host + ":0"
 						continue
 					}
 				}
 			}
-			serverErr <- err
 			return
 		}
+		if readyCallback != nil {
+			readyCallback()
+		}
+		err = s.server.Serve(ln)
+		return
 	} else {
 		s.logger.Info().Str("addr", s.server.Addr).Msg("web server started")
-		var err error
 		if s.enableTLS {
 			s.logger.Info().Msg("start web server with TLS")
-			err = s.server.ListenAndServeTLS("", "")
+			addr := s.server.Addr
+			if addr == "" {
+				addr = ":https"
+			}
+
+			ln, err = reuseport.Listen("tcp", addr)
+			if err != nil {
+				return
+			}
+
+			defer func() {
+				_ = ln.Close()
+			}()
+			if readyCallback != nil {
+				readyCallback()
+			}
+			err = s.server.ServeTLS(ln, "", "")
+			return
 		} else {
 			s.logger.Info().Msg("start web server without TLS")
-			err = s.server.ListenAndServe()
-		}
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			s.logger.Error().Err(err).Msg("web server failed to serve")
-			serverErr <- err
+			addr := s.server.Addr
+			if addr == "" {
+				addr = ":http"
+			}
+			ln, err = reuseport.Listen("tcp", addr)
+			if err != nil {
+				return
+			}
+			if readyCallback != nil {
+				readyCallback()
+			}
+			err = s.server.Serve(ln)
+			return
 		}
 	}
 }
