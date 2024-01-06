@@ -45,50 +45,98 @@ func ChangeUserInfo(user request.UserInfo, s *server.Server) error {
 	return nil
 }
 
-func GetMenu(s *server.Server) (menu []request.Menu) {
-	menu = []request.Menu{
-		//Home
-		{
-			Path:      "/home/index",
-			Name:      "home",
-			Component: "/home/index",
-			Meta: request.MetaProps{
-				Icon:        "HomeFilled",
-				Title:       "Home",
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     true,
-				IsKeepAlive: false,
+func GetMenu(s *server.Server, lang string) (menu []request.Menu) {
+	print("lang:", lang)
+	if lang == "zh" {
+		menu = []request.Menu{
+			//Home
+			{
+				Path:      "/home/index",
+				Name:      "home",
+				Component: "/home/index",
+				Meta: request.MetaProps{
+					Icon:        "HomeFilled",
+					Title:       "主页",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     true,
+					IsKeepAlive: false,
+				},
 			},
-		},
-		//Connection
-		{
-			Path:      "/connection",
-			Name:      "connection",
-			Component: "/connection/index",
-			Meta: request.MetaProps{
-				Icon:        "Connection",
-				Title:       "Connection Status",
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     false,
-				IsKeepAlive: false,
+			//Connection
+			{
+				Path:      "/connection",
+				Name:      "connection",
+				Component: "/connection/index",
+				Meta: request.MetaProps{
+					Icon:        "Connection",
+					Title:       "连接状态",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     false,
+					IsKeepAlive: false,
+				},
 			},
-		},
-		//Server Config
-		{
-			Path:      "/config/server",
-			Name:      "server",
-			Component: "/config/ServerConfig/index",
-			Meta: request.MetaProps{
-				Icon:        "Setting",
-				Title:       "Server",
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     false,
-				IsKeepAlive: true,
+			//Server Config
+			{
+				Path:      "/config/server",
+				Name:      "server",
+				Component: "/config/ServerConfig/index",
+				Meta: request.MetaProps{
+					Icon:        "Setting",
+					Title:       "服务端",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     false,
+					IsKeepAlive: true,
+				},
 			},
-		},
+		}
+	} else {
+		menu = []request.Menu{
+			//Home
+			{
+				Path:      "/home/index",
+				Name:      "home",
+				Component: "/home/index",
+				Meta: request.MetaProps{
+					Icon:        "HomeFilled",
+					Title:       "Home",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     true,
+					IsKeepAlive: false,
+				},
+			},
+			//Connection
+			{
+				Path:      "/connection",
+				Name:      "connection",
+				Component: "/connection/index",
+				Meta: request.MetaProps{
+					Icon:        "Connection",
+					Title:       "Connection Status",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     false,
+					IsKeepAlive: false,
+				},
+			},
+			//Server Config
+			{
+				Path:      "/config/server",
+				Name:      "server",
+				Component: "/config/ServerConfig/index",
+				Meta: request.MetaProps{
+					Icon:        "Setting",
+					Title:       "Server",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     false,
+					IsKeepAlive: true,
+				},
+			},
+		}
 	}
 	//pprof
 	if s.Config().EnablePprof {

@@ -54,7 +54,7 @@ router.beforeEach(async (to, from, next) => {
 
   // 5.Check if there's a Token, if not redirect to the login page
   // you can comment this line to disable login authentication for test purposes
-  // if (!userStore.token) return next({ path: LOGIN_URL, replace: true });
+  if (!userStore.token) return next({ path: LOGIN_URL, replace: true });
 
   // 6.If there's no menu list, request the menu list again and add dynamic routes
   if (!authStore.authMenuListGet.length) {

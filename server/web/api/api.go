@@ -100,7 +100,8 @@ func GetUserInfo(s *server.Server) gin.HandlerFunc {
 // GetMenu returns the permission menu based on the role of the user
 func GetMenu(s *server.Server) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		menu := service.GetMenu(s)
+		lang := ctx.Query("lang")
+		menu := service.GetMenu(s, lang)
 		response.SuccessWithData(menu, ctx)
 
 	}
