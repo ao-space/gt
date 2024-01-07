@@ -22,6 +22,7 @@ import { useRoute, useRouter } from "vue-router";
 import { ArrowRight } from "@element-plus/icons-vue";
 import { useAuthStore } from "@/stores/modules/auth";
 import { useGlobalStore } from "@/stores/modules/global";
+import i18n from "@/languages";
 
 const route = useRoute();
 const router = useRouter();
@@ -31,7 +32,10 @@ const globalStore = useGlobalStore();
 const breadcrumbList = computed(() => {
   let breadcrumbData = authStore.breadcrumbListGet[route.matched[route.matched.length - 1].path] ?? [];
   if (breadcrumbData[0].path !== HOME_URL) {
-    breadcrumbData = [{ path: HOME_URL, meta: { icon: "HomeFilled", title: "Home" } }, ...breadcrumbData];
+    breadcrumbData = [
+      { path: HOME_URL, meta: { icon: "HomeFilled", title: i18n.global.t("layout_header.Home") } },
+      ...breadcrumbData
+    ];
   }
   return breadcrumbData;
 });

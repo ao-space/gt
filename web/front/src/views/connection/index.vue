@@ -41,6 +41,7 @@ import type { TitleComponentOption, TooltipComponentOption, LegendComponentOptio
 import type { ECharts } from "echarts";
 import { CanvasRenderer } from "echarts/renderers";
 import { getConnectionApi } from "@/api/modules/connection";
+import i18n from "@/languages";
 
 use([CanvasRenderer, PolarComponent, TitleComponent, TooltipComponent, LegendComponent, PieChart]);
 
@@ -52,7 +53,7 @@ const chartOptions = reactive<EChartsOption>({
     fontWeight: 300
   },
   title: {
-    text: "Connection Pool Status",
+    text: i18n.global.t("connection_table.ConnectionPoolStatus"),
     left: "center"
   },
   tooltip: {

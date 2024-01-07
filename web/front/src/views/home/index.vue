@@ -12,7 +12,7 @@
               <el-col :span="12">{{ state.os.goos }}</el-col>
             </el-row>
             <el-row :gutter="10">
-              <el-col :span="12">{{ $t("view_home.cpu_nums") }}:</el-col>
+              <el-col :span="12">{{ $t("view_home.cpu_num") }}:</el-col>
               <el-col :span="12">{{ state.os.numCpu }}</el-col>
             </el-row>
             <el-row :gutter="10">

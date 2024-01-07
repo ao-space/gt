@@ -1,9 +1,9 @@
 <template>
-  <el-drawer v-model="drawerVisible" title="Layout Setting" size="290px">
+  <el-drawer v-model="drawerVisible" :title="$t('layout_theme.LayoutSetting')" size="290px">
     <!-- Layout Style -->
     <el-divider class="divider" content-position="center">
       <el-icon><Notification /></el-icon>
-      Layout
+      {{ $t("layout_theme.Layout") }}
     </el-divider>
     <div class="layout-box">
       <el-tooltip effect="dark" content="classic" placement="top" :show-after="200">

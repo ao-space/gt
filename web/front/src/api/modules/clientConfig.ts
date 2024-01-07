@@ -11,5 +11,9 @@ export const getClientConfigFromFileApi = () => {
 };
 
 export const saveClientConfigApi = (data: ClientConfig.Config) => {
-  return http.post<ClientConfig.Config>(`/config/save`, data);
+  const new_data = {
+    ...data,
+    Remote: [data.Remote]
+  };
+  return http.post<ClientConfig.Config>(`/config/save`, new_data);
 };

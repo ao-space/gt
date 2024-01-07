@@ -358,7 +358,7 @@ export namespace en {
     CPU: "CPU",
     Disk: "Disk",
     os: "os",
-    cpu_num: "CPU nums",
+    cpu_num: "CPU core num",
     compiler: "compiler",
     go_version: "go version",
     goroutine_nums: "goroutine nums",
@@ -388,6 +388,7 @@ export namespace en {
     large: "large",
     default: "default",
     small: "small",
+    Home: "Home",
     DoneBtnText: "Finish",
     CloseBtnText: "Close",
     NextBtnText: "Next",
@@ -416,9 +417,26 @@ export namespace en {
     Warning: "Warning",
     OK: "OK",
     Cancel: "Cancel",
+    Change: "Change",
     ChangeInfoSuccess: "Change account information success",
     ChangeInfoFailure: "Failed to change account information",
-    CancelChangeInfo: "Cancel change account information"
+    CancelChangeInfo: "Cancel change account information",
+    ConfirmLogout: "Are you sure to log out?",
+    Tips: "Tips",
+    Confirm: "Confirm",
+    ConfirmRestartSystem: "Are you sure to restart the system?",
+    RestartSuccess: "Restart success!",
+    RestartFailed: "restart failed",
+    RestartCanceled: "restart canceled",
+    ConfirmShutdownSystem: "Are you sure to shutdown the system?",
+    ShutdownSuccess: "shutdown success",
+    ShutdownFailed: "shutdown failed",
+    ShutdownCanceled: "shutdown canceled",
+    ConfirmKillSystem: "Are you sure to kill the system?",
+    KillSuccess: "kill success",
+    KillFailed: "kill failed",
+    KillCanceled: "kill canceled",
+    LogoutSuccess: "Logout success"
   };
   export const layout_tabs = {
     Refresh: "Refresh",
@@ -442,7 +460,9 @@ export namespace en {
     BreadcrumbIcon: "Breadcrumb Icon",
     Tab: "Tab",
     TabIcon: "Tab Icon",
-    Footer: "Footer"
+    Footer: "Footer",
+    Layout: "Layout",
+    LayoutSetting: "Layout Setting"
   };
   export const connection_table = {
     ID: "ID",
@@ -450,7 +470,11 @@ export namespace en {
     Type: "Type",
     LocalAddress: "Local Address",
     RemoteAddress: "Remote Address",
-    Status: "Status"
+    Status: "Status",
+    ConnectionPoolStatus: "Connection Pool Status",
+    Running: "Running",
+    Idle: "Idle",
+    Wait: "Wait"
   };
   export const result = {
     RequestFailed: "Request failed! Please try again later.",

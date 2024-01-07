@@ -46,7 +46,6 @@ func ChangeUserInfo(user request.UserInfo, s *server.Server) error {
 }
 
 func GetMenu(s *server.Server, lang string) (menu []request.Menu) {
-	print("lang:", lang)
 	if lang == "zh" {
 		menu = []request.Menu{
 			//Home

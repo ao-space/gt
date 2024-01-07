@@ -26,9 +26,9 @@ const globalStore = useGlobalStore();
 const assemblySize = computed(() => globalStore.assemblySize);
 
 const assemblySizeList = [
-  { label: "default", value: i18n.global.t("default") },
-  { label: "large", value: i18n.global.t("large") },
-  { label: "small", value: i18n.global.t("small") }
+  { label: "default", value: i18n.global.t("layout_header.default") },
+  { label: "large", value: i18n.global.t("layout_header.large") },
+  { label: "small", value: i18n.global.t("layout_header.small") }
 ];
 
 const setAssemblySize = (item: AssemblySizeType) => {

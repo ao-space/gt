@@ -5,11 +5,12 @@ import { useAuthStore } from "@/stores/modules/auth";
 
 export const useMetadataStore = defineStore("GT-metadata", () => {
   let auth_store = useAuthStore();
-  let data = localStorage.getItem("lang");
-  let language = ref("en");
-  if (data != null) {
-    language.value = data;
+  const language = ref(navigator.language.split("-")[0].toLocaleLowerCase());
+  let local_language = localStorage.getItem("lang");
+  if (local_language != null) {
+    language.value = local_language;
   }
+  console.log("lang:", language);
   watch(language, changeLangStatus);
   async function changeLangStatus(new_data: string) {
     await auth_store.getAuthMenuList();

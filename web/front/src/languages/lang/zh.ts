@@ -356,7 +356,7 @@ export namespace zh {
     CPU: "处理器",
     Disk: "硬盘",
     os: "操作系统",
-    cpu_num: "处理器数量",
+    cpu_num: "处理器线程数量",
     compiler: "编译器",
     go_version: "GO语言版本",
     goroutine_nums: "协程数量",
@@ -386,6 +386,7 @@ export namespace zh {
     large: "大",
     default: "默认",
     small: "小",
+    Home: "主页",
     DoneBtnText: "完成",
     CloseBtnText: "关闭",
     NextBtnText: "下一步",
@@ -412,9 +413,26 @@ export namespace zh {
     Warning: "警告",
     OK: "确定",
     Cancel: "取消",
+    Change: "修改",
     ChangeInfoSuccess: "成功更改帐户信息",
     ChangeInfoFailure: "无法更改帐户信息",
-    CancelChangeInfo: "取消更改帐户信息"
+    CancelChangeInfo: "取消更改帐户信息",
+    ConfirmLogout: "确定要注销吗？",
+    Tips: "提示",
+    Confirm: "确定",
+    ConfirmRestartSystem: "确定要重新启动系统吗？",
+    RestartSuccess: "重新启动成功！",
+    RestartFailed: "重新启动失败",
+    RestartCanceled: "重新启动已取消",
+    ConfirmShutdownSystem: "确定要关闭系统吗？",
+    ShutdownSuccess: "关闭成功",
+    ShutdownFailed: "关闭失败",
+    ShutdownCanceled: "关闭已取消",
+    ConfirmKillSystem: "确定要终止系统吗？",
+    KillSuccess: "终止成功",
+    KillFailed: "终止失败",
+    KillCanceled: "终止已取消",
+    LogoutSuccess: "注销成功"
   };
   export const layout_tabs = {
     Refresh: "刷新",
@@ -438,7 +456,9 @@ export namespace zh {
     BreadcrumbIcon: "面包屑图标",
     Tab: "标签页",
     TabIcon: "标签页图标",
-    Footer: "页脚"
+    Footer: "页脚",
+    Layout: "布局",
+    LayoutSetting: "布局设置"
   };
   export const connection_table = {
     ID: "ID",
@@ -446,7 +466,11 @@ export namespace zh {
     Type: "类型",
     LocalAddress: "本地地址",
     RemoteAddress: "远程地址",
-    Status: "状态"
+    Status: "状态",
+    ConnectionPoolStatus: "连接池状态",
+    Running: "运行中",
+    Idle: "空闲",
+    Wait: "等待"
   };
   export const result = {
     RequestFailed: "请求失败！请稍后重试。",
