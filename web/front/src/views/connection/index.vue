@@ -63,7 +63,11 @@ const chartOptions = reactive<EChartsOption>({
   legend: {
     orient: "vertical",
     left: "left",
-    data: ["Running", "Idle", "Wait"]
+    data: [
+      i18n.global.t("connection_table.Running"),
+      i18n.global.t("connection_table.Idle"),
+      i18n.global.t("connection_table.Wait")
+    ]
   },
   series: [
     {
