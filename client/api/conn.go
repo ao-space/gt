@@ -74,15 +74,25 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 func (c *Conn) Write(b []byte) (n int, err error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
+
 	binary.BigEndian.PutUint32(c.buf[0:], c.id)
 	binary.BigEndian.PutUint16(c.buf[4:], predef.Data)
-	binary.BigEndian.PutUint32(c.buf[6:], uint32(len(b)))
-	nw, err := c.writer.Write(c.buf[:10])
-	if err != nil {
-		return
+
+	var i int
+	for {
+		j := copy(c.buf[10:], b[i:])
+		i += j
+		binary.BigEndian.PutUint32(c.buf[6:], uint32(j))
+		var nw int
+		nw, err = c.writer.Write(c.buf[:10+j])
+		if err != nil {
+			return
+		}
+		n += nw
+		if len(b[i:]) == 0 {
+			break
+		}
 	}
-	n, err = c.writer.Write(b)
-	n += nw
 	return
 }
 

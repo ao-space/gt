@@ -31,10 +31,17 @@ endif
 RELEASE_OPTIONS=$(GO_RACE) -tags release -trimpath -ldflags "$(GO_STATIC_LINK_FLAG) -s -w -X 'github.com/isrc-cas/gt/predef.Version=$(VERSION)'"
 DEBUG_OPTIONS=$(GO_RACE) -trimpath -ldflags "$(GO_STATIC_LINK_FLAG) -X 'github.com/isrc-cas/gt/predef.Version=$(VERSION)'"
 SOURCES=$(shell ls -1 **/*.go)
+FRONTEND_DIR=web/front
+SOURCES_FRONT = $(shell find $(FRONTEND_DIR) -type d \( -name 'node_modules' -o -name 'dist' \) -prune -o -type f \( -name '*.ts' -o -name '*.vue' -o -name '*.scss' -o -name '*.json' -o -name '*.cjs' -o -name '*.config.ts' -o -name '*.html' \) -print)
+SERVER_FRONT_DIR=server/web
+CLIENT_FRONT_DIR=client/web
 TARGET?=$(shell gcc -dumpmachine)
 TARGET_OS=$(shell echo $(TARGET) | awk -F '-' '{print $$2}')
 ifeq ($(TARGET_OS), native)
 	TARGET_OS=
+endif
+ifeq ($(TARGET_OS), linux)
+	RUST_TARGET?=$(shell echo $(TARGET) | awk -F '-' '{print $$1 "-unknown-" $$2 "-" $$3}')
 endif
 TARGET_CPU=$(shell echo $(TARGET) | awk -F '-' '{print $$1}')
 ifeq ($(TARGET_CPU), native)
@@ -53,11 +60,17 @@ export GOOS?=$(shell go env GOOS)
 export GOARCH?=$(shell go env GOARCH)
 export CC=$(TARGET)-gcc -w
 export CXX=$(TARGET)-g++ -w
-export CGO_CXXFLAGS=-I$(shell pwd)/dep/_google-webrtc/src -I$(shell pwd)/dep/_google-webrtc/src/third_party/abseil-cpp -std=c++17 -DWEBRTC_POSIX
-export CGO_LDFLAGS=$(shell pwd)/dep/_google-webrtc/src/out/release-$(TARGET)/obj/libwebrtc.a -ldl -pthread
+PWD=$(shell pwd)
+export CGO_CXXFLAGS=-I$(PWD)/dep/_google-webrtc/src \
+	-I$(PWD)/dep/_google-webrtc/src/third_party/abseil-cpp \
+	-I$(PWD)/dep/_msquic/src/inc \
+	-std=c++17 -DWEBRTC_POSIX -DQUIC_API_ENABLE_PREVIEW_FEATURES
+export CGO_LDFLAGS= $(PWD)/dep/_google-webrtc/src/out/release-$(TARGET)/obj/libwebrtc.a \
+ 	$(PWD)/dep/_msquic/$(TARGET)/bin/Release/libmsquic.a \
+	-ldl -pthread
 export CGO_ENABLED=1
 
-.PHONY: all build docker_build_linux_arm64 fmt build_client docker_build_linux_arm64_client gofumpt build_server docker_build_linux_arm64_server golangci-lint check_webrtc_dependencies docker_release_linux_amd64 release clean docker_release_linux_amd64_client release_client compile_webrtc docker_release_linux_amd64_server release_server docker_create_image docker_build_linux_amd64 docker_release_linux_arm64 revive docker_build_linux_amd64_client docker_release_linux_arm64_client test docker_build_linux_amd64_server docker_release_linux_arm64_server update_submodule
+.PHONY: all build docker_build_linux_arm64 fmt build_client docker_build_linux_arm64_client gofumpt build_server docker_build_linux_arm64_server golangci-lint check_webrtc_dependencies docker_release_linux_amd64 release clean docker_release_linux_amd64_client release_client compile_webrtc docker_release_linux_amd64_server release_server docker_create_image docker_build_linux_amd64 docker_release_linux_arm64 revive docker_build_linux_amd64_client docker_release_linux_arm64_client test docker_build_linux_amd64_server docker_release_linux_arm64_server set_safe_directories update_submodule  build_web_server build_web_client release_web_server release_web_client check_npm front_release duplicate_dist_server clean_duplication_client clean_web clean_dist clean_duplication clean_duplication_server clean_duplication_client  check_msquic_dependencies compile_msquic
 
 all: gofumpt golangci-lint test release
 
@@ -67,9 +80,13 @@ gofumpt:
 	gofumpt --version || go install mvdan.cc/gofumpt@latest
 	gofumpt -l -w $(shell find . -name '*.go' | grep -Ev '^\./bufio|^\./client/std|^\./logger/file-rotatelogs|^\./dep')
 
-test: compile_webrtc
+test: compile_webrtc compile_msquic
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	go test -race -cover -count 1 ./...
+
+test_without_static: compile_webrtc compile_msquic
+	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
+	go test -tags nostatic -race -cover -count 1 ./...
 
 golangci-lint:
 	golangci-lint --version || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
@@ -83,64 +100,140 @@ golangci-lint:
 		--exclude 'SA6002: argument should be pointer-like to avoid allocations' \
 		--exclude 'S1000: should use a simple channel send/receive instead of `select` with a single case'
 
-update_submodule:
+update_submodule: set_safe_directories
 	$(UPDATE_SUBMODULE_COMMAND)
+	@git apply dep/patch/* && echo "patches applied" || echo "no patch applied"
+
+set_safe_directories:
+	@echo "Setting safe directories..."
+	@dirs="\
+			/go/src/github.com/isrc-cas/gt \
+			/go/src/github.com/isrc-cas/gt/dep/_google-webrtc \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/clog \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/googletest \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/boringssl \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3 \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/gost-engine \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/krb5 \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/gost-engine/libprov \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/pyca-cryptography \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/krb5 \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl/wycheproof \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/oqs-provider \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/pyca-cryptography \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/python-ecdsa \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/tlsfuzzer \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/tlslite-ng \
+			/go/src/github.com/isrc-cas/gt/dep/_msquic/submodules/openssl3/wycheproof ";\
+	for dir in $$dirs; do \
+		if git config --global --get-regexp '^safe\.directory$$' | grep -q "^safe.directory $$dir$$"; then \
+			echo "$$dir is already in safe.directory"; \
+		else \
+			git config --global --add safe.directory $$dir; \
+			echo "Added $$dir to safe.directory"; \
+		fi; \
+	done
 
 docker_create_image: update_submodule
 	docker images | grep -cim1 -E "^gtbuild\s+?v1" || docker build -t gtbuild:v1 .
 
-docker_build_linux_amd64: docker_build_linux_amd64_server docker_build_linux_amd64_client
-docker_release_linux_amd64: docker_release_linux_amd64_server docker_release_linux_amd64_client
+docker_build_linux_amd64: docker_create_image
+	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build'
+docker_release_linux_amd64: docker_create_image
+	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release'
 docker_build_linux_amd64_client: docker_create_image
 	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
-	docker run --rm -v $(shell pwd):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_client'
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_client'
 docker_release_linux_amd64_client: docker_create_image
 	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
-	docker run --rm -v $(shell pwd):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release_client'
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release_client'
 docker_build_linux_amd64_server: docker_create_image
 	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
-	docker run --rm -v $(shell pwd):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_server'
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_server'
 docker_release_linux_amd64_server: docker_create_image
 	$(eval MAKE_ENV=TARGET=x86_64-linux-gnu GOOS=linux GOARCH=amd64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
-	docker run --rm -v $(shell pwd):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release_server'
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release_server'
 
-docker_build_linux_arm64: docker_build_linux_arm64_server docker_build_linux_arm64_client
-docker_release_linux_arm64: docker_release_linux_arm64_server docker_release_linux_arm64_client
+docker_build_linux_arm64: docker_create_image
+	$(eval MAKE_ENV=TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build'
+docker_release_linux_arm64: docker_create_image
+	$(eval MAKE_ENV=TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release'
 docker_build_linux_arm64_client: docker_create_image
 	$(eval MAKE_ENV=TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
-	docker run --rm -v $(shell pwd):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_client'
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_client'
 docker_release_linux_arm64_client: docker_create_image
 	$(eval MAKE_ENV=TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
-	docker run --rm -v $(shell pwd):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release_client'
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release_client'
 docker_build_linux_arm64_server: docker_create_image
 	$(eval MAKE_ENV=TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
-	docker run --rm -v $(shell pwd):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_server'
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make build_server'
 docker_release_linux_arm64_server: docker_create_image
 	$(eval MAKE_ENV=TARGET=aarch64-linux-gnu GOOS=linux GOARCH=arm64 STATIC_LINK=$(STATIC_LINK) RACE_CHECK=$(RACE_CHECK) WITH_OFFICIAL_WEBRTC=$(WITH_OFFICIAL_WEBRTC))
-	docker run --rm -v $(shell pwd):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release_server'
+	docker run --rm -v $(PWD):/go/src/github.com/isrc-cas/gt -w /go/src/github.com/isrc-cas/gt gtbuild:v1 sh -c '$(MAKE_ENV) make release_server'
 
 build: build_server build_client
 release: release_server release_client
-build_client: $(SOURCES) Makefile compile_webrtc
+build_client: $(SOURCES) Makefile compile_msquic compile_webrtc compile_p2p
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
+	$(eval CGO_LDFLAGS+=$(PWD)/dep/p2p/target/$(RUST_TARGET)/release/libp2p.a)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/client
-release_client: $(SOURCES) Makefile compile_webrtc
+release_client: $(SOURCES) Makefile compile_msquic compile_webrtc compile_p2p release_web_client
 	$(eval CGO_CXXFLAGS+=-O3)
+	$(eval CGO_LDFLAGS+=$(PWD)/dep/p2p/target/$(RUST_TARGET)/release/libp2p.a)
 	$(eval NAME=$(GOOS)-$(GOARCH)-client)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/client
-build_server: $(SOURCES) Makefile compile_webrtc
+build_server: $(SOURCES) Makefile compile_msquic compile_webrtc
 	$(eval CGO_CXXFLAGS+=-O0 -g -ggdb)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(DEBUG_OPTIONS) -o build/$(NAME)$(EXE) ./cmd/server
-release_server: $(SOURCES) Makefile compile_webrtc
+release_server: $(SOURCES) Makefile compile_msquic compile_webrtc release_web_server
 	$(eval CGO_CXXFLAGS+=-O3)
 	$(eval NAME=$(GOOS)-$(GOARCH)-server)
 	go build $(RELEASE_OPTIONS) -o release/$(NAME)$(EXE) ./cmd/server
 
-clean:
-	rm build/* release/*
-	rm -r dep/_google-webrtc/src/out/*
+release_web_server: $(SOURCES_FRONT) Makefile check_npm front_release duplicate_dist_server
+release_web_client: $(SOURCES_FRONT) Makefile check_npm front_release duplicate_dist_client
+
+check_npm:
+	npm --version || curl -qL https://www.npmjs.com/install.sh | sh
+
+front_build: $(SOURCES_FRONT)
+	(cd $(FRONTEND_DIR) && npm install && npm run "build:test")
+
+front_release: $(SOURCES_FRONT)
+	(cd $(FRONTEND_DIR) && npm install && npm run "build:pro")
+
+duplicate_dist_server:
+	cp -r $(FRONTEND_DIR)/dist $(SERVER_FRONT_DIR)/dist
+
+duplicate_dist_client:
+	cp -r $(FRONTEND_DIR)/dist $(CLIENT_FRONT_DIR)/dist
+
+clean: clean_web clean_p2p
+	rm -rf build/* release/*
+	rm -rf dep/_google-webrtc/src/out/*
+
+clean_web: clean_dist
+	rm -rf $(FRONTEND_DIR)/node_modules
+	rm -f $(FRONTEND_DIR)/package-lock.json
+
+clean_dist: clean_duplication
+	rm -rf $(FRONTEND_DIR)/dist
+
+clean_duplication: clean_duplication_server clean_duplication_client
+
+clean_duplication_server:
+	rm -rf $(SERVER_FRONT_DIR)/dist
+clean_duplication_client:
+	rm -rf $(CLIENT_FRONT_DIR)/dist
+
 
 check_webrtc_dependencies:
 	sh -c "command -v gn"
@@ -178,7 +271,33 @@ compile_webrtc: check_webrtc_dependencies update_submodule
         use_lld=false \
         use_rtti=true \
         use_sysroot=false"
-	sed -i 's| [^ ]*gcc | $(CC) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
-	sed -i 's| [^ ]*g++ | $(CXX) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
-	sed -i 's|"ar"|$(TARGET)-ar|g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
+	sed 's| [^ ]*gcc | $(CC) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
+	cat ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
+	rm ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
+	sed 's| [^ ]*g++ | $(CXX) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
+	cat ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
+	rm ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
+	sed 's|"ar"|$(TARGET)-ar|g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
+	cat ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
+	rm ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
 	ninja -C ./dep/_google-webrtc/src/out/release-$(TARGET)
+
+check_msquic_dependencies:
+	sh -c "command -v cmake"
+
+compile_msquic: check_msquic_dependencies update_submodule
+	mkdir -p ./dep/_msquic/$(TARGET)
+	cmake -B./dep/_msquic/$(TARGET) -S./dep/_msquic -DQUIC_BUILD_SHARED=OFF -DCMAKE_TARGET_ARCHITECTURE=$(TARGET_CPU)
+	make -C./dep/_msquic/$(TARGET) -j$(shell nproc)
+	@renameSymbols=$$(objdump -t ./dep/_msquic/$(TARGET)/bin/Release/libmsquic.a | awk -v RS= '/_YB80VJ/{next}1' | grep -E 'g +(F|O) ' | grep -Evi ' (ms){0,1}quic' | awk '{print " --redefine-sym " $$NF "=" $$NF "_YB80VJ"}') && \
+    		$(TARGET)-objcopy $$renameSymbols ./dep/_msquic/$(TARGET)/bin/Release/libmsquic.a
+
+compile_p2p:
+	cd ./dep/p2p && \
+    . "$$HOME/.cargo/env" && \
+	cargo build -r --target $(RUST_TARGET)
+
+clean_p2p:
+	cd ./dep/p2p && \
+    . "$$HOME/.cargo/env" && \
+	cargo clean

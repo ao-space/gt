@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build !release
-// +build !release
 
 package client
 
@@ -23,6 +22,7 @@ import (
 	"sync/atomic"
 
 	"github.com/isrc-cas/gt/client/api"
+	"github.com/isrc-cas/gt/client/webrtc"
 	"github.com/isrc-cas/gt/logger"
 )
 
@@ -34,13 +34,14 @@ type Client struct {
 	closing             uint32
 	tunnels             map[*conn]struct{}
 	tunnelsRWMtx        sync.RWMutex
-	peers               map[uint32]*peerTask
+	peers               map[uint32]PeerTask
 	peersRWMtx          sync.RWMutex
 	tunnelsCond         *sync.Cond
 	idleManager         *idleManager
 	apiServer           *api.Server
 	services            atomic.Pointer[services]
 	tcpForwardListener  net.Listener
+	webrtcThreadPool    *webrtc.ThreadPool
 	waitTunnelsShutdown sync.WaitGroup
 	configChecksum      atomic.Pointer[[32]byte]
 	reloadWaitGroup     sync.WaitGroup
@@ -48,6 +49,9 @@ type Client struct {
 
 	// test purpose only
 	OnTunnelClose atomic.Value
+
+	// indicate which remote is chosen to establish tunnel
+	chosenRemoteLabel int
 }
 
 func (c *conn) onTunnelClose() {

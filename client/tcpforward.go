@@ -204,7 +204,10 @@ func (c *Client) createPeerConnection(dialer dialer) (peerConnection *webrtc.Pee
 		OnICECandidateError: func(addrss string, port int, url string, errorCode int, errorText string) {
 		},
 	}
-	err = webrtc.NewPeerConnection(&peerConnectionConfig, &peerConnection)
+	signalingThread := c.webrtcThreadPool.GetThread()
+	networkThread := c.webrtcThreadPool.GetSocketThread()
+	workerThread := c.webrtcThreadPool.GetThread()
+	err = webrtc.NewPeerConnection(&peerConnectionConfig, &peerConnection, signalingThread, networkThread, workerThread)
 	if err != nil {
 		return
 	}
@@ -227,7 +230,7 @@ func (c *Client) createPeerConnection(dialer dialer) (peerConnection *webrtc.Pee
 	dataChannelUnused.Close()
 
 	// 发送 offer
-	conn, err := dialer.dialFn()
+	conn, err := dialer.dial()
 	if err != nil {
 		return
 	}

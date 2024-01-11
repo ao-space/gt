@@ -22,7 +22,8 @@ extern "C" {
 #include <stdint.h>
 
 char *NewPeerConnection(void **peerConnectionOutside, char **iceServers, int iceServersLen,
-                        uint16_t *minPort, uint16_t *maxPort, void *userData);
+                        uint16_t *minPort, uint16_t *maxPort, void *signalingThread,
+                        void *networkThread, void *workerThread, void *userData);
 void DeletePeerConnection(void *peerConnection);
 
 void onSignalingChange(int new_state, void *userData);

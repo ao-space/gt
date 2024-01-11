@@ -38,12 +38,17 @@ type conn struct {
 	services      atomic.Pointer[services]
 }
 
+type PoolInfo struct {
+	LocalAddr  net.Addr
+	RemoteAddr net.Addr
+}
+
 func newConn(c net.Conn, client *Client) *conn {
 	nc := &conn{
 		Connection: connection.Connection{
 			Conn:         c,
 			Reader:       pool.GetReader(c),
-			WriteTimeout: client.Config().RemoteTimeout,
+			WriteTimeout: client.Config().RemoteTimeout.Duration,
 		},
 		client: client,
 		tasks:  make(map[uint32]*httpTask, 100),
@@ -177,10 +182,10 @@ func (c *conn) readLoop(connID uint) {
 	r := &bufio.LimitedReader{}
 	r.Reader = c.Reader
 	var timeout time.Duration
-	if c.client.Config().RemoteTimeout > 0 {
-		timeout = c.client.Config().RemoteTimeout / 2
+	if c.client.Config().RemoteTimeout.Duration > 0 {
+		timeout = c.client.Config().RemoteTimeout.Duration / 2
 		if timeout <= 0 {
-			timeout = c.client.Config().RemoteTimeout
+			timeout = c.client.Config().RemoteTimeout.Duration
 		}
 	}
 	for pings <= 3 {
@@ -431,8 +436,8 @@ func (c *conn) processServiceData(connID uint, taskID uint32, s *service, r *buf
 			readErr = err
 		}
 	}
-	if task.service.LocalTimeout > 0 {
-		dl := time.Now().Add(task.service.LocalTimeout)
+	if task.service.LocalTimeout.Duration > 0 {
+		dl := time.Now().Add(task.service.LocalTimeout.Duration)
 		writeErr = task.conn.SetReadDeadline(dl)
 		if writeErr != nil {
 			return
@@ -456,9 +461,10 @@ func (c *conn) processData(taskID uint32, r *bufio.LimitedReader) (readErr, writ
 				})
 				return
 			}
-			_, err := r.WriteTo(pt.apiConn.PipeWriter)
+			_, err := r.WriteTo(pt.APIWriter())
 			if err != nil {
-				pt.Logger.Error().Err(err).Msg("processP2P WriteTo failed")
+				c.Logger.Info().
+					Uint32("peerTask", taskID).Msg("got closed because task with same id is received")
 			}
 			return
 		}
@@ -478,8 +484,8 @@ func (c *conn) processData(taskID uint32, r *bufio.LimitedReader) (readErr, writ
 			readErr = err
 		}
 	}
-	if task.service.LocalTimeout > 0 {
-		dl := time.Now().Add(task.service.LocalTimeout)
+	if task.service.LocalTimeout.Duration > 0 {
+		dl := time.Now().Add(task.service.LocalTimeout.Duration)
 		writeErr = task.conn.SetReadDeadline(dl)
 		if writeErr != nil {
 			return
@@ -489,7 +495,81 @@ func (c *conn) processData(taskID uint32, r *bufio.LimitedReader) (readErr, writ
 }
 
 func (c *conn) processP2P(id uint32, r *bufio.LimitedReader) {
-	t := &peerTask{}
+	var t PeerTask
+	var ok bool
+	if c.client.Config().WebRTCThread {
+		t, ok = c.newPeerTask(id)
+	} else {
+		t, ok = c.newPeerProcTask(id)
+	}
+	if !ok {
+		return
+	}
+
+	c.client.apiServer.Listener.AcceptCh() <- t.APIConn()
+	c.Logger.Info().
+		Uint32("peerTask", id).Msg("peer task started")
+	_, err := r.WriteTo(t.APIWriter())
+	if err != nil {
+		c.Logger.Error().
+			Uint32("peerTask", id).Err(err).Msg("processP2P WriteTo failed")
+	}
+}
+
+func (c *conn) newPeerProcTask(id uint32) (t *peerProcessTask, ok bool) {
+	c.client.peersRWMtx.Lock()
+	defer c.client.peersRWMtx.Unlock()
+	if !predef.Debug {
+		l := uint(len(c.client.peers))
+		if l >= c.client.Config().WebRTCRemoteConnections {
+			respAndClose(id, c, [][]byte{
+				[]byte("HTTP/1.1 403 Forbidden\r\nConnection: Closed\r\n\r\n"),
+			})
+			return
+		}
+	}
+
+	t = &peerProcessTask{}
+	t.id = id
+	t.tunnel = c
+	t.apiConn = api.NewConn(id, "", c)
+	t.apiConn.ProcessOffer = t.processOffer
+	t.apiConn.GetOffer = t.getOffer
+	t.apiConn.ProcessAnswer = t.processAnswer
+	t.data = pool.BytesPool.Get().([]byte)
+	t.Logger = c.Logger.With().
+		Uint32("peerTask", id).
+		Logger()
+	t.timer = time.AfterFunc(120*time.Second, func() {
+		t.Logger.Info().Msg("peer task timeout")
+		t.CloseWithLock()
+	})
+
+	ot, ok := c.client.peers[id]
+	if ok && ot != nil {
+		ot.CloseWithLock()
+		c.Logger.Info().
+			Uint32("peerTask", id).Msg("got closed because task with same id is received")
+	}
+	c.client.peers[id] = t
+	ok = true
+	return
+}
+
+func (c *conn) newPeerTask(id uint32) (t *peerTask, ok bool) {
+	c.client.peersRWMtx.Lock()
+	defer c.client.peersRWMtx.Unlock()
+	if !predef.Debug {
+		l := uint(len(c.client.peers))
+		if l >= c.client.Config().WebRTCRemoteConnections {
+			respAndClose(id, c, [][]byte{
+				[]byte("HTTP/1.1 403 Forbidden\r\nConnection: Closed\r\n\r\n"),
+			})
+			return
+		}
+	}
+
+	t = &peerTask{}
 	t.id = id
 	t.tunnel = c
 	t.apiConn = api.NewConn(id, "", c)
@@ -508,19 +588,13 @@ func (c *conn) processP2P(id uint32, r *bufio.LimitedReader) {
 		t.CloseWithLock()
 	})
 
-	c.client.peersRWMtx.Lock()
 	ot, ok := c.client.peers[id]
 	if ok && ot != nil {
 		ot.CloseWithLock()
-		ot.Logger.Info().Msg("got closed because task with same id is received")
+		c.Logger.Info().
+			Uint32("peerTask", id).Msg("got closed because task with same id is received")
 	}
 	c.client.peers[id] = t
-	c.client.peersRWMtx.Unlock()
-
-	c.client.apiServer.Listener.AcceptCh() <- t.apiConn
-	t.Logger.Info().Msg("peer task started")
-	_, err := r.WriteTo(t.apiConn.PipeWriter)
-	if err != nil {
-		t.Logger.Error().Err(err).Msg("processP2P WriteTo failed")
-	}
+	ok = true
+	return
 }

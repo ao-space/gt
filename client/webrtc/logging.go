@@ -66,7 +66,10 @@ func onLogMessage(severity C.int, messageC *C.char, tagC *C.char) {
 }
 
 // SetLog set logging severity and onLogMessage callback
-func SetLog(severity LoggingSeverity, f func(severity LoggingSeverity, message string, tag string)) {
+func SetLog(
+	severity LoggingSeverity,
+	f func(severity LoggingSeverity, message string, tag string),
+) {
 	onLogMessageGlobalRWMutex.Lock()
 	onLogMessageGlobal = f
 	onLogMessageGlobalRWMutex.Unlock()

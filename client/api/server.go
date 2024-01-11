@@ -62,6 +62,11 @@ func (s *Server) Start() {
 }
 
 func (s *Server) exchangeWebRTCInfo(writer http.ResponseWriter, request *http.Request) {
+	defer func() {
+		if request.Body != nil {
+			request.Body.Close()
+		}
+	}()
 	value := request.Context().Value(rawConn)
 	if value == nil {
 		return

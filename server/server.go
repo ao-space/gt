@@ -32,17 +32,22 @@ import (
 	"strings"
 	gosync "sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/isrc-cas/gt/config"
+	connection "github.com/isrc-cas/gt/conn"
+	"github.com/isrc-cas/gt/conn/msquic"
 	"github.com/isrc-cas/gt/logger"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/server/api"
 	"github.com/isrc-cas/gt/server/sync"
 	"github.com/isrc-cas/gt/util"
 	"github.com/pion/logging"
-	"github.com/pion/turn/v2"
+	"github.com/pion/turn/v3"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 // Server is a network agent server.
@@ -56,6 +61,7 @@ type Server struct {
 	tlsListener  net.Listener
 	listener     net.Listener
 	sniListener  net.Listener
+	quicListener net.Listener
 	accepted     uint64
 	served       uint64
 	failed       uint64
@@ -77,7 +83,15 @@ type Server struct {
 
 // New parses the command line args and creates a Server. out 用于测试
 func New(args []string, out io.Writer) (s *Server, err error) {
-	conf := defaultConfig()
+	var conf Config
+	if predef.IsNoArgs() {
+		conf = defaultConfigWithNoArgs()
+	} else {
+		conf = defaultConfig()
+		if util.Contains(args, "-webAddr") {
+			conf.Config = predef.GetDefaultServerConfigPath()
+		}
+	}
 	err = config.ParseFlags(args, &conf, &conf.Options)
 	if err != nil {
 		return
@@ -85,6 +99,13 @@ func New(args []string, out io.Writer) (s *Server, err error) {
 	if conf.Options.Version {
 		_, _ = fmt.Println(predef.Version)
 		os.Exit(0)
+	}
+
+	if len(conf.Options.Signal) > 0 {
+		err = processSignal(conf.Options.Signal)
+		if err != nil {
+			return
+		}
 	}
 
 	l, err := logger.Init(logger.Options{
@@ -113,6 +134,80 @@ func New(args []string, out io.Writer) (s *Server, err error) {
 	return
 }
 
+func processSignal(signal string) (err error) {
+	switch signal {
+	case "restart":
+		err := sig(syscall.SIGQUIT)
+		if err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	case "stop":
+		err := sig(syscall.SIGTERM)
+		if err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	case "kill":
+		err := sig(syscall.SIGKILL)
+		if err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	default:
+		err = fmt.Errorf("unknown value of '-s': %q", signal)
+	}
+	return
+}
+
+func sig(sig syscall.Signal) (err error) {
+	processes, err := process.Processes()
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		return
+	}
+	tid := os.Getpid()
+	p, err := process.NewProcess(int32(tid))
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		return
+	}
+	e, err := p.Exe()
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		return
+	}
+
+	for _, proc := range processes {
+		pid := int(proc.Pid)
+		if pid == tid {
+			continue
+		}
+		var exe string
+		exe, err = proc.Exe()
+		if err != nil {
+			if os.IsNotExist(err) || os.IsPermission(err) {
+				continue
+			}
+			_, _ = fmt.Fprintln(os.Stderr, err)
+			return
+		}
+		if strings.HasPrefix(exe, e) {
+			p, err := os.FindProcess(pid)
+			if err != nil {
+				_, _ = fmt.Fprintln(os.Stderr, err)
+				return err
+			}
+			err = p.Signal(sig)
+			if err != nil {
+				_, _ = fmt.Fprintln(os.Stderr, err)
+				return err
+			}
+			fmt.Printf("sent signal to process %d.\n", pid)
+		}
+	}
+	return
+}
 func (s *Server) tlsListen() (err error) {
 	var tlsConfig *tls.Config
 	tlsConfig, err = newTLSConfig(s.config.CertFile, s.config.KeyFile, s.config.TLSMinVersion)
@@ -139,6 +234,34 @@ func (s *Server) listen() (err error) {
 	}
 	s.Logger.Info().Str("addr", s.listener.Addr().String()).Msg("Listening")
 	go s.acceptLoop(s.listener, func(c *conn) {
+		c.handle(c.handleHTTP)
+	})
+	return
+}
+
+func (s *Server) quicListen(openBBR bool) (err error) {
+	var tlsConfig *tls.Config
+	if len(s.config.CertFile) > 0 && len(s.config.KeyFile) > 0 {
+		tlsConfig, err = newTLSConfig(s.config.CertFile, s.config.KeyFile, s.config.TLSMinVersion)
+	} else {
+		tlsConfig = connection.GenerateTLSConfig()
+	}
+	if err != nil {
+		return
+	}
+	if openBBR {
+		//s.quicListener, err = connection.QuicBbrListen(s.config.QuicAddr, tlsConfig)
+		//s.quicListener, err = quic.NewListenr(s.config.QuicAddr, 10_000, s.config.KeyFile, s.config.CertFile, "")
+		s.quicListener, err = msquic.MsquicListen(s.config.QuicAddr, s.config.KeyFile, s.config.CertFile)
+	} else {
+		s.quicListener, err = connection.QuicListen(s.config.QuicAddr, tlsConfig)
+	}
+	if err != nil {
+		err = fmt.Errorf("can not listen on addr '%s', cause %s, please check option 'addr'", s.config.QuicAddr, err.Error())
+		return
+	}
+	s.Logger.Info().Str("QuicAddr", s.quicListener.Addr().String()).Msg("Listening")
+	go s.acceptLoop(s.quicListener, func(c *conn) {
 		c.handle(c.handleHTTP)
 	})
 	return
@@ -206,8 +329,7 @@ func (s *Server) acceptLoop(l net.Listener, handle func(*conn)) {
 
 // Start runs the server.
 func (s *Server) Start() (err error) {
-	s.Logger.Info().Interface("config", &s.config).Msg(predef.Version)
-
+	s.Logger.Info().Msg(predef.Version)
 	err = s.users.mergeUsers(s.config.Users, nil, nil)
 	if err != nil {
 		return
@@ -273,6 +395,24 @@ func (s *Server) Start() (err error) {
 		}
 		listening = true
 	}
+	if len(s.config.QuicAddr) > 0 {
+		//if strings.IndexByte(s.config.QuicAddr, ':') == -1 {
+		//	s.config.QuicAddr = ":" + s.config.QuicAddr
+		//}
+		// TODO Go 的冒号加空格会同时监听 IPv4 和 IPv6，这里行为与其他的不一致
+		colonIndex := strings.IndexByte(s.config.QuicAddr, ':')
+		if colonIndex == -1 {
+			s.config.QuicAddr = "0.0.0.0:" + s.config.QuicAddr
+		}
+		if colonIndex == 0 {
+			s.config.QuicAddr = "0.0.0.0" + s.config.QuicAddr
+		}
+		err = s.quicListen(s.config.OpenBBR)
+		if err != nil {
+			return
+		}
+		listening = true
+	}
 	if len(s.config.Addr) > 0 {
 		if strings.IndexByte(s.config.Addr, ':') == -1 {
 			s.config.Addr = ":" + s.config.Addr
@@ -311,6 +451,12 @@ func (s *Server) Start() (err error) {
 			return
 		}
 	}
+
+	conf4log := *s.Config()
+	conf4log.Password = "******"
+	conf4log.SigningKey = "******"
+
+	s.Logger.Info().Msg(spew.Sdump(conf4log))
 	return
 }
 
@@ -348,10 +494,6 @@ func (s *Server) startSTUNServer() (err error) {
 		Realm:         "ao.space",
 		LoggerFactory: factory,
 		AuthHandler: func(username, realm string, srcAddr net.Addr) (key []byte, ok bool) {
-			value, ok := s.users.Load(username)
-			if ok {
-				key = []byte(value.(string))
-			}
 			return
 		},
 		PacketConnConfigs: []turn.PacketConnConfig{
@@ -459,7 +601,7 @@ func (s *Server) authWithAPI(id string, secret string, prefixes []string) (hostP
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Request-Id", strconv.FormatInt(time.Now().Unix(), 10))
 	client := http.Client{
-		Timeout: s.config.Timeout,
+		Timeout: s.config.Timeout.Duration,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -526,10 +668,14 @@ func (s *Server) IsClosing() (closing bool) {
 
 // Shutdown stops the server gracefully.
 func (s *Server) Shutdown() {
+	defer s.Logger.Close()
+	s.ShutdownWithoutClosingLogger()
+}
+
+func (s *Server) ShutdownWithoutClosingLogger() {
 	if !atomic.CompareAndSwapUint32(&s.closing, 0, 1) {
 		return
 	}
-	defer s.Logger.Close()
 	event := s.Logger.Info()
 	if s.apiServer != nil {
 		event.AnErr("api", s.apiServer.Close())
@@ -933,6 +1079,15 @@ func (s *Server) GetTLSListenerAddrPort() (addrPort netip.AddrPort) {
 	return
 }
 
+// GetQuicListenerAddrPort 获取 QUIC listener 地址，返回值可能为空
+func (s *Server) GetQuicListenerAddrPort() (addrPort string) {
+	if s.tlsListener == nil {
+		return
+	}
+	addrPort = s.quicListener.Addr().String()
+	return
+}
+
 // GetAPIListenerAddrPort 获取 api listener 地址，返回值可能为空
 func (s *Server) GetAPIListenerAddrPort() (addrPort netip.AddrPort) {
 	if s.apiListener == nil {
@@ -948,5 +1103,19 @@ func (s *Server) GetSTUNListenerAddrPort() (addrPort netip.AddrPort) {
 		return
 	}
 	addrPort = s.turnListener.LocalAddr().(*net.UDPAddr).AddrPort()
+	return
+}
+
+func (s *Server) Config() *Config {
+	return &s.config
+}
+
+func (s *Server) GetConnectionInfo() (info []ConnectionInfo) {
+	s.id2Client.Range(func(key, value interface{}) bool {
+		client := value.(*client)
+		clientInfo := client.GetConnectionInfo()
+		info = append(info, clientInfo...)
+		return true
+	})
 	return
 }

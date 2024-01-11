@@ -21,19 +21,21 @@ import (
 )
 
 const (
-	running status = iota
+	running Status = iota
 	idle
 	wait
+	connecting
 )
 
-type status int
+type Status int
 
 type idleManager struct {
-	status     map[uint]status
+	status     map[uint]Status
 	statusMtx  sync.RWMutex
 	statusCond *sync.Cond
 	min        uint
 	close      atomic.Bool
+	initMtx    sync.Mutex
 }
 
 func (m *idleManager) String() string {
@@ -42,33 +44,38 @@ func (m *idleManager) String() string {
 	return fmt.Sprintf("%#v", m.status)
 }
 
+func (m *idleManager) GetConnectionStatus() (status map[uint]Status) {
+	m.statusMtx.RLock()
+	defer m.statusMtx.RUnlock()
+	status = make(map[uint]Status, len(m.status))
+	for k, v := range m.status {
+		status[k] = v
+	}
+	return
+}
+
 func newIdleManager(min uint) *idleManager {
 	m := &idleManager{
-		status: make(map[uint]status),
+		status: make(map[uint]Status),
 		min:    min,
 	}
 	m.statusCond = sync.NewCond(&m.statusMtx)
 	return m
 }
 
-func (m *idleManager) InitIdle(id uint) (exit bool) {
+func (m *idleManager) Init(id uint) (exit bool) {
 	m.statusMtx.Lock()
 	defer m.statusMtx.Unlock()
 
-	if v, ok := m.status[id]; ok && v == idle {
-		return false
-	}
-	m.status[id] = idle
+	m.status[id] = connecting
 	var n uint
 	for _, s := range m.status {
 		switch s {
-		case running:
-			n++
 		case idle:
 			n++
 		}
 	}
-	if n <= m.min {
+	if n < m.min {
 		return false
 	}
 
@@ -140,7 +147,7 @@ func (m *idleManager) SetRunningWithTaskCount(id uint, taskCount uint32) {
 	m.statusMtx.RUnlock()
 	if s == running {
 		if taskCount >= 3 {
-			m.statusCond.Signal()
+			m.statusCond.Broadcast()
 		}
 		return
 	}
@@ -148,22 +155,6 @@ func (m *idleManager) SetRunningWithTaskCount(id uint, taskCount uint32) {
 	m.statusMtx.Lock()
 	if m.status[id] != running {
 		m.status[id] = running
-	}
-	m.statusMtx.Unlock()
-}
-
-func (m *idleManager) SetRunning(id uint) {
-	m.statusMtx.RLock()
-	s := m.status[id]
-	m.statusMtx.RUnlock()
-	if s == running {
-		return
-	}
-
-	m.statusMtx.Lock()
-	if m.status[id] != running {
-		m.status[id] = running
-		defer m.statusCond.Signal()
 	}
 	m.statusMtx.Unlock()
 }
@@ -185,18 +176,22 @@ func (m *idleManager) WaitIdle(id uint) {
 	defer m.statusMtx.Unlock()
 
 	for !m.close.Load() {
-		wait := false
-		for _, s := range m.status {
+		m.status[id] = wait
+		w := false
+		for i, s := range m.status {
+			if i == id {
+				continue
+			}
 			if s == idle {
-				wait = true
+				w = true
 				break
 			}
 		}
-		if wait {
+		if w {
 			m.statusCond.Wait()
 			continue
 		}
-		m.status[id] = idle
+		m.status[id] = connecting
 		return
 	}
 }

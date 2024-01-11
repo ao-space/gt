@@ -18,13 +18,10 @@
 
 #include "logging.h"
 
-using namespace std;
-using namespace rtc;
-
 class LogSink : public rtc::LogSink {
   protected:
-    void OnLogMessage(const string &message, LoggingSeverity severity, const char *tag) {
-        auto messageStr = (string)message;
+    void OnLogMessage(const std::string &message, rtc::LoggingSeverity severity, const char *tag) {
+        auto messageStr = (std::string)message;
         if (messageStr.back() = '\n') {
             messageStr.pop_back();
         }
@@ -34,8 +31,8 @@ class LogSink : public rtc::LogSink {
         onLogMessage(severity, (char *)messageStr.c_str(), (char *)tag);
     }
 
-    void OnLogMessage(const string &message, LoggingSeverity severity) {
-        auto messageStr = (string)message;
+    void OnLogMessage(const std::string &message, rtc::LoggingSeverity severity) {
+        auto messageStr = (std::string)message;
         if (messageStr.back() = '\n') {
             messageStr.pop_back();
         }
@@ -45,8 +42,8 @@ class LogSink : public rtc::LogSink {
         onLogMessage(severity, (char *)messageStr.c_str(), nullptr);
     }
 
-    void OnLogMessage(const string &message) {
-        auto messageStr = (string)message;
+    void OnLogMessage(const std::string &message) {
+        auto messageStr = (std::string)message;
         if (messageStr.back() = '\n') {
             messageStr.pop_back();
         }
@@ -56,8 +53,8 @@ class LogSink : public rtc::LogSink {
         onLogMessage(rtc::LS_INFO, (char *)messageStr.c_str(), nullptr);
     }
 
-    void OnLogMessage(absl::string_view message, LoggingSeverity severity, const char *tag) {
-        auto messageStr = (string)message;
+    void OnLogMessage(absl::string_view message, rtc::LoggingSeverity severity, const char *tag) {
+        auto messageStr = (std::string)message;
         if (messageStr.back() = '\n') {
             messageStr.pop_back();
         }
@@ -67,8 +64,8 @@ class LogSink : public rtc::LogSink {
         onLogMessage(severity, (char *)messageStr.c_str(), (char *)tag);
     }
 
-    void OnLogMessage(absl::string_view message, LoggingSeverity severity) {
-        auto messageStr = (string)message;
+    void OnLogMessage(absl::string_view message, rtc::LoggingSeverity severity) {
+        auto messageStr = (std::string)message;
         if (messageStr.back() = '\n') {
             messageStr.pop_back();
         }
@@ -79,7 +76,7 @@ class LogSink : public rtc::LogSink {
     }
 
     void OnLogMessage(absl::string_view message) {
-        auto messageStr = (string)message;
+        auto messageStr = (std::string)message;
         if (messageStr.back() = '\n') {
             messageStr.pop_back();
         }
@@ -91,14 +88,14 @@ class LogSink : public rtc::LogSink {
 };
 
 void SetLog(int severity) {
-    static mutex m;
+    static std::mutex m;
     m.lock();
     static ::LogSink *stream = nullptr;
     if (stream != nullptr) {
-        LogMessage::RemoveLogToStream(stream);
+        rtc::LogMessage::RemoveLogToStream(stream);
         delete stream;
     }
     stream = new ::LogSink();
-    LogMessage::AddLogToStream(stream, LoggingSeverity(severity));
+    rtc::LogMessage::AddLogToStream(stream, rtc::LoggingSeverity(severity));
     m.unlock();
 }

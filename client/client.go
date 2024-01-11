@@ -37,20 +37,22 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/isrc-cas/gt/client/api"
 	"github.com/isrc-cas/gt/client/webrtc"
 	"github.com/isrc-cas/gt/config"
 	connection "github.com/isrc-cas/gt/conn"
+	"github.com/isrc-cas/gt/conn/msquic"
 	"github.com/isrc-cas/gt/logger"
 	"github.com/isrc-cas/gt/pool"
 	"github.com/isrc-cas/gt/predef"
 	"github.com/isrc-cas/gt/util"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 // New parses the command line args and creates a Client. out 用于测试
 func New(args []string, out io.Writer) (c *Client, err error) {
-	conf := defaultConfig()
+	conf := getDefaultConfig(args)
 	err = config.ParseFlags(args, &conf, &conf.Options)
 	if err != nil {
 		return
@@ -87,12 +89,24 @@ func New(args []string, out io.Writer) (c *Client, err error) {
 	c = &Client{
 		Logger:  l,
 		tunnels: make(map[*conn]struct{}),
-		peers:   make(map[uint32]*peerTask),
+		peers:   make(map[uint32]PeerTask),
 	}
 	c.config.Store(&conf)
 	c.tunnelsCond = sync.NewCond(c.tunnelsRWMtx.RLocker())
 	c.apiServer = api.NewServer(l.With().Str("scope", "api").Logger())
 	c.apiServer.ReadTimeout = 30 * time.Second
+	c.webrtcThreadPool = webrtc.NewThreadPool(3)
+	return
+}
+func getDefaultConfig(args []string) (conf Config) {
+	if predef.IsNoArgs() {
+		conf = defaultConfigWithNoArgs()
+	} else {
+		conf = defaultConfig()
+		if util.Contains(args, "-webAddr") {
+			conf.Config = predef.GetDefaultClientConfigPath()
+		}
+	}
 	return
 }
 
@@ -178,62 +192,100 @@ func sig(sig syscall.Signal) (err error) {
 }
 
 type dialer struct {
-	host      string
-	stun      string
-	tlsConfig *tls.Config
-	dialFn    func() (conn net.Conn, err error)
+	tcp        string
+	tls        string
+	quic       string
+	bbr        bool
+	preferQuic bool
+	stuns      []string
+	tlsConfig  *tls.Config
 }
 
-func (d *dialer) init(c *Client, remote string, stun string) (err error) {
-	var u *url.URL
-	u, err = url.Parse(remote)
-	if err != nil {
-		err = fmt.Errorf("remote url (-remote option) '%s' is invalid, cause %s", remote, err.Error())
-		return
+func (d *dialer) isReady() (ready bool) {
+	if len(d.tls) > 0 {
+		return true
 	}
-	d.stun = stun
-	c.Logger.Info().Str("remote", remote).Str("stun", stun).Msg("remote url")
-	switch u.Scheme {
-	case "tls":
-		if len(u.Port()) < 1 {
-			u.Host = net.JoinHostPort(u.Host, "443")
+	if len(d.quic) > 0 {
+		return true
+	}
+	if len(d.tcp) > 0 {
+		return true
+	}
+
+	return false
+}
+
+func (d *dialer) init(c *Client, remotes []string, stuns []string) (err error) {
+	d.stuns = stuns
+	for _, remote := range remotes {
+		var u *url.URL
+		u, err = url.Parse(remote)
+		if err != nil {
+			err = fmt.Errorf("remote url (-remote option) '%s' is invalid, cause %s", remote, err.Error())
+			return
 		}
-		tlsConfig := &tls.Config{}
-		if len(c.Config().RemoteCert) > 0 {
-			var cf []byte
-			cf, err = os.ReadFile(c.Config().RemoteCert)
-			if err != nil {
-				err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
-				return
+		c.Logger.Info().Str("remote", remote).Strs("stuns", stuns).Msg("remote url")
+		switch u.Scheme {
+		case "tls":
+			if len(u.Port()) < 1 {
+				u.Host = net.JoinHostPort(u.Host, "443")
 			}
-			roots := x509.NewCertPool()
-			ok := roots.AppendCertsFromPEM(cf)
-			if !ok {
-				err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
-				return
+			tlsConfig := &tls.Config{}
+			if len(c.Config().RemoteCert) > 0 {
+				var cf []byte
+				cf, err = os.ReadFile(c.Config().RemoteCert)
+				if err != nil {
+					err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
+					return
+				}
+				roots := x509.NewCertPool()
+				ok := roots.AppendCertsFromPEM(cf)
+				if !ok {
+					err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
+					return
+				}
+				tlsConfig.RootCAs = roots
 			}
-			tlsConfig.RootCAs = roots
+			if c.Config().RemoteCertInsecure {
+				tlsConfig.InsecureSkipVerify = true
+			}
+			d.tls = u.Host
+			d.tlsConfig = tlsConfig
+		case "tcp":
+			if len(u.Port()) < 1 {
+				u.Host = net.JoinHostPort(u.Host, "80")
+			}
+			d.tcp = u.Host
+		case "quic":
+			if len(u.Port()) < 1 {
+				u.Host = net.JoinHostPort(u.Host, "443")
+			}
+			tlsConfig := &tls.Config{}
+			if len(c.Config().RemoteCert) > 0 {
+				var cf []byte
+				cf, err = os.ReadFile(c.Config().RemoteCert)
+				if err != nil {
+					err = fmt.Errorf("failed to read remote cert file (-remoteCert option) '%s', cause %s", c.Config().RemoteCert, err.Error())
+					return
+				}
+				roots := x509.NewCertPool()
+				ok := roots.AppendCertsFromPEM(cf)
+				if !ok {
+					err = fmt.Errorf("failed to parse remote cert file (-remoteCert option) '%s'", c.Config().RemoteCert)
+					return
+				}
+				tlsConfig.RootCAs = roots
+			}
+			if c.Config().RemoteCertInsecure {
+				tlsConfig.InsecureSkipVerify = true
+			}
+			d.quic = u.Host
+			d.tlsConfig = tlsConfig
+		default:
+			err = fmt.Errorf("remote url (-remote option) '%s' is invalid", remote)
 		}
-		if c.Config().RemoteCertInsecure {
-			tlsConfig.InsecureSkipVerify = true
-		}
-		d.host = u.Host
-		d.tlsConfig = tlsConfig
-		d.dialFn = d.tlsDial
-	case "tcp":
-		if len(u.Port()) < 1 {
-			u.Host = net.JoinHostPort(u.Host, "80")
-		}
-		d.host = u.Host
-		d.dialFn = d.dial
-	default:
-		err = fmt.Errorf("remote url (-remote option) '%s' is invalid", remote)
 	}
 	return
-}
-
-func (d *dialer) initWithRemote(c *Client) (err error) {
-	return d.init(c, c.Config().Remote, c.Config().RemoteSTUN)
 }
 
 func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
@@ -246,7 +298,7 @@ func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
 	req.URL.RawQuery = query.Encode()
 	req.Header.Set("Request-Id", strconv.FormatInt(time.Now().Unix(), 10))
 	client := http.Client{
-		Timeout: c.Config().RemoteTimeout,
+		Timeout: c.Config().RemoteTimeout.Duration,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -267,25 +319,83 @@ func (d *dialer) initWithRemoteAPI(c *Client) (err error) {
 	}
 	stunAddr, err := jsonparser.GetString(r, "stunAddress")
 	if err != nil {
-		if err != jsonparser.KeyPathNotFoundError {
+		if !errors.Is(err, jsonparser.KeyPathNotFoundError) {
 			return
 		}
 	}
-	err = d.init(c, addr, stunAddr)
+	err = d.init(c, []string{addr}, []string{stunAddr})
 	return
 }
 
-func (d *dialer) dial() (conn net.Conn, err error) {
-	return net.Dial("tcp", d.host)
+func (d *dialer) tcpDial() (conn net.Conn, err error) {
+	return net.Dial("tcp", d.tcp)
 }
 
 func (d *dialer) tlsDial() (conn net.Conn, err error) {
-	return tls.Dial("tcp", d.host, d.tlsConfig)
+	return tls.Dial("tcp", d.tls, d.tlsConfig)
+}
+
+func (d *dialer) quicDial() (conn net.Conn, err error) {
+	return connection.QuicDial(d.quic, d.tlsConfig)
+}
+
+func (d *dialer) msquicDial() (conn net.Conn, err error) {
+	return msquic.MsquicDial(d.quic, d.tlsConfig)
+}
+
+func (d *dialer) dial() (conn net.Conn, err error) {
+	if !d.preferQuic && len(d.tls) > 0 {
+		return d.tlsDial()
+	}
+	if len(d.quic) > 0 {
+		if d.bbr {
+			return d.msquicDial()
+		}
+		return d.quicDial()
+	}
+	if len(d.tcp) > 0 {
+		return d.tcpDial()
+	}
+
+	return nil, errors.New("no dialer available")
+}
+
+func (c *Client) processRemotes() (result []dialer, err error) {
+	m := make(map[string][]string)
+	for index, remote := range c.Config().Remote {
+		if !strings.Contains(remote, "://") {
+			remote = "tcp://" + remote
+			c.Config().Remote[index] = remote
+		}
+		var u *url.URL
+		u, err = url.Parse(remote)
+		if err != nil {
+			return
+		}
+		hostname := u.Hostname()
+		value, ok := m[hostname]
+		if ok {
+			value = append(value, remote)
+			m[hostname] = value
+		} else {
+			m[hostname] = []string{remote}
+		}
+	}
+	result = make([]dialer, 0, len(m))
+	for _, remotes := range m {
+		var d dialer
+		err = d.init(c, remotes, c.Config().RemoteSTUN)
+		if err != nil {
+			return
+		}
+		result = append(result, d)
+	}
+	return
 }
 
 // Start runs the client agent.
 func (c *Client) Start() (err error) {
-	c.Logger.Info().Interface("config", c.Config()).Msg(predef.Version)
+	c.Logger.Info().Msg(predef.Version)
 
 	var level webrtc.LoggingSeverity
 	switch c.Config().WebRTCLogLevel {
@@ -329,12 +439,9 @@ func (c *Client) Start() (err error) {
 		return
 	}
 
-	var dialer dialer
+	var ds []dialer
 	if len(c.Config().Remote) > 0 {
-		if !strings.Contains(c.Config().Remote, "://") {
-			c.Config().Remote = "tcp://" + c.Config().Remote
-		}
-		err = dialer.initWithRemote(c)
+		ds, err = c.processRemotes()
 		if err != nil {
 			return
 		}
@@ -345,20 +452,22 @@ func (c *Client) Start() (err error) {
 			err = fmt.Errorf("remote api url (-remoteAPI option) '%s' must begin with http:// or https://", c.Config().RemoteAPI)
 			return
 		}
-		for len(dialer.host) == 0 {
+		var dialer dialer
+		for len(ds) == 0 {
 			if atomic.LoadUint32(&c.closing) == 1 {
 				err = errors.New("client is closing")
 				return
 			}
 			err = dialer.initWithRemoteAPI(c)
 			if err == nil {
+				ds = append(ds, dialer)
 				break
 			}
 			c.Logger.Error().Err(err).Msg("failed to query server address")
-			time.Sleep(c.Config().ReconnectDelay)
+			time.Sleep(c.Config().ReconnectDelay.Duration)
 		}
 	}
-	if len(dialer.host) == 0 {
+	if len(ds) == 0 {
 		err = errors.New("option -remote or -remoteAPI must be specified")
 		return
 	}
@@ -373,19 +482,31 @@ func (c *Client) Start() (err error) {
 	} else if c.Config().RemoteIdleConnections > c.Config().RemoteConnections {
 		c.Config().RemoteIdleConnections = c.Config().RemoteConnections
 	}
+	if c.Config().WebRTCRemoteConnections < 1 {
+		c.Config().WebRTCRemoteConnections = 1
+	} else if !predef.Debug && c.Config().WebRTCRemoteConnections > 50 {
+		c.Config().WebRTCRemoteConnections = 50
+	}
 	c.idleManager = newIdleManager(c.Config().RemoteIdleConnections)
 
-	for i := uint(1); i <= c.Config().RemoteConnections; i++ {
-		go c.connectLoop(dialer, i)
-		c.waitTunnelsShutdown.Add(1)
+	conf4Log := *c.Config()
+	conf4Log.Secret = "******"
+	conf4Log.Password = "******"
+	conf4Log.SigningKey = "******"
+	c.Logger.Info().Msg(spew.Sdump(conf4Log))
+	connID := uint(0)
+	for _, dialer := range ds {
+		for i := uint(1); i <= c.Config().RemoteConnections; i++ {
+			connID += 1
+			go c.connectLoop(dialer, connID)
+			c.waitTunnelsShutdown.Add(1)
+		}
 	}
 	c.apiServer.Start()
 
 	// tcpforward
 	if c.Config().TCPForwardConnections < 1 {
 		c.Config().TCPForwardConnections = 1
-	} else if c.Config().TCPForwardConnections > 10 {
-		c.Config().TCPForwardConnections = 10
 	}
 	if c.Config().TCPForwardHostPrefix != "" {
 		c.tcpForwardListener, err = net.Listen("tcp", c.Config().TCPForwardAddr)
@@ -394,7 +515,9 @@ func (c *Client) Start() (err error) {
 			return
 		}
 		c.Logger.Info().Str("addr", c.tcpForwardListener.Addr().String()).Msg("Listening TCP forward")
-		go c.tcpForwardStart(dialer)
+		for _, dialer := range ds {
+			go c.tcpForwardStart(dialer)
+		}
 	}
 
 	return
@@ -402,6 +525,25 @@ func (c *Client) Start() (err error) {
 
 func (c *Client) Config() *Config {
 	return c.config.Load()
+}
+
+func (c *Client) GetConnectionPoolStatus() (status map[uint]Status) {
+	if c.idleManager == nil {
+		return
+	}
+	return c.idleManager.GetConnectionStatus()
+}
+
+func (c *Client) GetConnectionPoolNetInfo() (pools []PoolInfo) {
+	c.tunnelsRWMtx.RLock()
+	defer c.tunnelsRWMtx.RUnlock()
+	for conn := range c.tunnels {
+		pools = append(pools, PoolInfo{
+			LocalAddr:  conn.LocalAddr(),
+			RemoteAddr: conn.RemoteAddr(),
+		})
+	}
+	return
 }
 
 // Close stops the client agent.
@@ -421,19 +563,27 @@ func (c *Client) Close() {
 		p.Close()
 	}
 	c.peersRWMtx.Unlock()
-	c.idleManager.Close()
+	if c.idleManager != nil {
+		c.idleManager.Close()
+	}
 	c.Logger.Info().Err(c.apiServer.Close()).Msg("api server close")
 	if c.tcpForwardListener != nil {
 		_ = c.tcpForwardListener.Close()
 	}
+	//c.webrtcThreadPool.Close()
 }
 
 // Shutdown stops the client gracefully.
 func (c *Client) Shutdown() {
+	defer c.Logger.Close()
+	c.ShutdownWithoutClosingLogger()
+}
+
+func (c *Client) ShutdownWithoutClosingLogger() {
 	if !atomic.CompareAndSwapUint32(&c.closing, 0, 1) {
 		return
 	}
-	defer c.Logger.Close()
+
 	c.tunnelsRWMtx.Lock()
 	for t := range c.tunnels {
 		t.SendCloseSignal()
@@ -445,25 +595,28 @@ func (c *Client) Shutdown() {
 	}
 	c.peersRWMtx.Unlock()
 
-	c.idleManager.Close()
+	if c.idleManager != nil {
+		c.idleManager.Close()
+	}
 	c.waitTunnelsShutdown.Wait()
 
 	c.Logger.Info().Err(c.apiServer.Close()).Msg("api server close")
 	if c.tcpForwardListener != nil {
 		_ = c.tcpForwardListener.Close()
 	}
+	//c.webrtcThreadPool.Close()
 }
 
 func (c *Client) initConn(d dialer, connID uint) (result *conn, err error) {
 	c.initConnMtx.Lock()
 	defer c.initConnMtx.Unlock()
 
-	conn, err := d.dialFn()
+	conn, err := d.dial()
 	if err != nil {
 		return
 	}
 	result = newConn(conn, c)
-	result.stuns = append(result.stuns, d.stun)
+	result.stuns = append(result.stuns, d.stuns...)
 	result.Logger = c.Logger.With().Uint("connID", connID).Logger()
 	err = result.init()
 	if err != nil {
@@ -481,24 +634,28 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 		}
 	}()
 
-	exit := c.idleManager.InitIdle(connID)
+	c.idleManager.initMtx.Lock()
+	exit := c.idleManager.Init(connID)
 	if !exit {
 		c.Logger.Info().Uint("connID", connID).Msg("trying to connect to remote")
 		conn, err := c.initConn(d, connID)
 		if err == nil {
+			c.idleManager.SetIdle(connID)
+			c.idleManager.initMtx.Unlock()
 			conn.readLoop(connID)
 		} else {
+			c.idleManager.initMtx.Unlock()
 			c.Logger.Error().Err(err).Uint("connID", connID).Msg("failed to connect to remote")
 		}
 	} else {
+		c.idleManager.initMtx.Unlock()
 		c.Logger.Info().Uint("connID", connID).Msg("wait to connect to remote")
 	}
-
+	c.idleManager.SetWait(connID)
 	if atomic.LoadUint32(&c.closing) == 1 {
 		return true
 	}
-	time.Sleep(c.Config().ReconnectDelay)
-	c.idleManager.SetWait(connID)
+	time.Sleep(c.Config().ReconnectDelay.Duration)
 	c.idleManager.WaitIdle(connID)
 
 	for len(c.Config().RemoteAPI) > 0 {
@@ -509,8 +666,8 @@ func (c *Client) connect(d dialer, connID uint) (closing bool) {
 		if err == nil {
 			break
 		}
-		c.Logger.Error().Err(err).Msg("failed to query server address")
-		time.Sleep(c.Config().ReconnectDelay)
+		c.Logger.Error().Uint("connID", connID).Err(err).Msg("failed to query server address")
+		time.Sleep(c.Config().ReconnectDelay.Duration)
 	}
 	return
 }
@@ -565,14 +722,15 @@ func (c *Client) WaitUntilReady(timeout time.Duration) (err error) {
 	return
 }
 
+var errNoService = errors.New("no service is configured")
+
 func (c *Client) parseServices() (err error) {
 	services, err := parseServices(c.Config())
 	if err != nil {
 		return
 	}
-	// services 不能为空
 	if len(services) == 0 {
-		err = errors.New("no service is configured")
+		err = errNoService
 		return
 	}
 	h := sha256.New()
@@ -614,7 +772,7 @@ func parseServices(config *Config) (result services, err error) {
 			if configServicesLen == 1 ||
 				(x.Position > config.Local[i].Position &&
 					(i == configServicesLen-1 || x.Position < config.Local[i+1].Position)) {
-				configServices[i].LocalTimeout = x.Value
+				configServices[i].LocalTimeout.Duration = x.Value
 			}
 		}
 		for _, x := range config.UseLocalAsHTTPHost {
@@ -638,12 +796,11 @@ func parseServices(config *Config) (result services, err error) {
 	for i := 0; i < len(result); i++ {
 		if result[i].LocalURL.URL == nil {
 			err = errors.New("local url (-local option) cannot be empty")
-			return
 		}
 
 		// 设置默认值
-		if result[i].LocalTimeout == 0 {
-			result[i].LocalTimeout = 120 * time.Second
+		if result[i].LocalTimeout.Duration == 0 {
+			result[i].LocalTimeout.Duration = 120 * time.Second
 		}
 		if result[i].RemoteTCPRandom == nil {
 			result[i].RemoteTCPRandom = new(bool)
@@ -680,7 +837,7 @@ func parseServices(config *Config) (result services, err error) {
 				return
 			}
 		default:
-			err = fmt.Errorf("local url (-local option) '%s' must begin with http://, https:// or tcp://", config.Local[i].Value)
+			err = fmt.Errorf("local url (-local option) '%s' must begin with http://, https:// or tcp://", result[i].LocalURL.String())
 			return
 		}
 
@@ -724,7 +881,16 @@ func (c *Client) ReloadServices() (err error) {
 		c.reloading.Store(false)
 	}()
 
-	conf := defaultConfig()
+	conf := getDefaultConfig(os.Args)
+	// ignore the webSetting
+	conf.WebAddr = c.Config().WebAddr
+	conf.WebKeyFile = c.Config().WebKeyFile
+	conf.WebCertFile = c.Config().WebCertFile
+	conf.EnablePprof = c.Config().EnablePprof
+	conf.SigningKey = c.Config().SigningKey
+	conf.Admin = c.Config().Admin
+	conf.Password = c.Config().Password
+
 	err = config.ParseFlags(os.Args, &conf, &conf.Options)
 	if err != nil {
 		return
@@ -753,7 +919,7 @@ func (c *Client) ReloadServices() (err error) {
 		return
 	}
 	if len(services) == 0 {
-		err = errors.New("no service is configured")
+		err = errNoService
 		return
 	}
 	checksum := [32]byte{}
@@ -770,6 +936,10 @@ func (c *Client) ReloadServices() (err error) {
 	defer pool.BytesPool.Put(buf)
 	i := copy(buf, connection.ServicesBytes)
 	n := gen(conf, services, buf[i:])
+
+	conf4Log := conf
+	conf4Log.Secret = "******"
+	c.Logger.Info().Str("config", "reloading").Msg(spew.Sdump(conf4Log))
 
 	c.initConnMtx.Lock()
 	defer c.initConnMtx.Unlock()

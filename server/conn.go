@@ -16,6 +16,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"errors"
 	"io"
@@ -59,7 +60,7 @@ func newConn(c net.Conn, s *Server) *conn {
 	nc := &conn{
 		Connection: connection.Connection{
 			Conn:         c,
-			WriteTimeout: s.config.Timeout,
+			WriteTimeout: s.config.Timeout.Duration,
 		},
 		server: s,
 		tasks:  make(map[uint32]*conn, 100),
@@ -110,8 +111,8 @@ func (c *conn) handle(handleFunc func() bool) {
 			atomic.AddUint64(&c.server.failed, 1)
 		}
 	}()
-	if c.server.config.Timeout > 0 {
-		dl := startTime.Add(c.server.config.Timeout)
+	if c.server.config.Timeout.Duration > 0 {
+		dl := startTime.Add(c.server.config.Timeout.Duration)
 		err := c.SetReadDeadline(dl)
 		if err != nil {
 			c.Logger.Debug().Err(err).Msg("handle set deadline failed")
@@ -137,13 +138,20 @@ func (c *conn) handle(handleFunc func() bool) {
 
 			c.Logger = c.Logger.With().Time("tunnel", time.Now()).Logger()
 
-			// 判断 IP 是否处于被限制状态
-			remoteAddr, ok := c.RemoteAddr().(*net.TCPAddr)
-			if !ok {
-				c.Logger.Warn().Msg("conn is not tcp conn")
-				return
+			remoteTcpAddr, okTcp := c.RemoteAddr().(*net.TCPAddr)
+			var remoteIP string
+			if okTcp {
+				remoteIP = remoteTcpAddr.IP.String()
+			} else {
+				remoteUdpAddr, okUdp := c.RemoteAddr().(*net.UDPAddr)
+				if okUdp {
+					remoteIP = remoteUdpAddr.IP.String()
+				} else {
+					c.Logger.Warn().Msg("conn is not tcp/udp conn")
+					return
+				}
 			}
-			remoteIP := remoteAddr.IP.String()
+
 			c.server.reconnectRWMutex.RLock()
 			reconnectTimes := c.server.reconnect[remoteIP]
 			c.server.reconnectRWMutex.RUnlock()
@@ -155,9 +163,47 @@ func (c *conn) handle(handleFunc func() bool) {
 			// 不能将 reconnectTimes 传参，多线程环境下这个值应该实时获取
 			handled = c.handleTunnelLoop(remoteIP)
 			return
+		case 0x02:
+			_, err = reader.Discard(2)
+			if err != nil {
+				c.Logger.Warn().Err(err).Msg("failed to discard version field")
+				return
+			}
+			handled = c.handleProbe(reader)
+			return
 		}
 	}
 	handled = handleFunc()
+}
+
+func (c *conn) handleProbe(r *bufio.Reader) (handled bool) {
+	op, err := r.ReadByte()
+	if err != nil {
+		c.Logger.Warn().Err(err).Msg("handleProbe read op error")
+		return
+	}
+	switch op {
+	case 0x00:
+		for i := 0; i < connection.ProbeTimes; i++ {
+			ctx, cancel := context.WithTimeout(context.Background(), c.server.config.Timeout.Duration)
+			buf, err := c.Connection.Conn.(*connection.QuicConnection).ReceiveDatagram(ctx)
+			cancel()
+			if err != nil {
+				c.Logger.Warn().Err(err).Msg("handleProbe ReceiveDatagram error")
+				return
+			}
+			err = c.Connection.Conn.(*connection.QuicConnection).SendDatagram(buf)
+			if err != nil {
+				c.Logger.Warn().Err(err).Msg("handleProbe SendDatagram error")
+				return
+			}
+			no := buf[0]
+			if no == connection.ProbeTimes-1 {
+				break
+			}
+		}
+	}
+	return true
 }
 
 func (c *conn) handleSNI() (handled bool) {
@@ -334,8 +380,8 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 			c.server.reconnectRWMutex.Unlock()
 
 			// ReconnectDuration 为 0 表示不进行限制解除
-			if c.server.config.ReconnectDuration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
-				time.AfterFunc(c.server.config.ReconnectDuration, func() {
+			if c.server.config.ReconnectDuration.Duration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
+				time.AfterFunc(c.server.config.ReconnectDuration.Duration, func() {
 					c.server.reconnectRWMutex.Lock()
 					c.server.reconnect[remoteIP] = 0
 					c.server.reconnectRWMutex.Unlock()
@@ -379,8 +425,8 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 			c.server.reconnectRWMutex.Unlock()
 
 			// ReconnectDuration 为 0 表示不进行限制解除
-			if c.server.config.ReconnectDuration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
-				time.AfterFunc(c.server.config.ReconnectDuration, func() {
+			if c.server.config.ReconnectDuration.Duration > 0 && reconnectTimes > c.server.config.ReconnectTimes {
+				time.AfterFunc(c.server.config.ReconnectDuration.Duration, func() {
 					c.server.reconnectRWMutex.Lock()
 					c.server.reconnect[remoteIP] = 0
 					c.server.reconnectRWMutex.Unlock()
@@ -759,8 +805,8 @@ func (c *conn) readLoop(cli *client) (reload bool) {
 	r := &bufio.LimitedReader{}
 	isClosing := false
 	for {
-		if c.server.config.Timeout > 0 {
-			dl := time.Now().Add(c.server.config.Timeout)
+		if c.server.config.Timeout.Duration > 0 {
+			dl := time.Now().Add(c.server.config.Timeout.Duration)
 			err = c.SetReadDeadline(dl)
 			if err != nil {
 				return
@@ -887,8 +933,8 @@ func (c *conn) readLoop(cli *client) (reload bool) {
 				}
 				return
 			}
-			if c.server.config.Timeout > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
-				dl := time.Now().Add(c.server.config.Timeout)
+			if c.server.config.Timeout.Duration > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
+				dl := time.Now().Add(c.server.config.Timeout.Duration)
 				err = task.SetReadDeadline(dl)
 				if err != nil {
 					c.Logger.Debug().Err(err).Uint32("taskID", taskID).Msg("update read deadline failed")
@@ -916,6 +962,12 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 			buf[4] = byte(predef.Close >> 8)
 			buf[5] = byte(predef.Close)
 			_, wErr = c.Write(buf[:6])
+			if wErr == nil &&
+				c.server.config.Timeout.Duration > 0 &&
+				!c.server.config.TimeoutOnUnidirectionalTraffic {
+				dl := time.Now().Add(c.server.config.Timeout.Duration)
+				wErr = c.SetReadDeadline(dl)
+			}
 		}
 		pool.BytesPool.Put(buf)
 		if rErr != nil || wErr != nil {
@@ -965,14 +1017,21 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 	if wErr != nil {
 		return
 	}
+	if c.server.config.Timeout.Duration > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
+		dl := time.Now().Add(c.server.config.Timeout.Duration)
+		wErr = c.SetReadDeadline(dl)
+		if wErr != nil {
+			return
+		}
+	}
 
 	bufIndex -= 4
 	buf[bufIndex] = byte(predef.Data >> 8)
 	buf[bufIndex+1] = byte(predef.Data)
 	bufIndex += 2
 	for {
-		if c.server.config.Timeout > 0 {
-			dl := time.Now().Add(c.server.config.Timeout)
+		if c.server.config.Timeout.Duration > 0 {
+			dl := time.Now().Add(c.server.config.Timeout.Duration)
 			rErr = task.SetReadDeadline(dl)
 			if rErr != nil {
 				return
@@ -996,8 +1055,8 @@ func (c *conn) process(taskID uint32, task *conn, cli *client) {
 			if wErr != nil {
 				return
 			}
-			if c.server.config.Timeout > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
-				dl := time.Now().Add(c.server.config.Timeout)
+			if c.server.config.Timeout.Duration > 0 && !c.server.config.TimeoutOnUnidirectionalTraffic {
+				dl := time.Now().Add(c.server.config.Timeout.Duration)
 				wErr = c.SetReadDeadline(dl)
 				if wErr != nil {
 					return
