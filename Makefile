@@ -37,13 +37,17 @@ SERVER_FRONT_DIR=server/web
 CLIENT_FRONT_DIR=client/web
 TARGET?=$(shell gcc -dumpmachine)
 TARGET_OS=$(shell echo $(TARGET) | awk -F '-' '{print $$2}')
+TARGET_CPU=$(shell echo $(TARGET) | awk -F '-' '{print $$1}')
 ifeq ($(TARGET_OS), native)
 	TARGET_OS=
 endif
 ifeq ($(TARGET_OS), linux)
-	RUST_TARGET?=$(shell echo $(TARGET) | awk -F '-' '{print $$1 "-unknown-" $$2 "-" $$3}')
+	ifeq ($(TARGET_CPU), riscv64)
+		RUST_TARGET?=$(shell echo $(TARGET) | awk -F '-' '{print "riscv64gc-unknown-linux-" $$3}')
+	else
+		RUST_TARGET?=$(shell echo $(TARGET) | awk -F '-' '{print $$1 "-unknown-linux-" $$3}')
+	endif
 endif
-TARGET_CPU=$(shell echo $(TARGET) | awk -F '-' '{print $$1}')
 ifeq ($(TARGET_CPU), native)
 	TARGET_CPU=
 endif
