@@ -1,6 +1,9 @@
 <template>
+  <el-row>
+    <h1 style="align-self: center">{{ $t("cconfig.BasicSettings") }}</h1>
+  </el-row>
   <Anchor :tab-list="tabList">
-    <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
+    <template v-for="tab in staticBasicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
         :id="tab.name"
         :is="tab.component"
@@ -9,7 +12,6 @@
         @update:setting="tab.updateSetting"
       />
     </template>
-
     <template v-for="tab in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
         :id="tab.name"
@@ -20,6 +22,20 @@
         :setting="tab.setting"
         @add-service="addService"
         @remove-service="removeService(tab.index)"
+        @update:setting="tab.updateSetting"
+      />
+    </template>
+  </Anchor>
+  <el-row>
+    <h1 style="align-self: center">{{ $t("cconfig.OptionSettings") }}</h1>
+  </el-row>
+  <Anchor :tab-list="tabList">
+    <template v-for="tab in staticOptionTabs" :key="tab.uuid" #[tab.uuid]>
+      <component
+        :id="tab.name"
+        :is="tab.component"
+        :ref="(el: InstanceType<typeof tab.component> | null) => tab.ref = el"
+        :setting="tab.setting"
         @update:setting="tab.updateSetting"
       />
     </template>
@@ -151,7 +167,7 @@ interface staticTabType<T> {
   updateSetting: (newSetting: T) => void;
 }
 
-const staticTabs = reactive([
+const staticBasicTabs = reactive([
   {
     title: i18n.global.t("cconfig.GeneralSetting"),
     name: "GeneralSetting",
@@ -160,7 +176,9 @@ const staticTabs = reactive([
     ref: generalSettingRef,
     setting: generalSetting,
     updateSetting: updateGeneralSetting
-  } as staticTabType<ClientConfig.GeneralSetting>,
+  } as staticTabType<ClientConfig.GeneralSetting>
+]);
+const staticOptionTabs = reactive([
   {
     title: i18n.global.t("cconfig.SentrySetting"),
     name: "SentrySetting",
@@ -200,7 +218,12 @@ const staticTabs = reactive([
 ]);
 let metadataStore = useMetadataStore();
 metadataStore.$subscribe(() => {
-  staticTabs.map(value => {
+  staticBasicTabs.map(value => {
+    value.title = i18n.global.t("cconfig." + value.name);
+  });
+});
+metadataStore.$subscribe(() => {
+  staticOptionTabs.map(value => {
     value.title = i18n.global.t("cconfig." + value.name);
   });
 });
@@ -229,8 +252,9 @@ const dynamicTabs = computed<dynamicTabType<ClientConfig.Service>[]>(() => {
 });
 
 const tabList = computed<Tab[]>(() => [
-  ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
-  ...dynamicTabs.value.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
+  ...staticBasicTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
+  ...dynamicTabs.value.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
+  ...staticOptionTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
 ]);
 
 const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => {

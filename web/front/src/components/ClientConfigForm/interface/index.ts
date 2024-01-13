@@ -7,7 +7,7 @@ export namespace ClientConfig {
     ID: string;
     Secret: string;
     ReconnectDelay: string;
-    Remote: string;
+    Remote: string[];
     RemoteSTUN: string;
     RemoteAPI: string;
     RemoteCert: string;
@@ -58,7 +58,7 @@ export namespace ClientConfig {
     Secret: "",
     ReconnectDelay: "0s",
     RemoteTimeout: "0s",
-    Remote: "",
+    Remote: [""],
     RemoteSTUN: "",
     RemoteAPI: "",
     RemoteCert: "",

@@ -45,15 +45,21 @@
           </el-form-item>
         </el-descriptions-item>
         <!-- Remote -->
-        <el-descriptions-item>
-          <template #label>
-            {{ $t("cconfig.Remote") }}
-            <UsageTooltip :usage-text="$t('cusage[\'Remote\']')" />
-          </template>
-          <el-form-item prop="Remote">
-            <el-input v-model="localSetting.Remote" />
-          </el-form-item>
-        </el-descriptions-item>
+        <template v-for="(remote, index) in localSetting.Remote" :key="index">
+          <el-descriptions-item>
+            <template #label>
+              {{ $t("cconfig.Remote") }}
+              <UsageTooltip :usage-text="$t('cusage[\'Remote\']')" />
+            </template>
+            <el-row>
+              <el-form-item prop="Remote">
+                <el-input v-model="localSetting.Remote[index]" />
+              </el-form-item>
+              <el-button @click="deleteRemote(index)">{{ $t("cconfig.Delete") }}</el-button>
+              <el-button @click="addRemote()">{{ $t("cconfig.AddNewRemote") }}</el-button>
+            </el-row>
+          </el-descriptions-item>
+        </template>
         <!-- RemoteSTUN -->
         <el-descriptions-item>
           <template #label>
@@ -153,16 +159,19 @@ const validatorRemoteIdleConnections = (rule: any, value: number, callback: any)
     callback();
   }
 };
-const validatorRemote = (rule: any, value: any, callback: any) => {
+const validatorRemote = (rule: any, values: any, callback: any) => {
   console.log("Calling validatorRemote");
-  if (!value) {
-    callback();
-  } else if (value.startsWith("tls://") || value.startsWith("tcp://")) {
-    console.log("Valid remote format");
-    callback();
-  } else {
-    console.log("Invalid remote format");
-    callback(new Error(i18n.global.t("cerror.PleaseEnterValidRemote")));
+  for (let value of values) {
+    console.log("value：", localSetting.Remote);
+    if (!value) {
+      callback();
+    } else if (value.startsWith("tls://") || value.startsWith("tcp://")) {
+      console.log("Valid remote format");
+      callback();
+    } else {
+      console.log("Invalid remote format");
+      callback(new Error(i18n.global.t("cerror.PleaseEnterValidRemote")));
+    }
   }
 };
 const validatorRemoteAPI = (rule: any, value: any, callback: any) => {
@@ -202,10 +211,19 @@ const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
     }
   ]
 });
+const addRemote = () => {
+  localSetting.Remote.push("");
+};
+
+const deleteRemote = (index: number) => {
+  if (localSetting.Remote.length != 1) {
+    localSetting.Remote.splice(index, 1);
+  }
+};
 
 const checkRemoteSetting = (): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
-    const isRemoteEmpty = !localSetting.Remote?.trim();
+    const isRemoteEmpty = localSetting.Remote.every(item => !item.trim());
     const isRemoteAPIEmpty = !localSetting.RemoteAPI?.trim();
 
     if (isRemoteEmpty && isRemoteAPIEmpty) {

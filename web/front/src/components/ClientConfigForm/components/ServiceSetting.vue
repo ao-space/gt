@@ -3,7 +3,7 @@
   <el-form ref="serviceSettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title> Service {{ index + 1 }} Setting </template>
+        <template #title>{{ $t("cconfig.Service") }} {{ index + 1 }} {{ $t("cconfig.Setting") }} </template>
         <template #extra>
           <el-button v-if="isLast" type="primary" @click="emit('addService')">{{ $t("cconfig.AddService") }}</el-button>
           <el-button type="danger" @click="emit('removeService', props.index)">{{ $t("cconfig.Delete") }}</el-button>

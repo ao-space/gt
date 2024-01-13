@@ -183,6 +183,8 @@ export namespace en {
     GetFromRunning: "GetFromRunning",
     AddService: "Add Service",
     DetailSettings: "DetailSettings",
+    BasicSettings: "BasicSettings",
+    OptionSettings: "OptionSettings",
     //sentences
     AddTcpRanges: "Please Add TCP Ranges and Numbers",
     AddHostRegex: "Please Add A Host Regex",
@@ -265,6 +267,9 @@ export namespace en {
     Service: "Service",
     Setting: "Setting",
     DetailSettings: "DetailSettings",
+    AddNewRemote: "Add new Remote",
+    BasicSettings: "BasicSettings",
+    OptionSettings: "OptionSettings",
     //sentences
     SelectWebRtcLogLevel: "Select log level",
     SaveConfigConfirm: "Make sure you want to save the configuration to file.",
