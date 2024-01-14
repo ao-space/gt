@@ -205,21 +205,19 @@ const validatorRemoteIdleConnections = (rule: any, value: number, callback: any)
     callback();
   }
 };
-const validatorRemote = (rule: any, values: any, callback: any) => {
-  console.log("Calling validatorRemote");
-  for (let value of values) {
-    console.log("value：", localSetting.Remote);
-    if (!value) {
-      callback();
-    } else if (value.startsWith("tls://") || value.startsWith("tcp://")) {
-      console.log("Valid remote format");
-      callback();
-    } else {
-      console.log("Invalid remote format");
-      callback(new Error(i18n.global.t("cerror.PleaseEnterValidRemote")));
-    }
+const validatorRemote = (index: number) => (rule: any, values: any, callback: any) => {
+  const value = localSetting.Remote[index];
+  if (!value || value.trim() === "") {
+    callback();
+  } else if (value.startsWith("tls://") || value.startsWith("tcp://")) {
+    console.log(`Valid remote format for remote ${index}`);
+    callback();
+  } else {
+    console.log(`Invalid remote format for remote ${index}`);
+    callback(new Error(i18n.global.t("cerror.PleaseEnterValidRemote")));
   }
 };
+
 const validatorRemoteAPI = (rule: any, value: any, callback: any) => {
   console.log("Calling validatorRemoteAPI");
   if (!value) {
@@ -237,7 +235,10 @@ const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
   Secret: [{ message: i18n.global.t("cerror.PleaseInputSecret"), trigger: "blur" }],
   ReconnectDelay: [{ validator: validatorTimeFormat, trigger: "blur" }],
   RemoteTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }],
-  Remote: [{ validator: validatorRemote, trigger: "blur" }],
+  Remote: localSetting.Remote.map((_, index) => ({
+    validator: validatorRemote(index),
+    trigger: "blur"
+  })),
   RemoteAPI: [{ validator: validatorRemoteAPI, trigger: "blur" }],
   RemoteConnections: [
     { type: "number", message: i18n.global.t("cerror.PleaseInputRemoteConnections"), trigger: "blur" },
