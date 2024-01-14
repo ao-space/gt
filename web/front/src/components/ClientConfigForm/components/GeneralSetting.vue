@@ -53,7 +53,12 @@
             </template>
             <el-row>
               <el-form-item prop="Remote">
-                <el-input v-model="localSetting.Remote[index]" />
+                <el-input v-model="localSetting.Remote[index]" placeholder="tcp://127.0.0.1:8080" />
+                <!--                <el-select v-model="remote.protocol">-->
+                <!--                  <el-option v-for="item in Protocols" :key="item.value" :label="item.label" :value="item.value"></el-option>-->
+                <!--                </el-select>-->
+                <!--                <el-input v-model="remote.addr" placeholder="127.0.0.1" />-->
+                <!--                <el-input v-model="remote.port" placeholder="8080" />-->
               </el-form-item>
               <el-button @click="deleteRemote(index)">{{ $t("cconfig.Delete") }}</el-button>
               <el-button @click="addRemote()">{{ $t("cconfig.AddNewRemote") }}</el-button>
@@ -139,6 +144,47 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
   setting: () => ClientConfig.defaultGeneralSetting
 });
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
+// const remotes = reactive(
+//   localSetting.Remote.map(remote => {
+//     const parts = remote.split(":");
+//     return {
+//       protocol: parts[0].replace("//", ""), // Assuming protocol is the first part
+//       addr: parts[1].replace("//", ""), // Fix the assignment here
+//       port: parts[2]
+//     };
+//   })
+// );
+// watch(remotes, new_remotes => {
+//   Object.assign(
+//     localSetting.Remote,
+//     new_remotes.map(data => {
+//       return data.protocol + "://" + data.addr + ":" + data.port;
+//     })
+//   );
+// });
+// watch(localSetting.Remote, () => {
+//   Object.assign(
+//     remotes,
+//     localSetting.Remote.map(remote => {
+//       const parts = remote.split(":");
+//       return {
+//         protocol: parts[0].replace("//", ""), // Assuming protocol is the first part
+//         addr: parts[1].replace("//", ""), // Fix the assignment here
+//         port: parts[2]
+//       }; // Return the created 'res' object
+//     })
+//   );
+// });
+// const Protocols = [
+//   {
+//     value: "tcp",
+//     label: "tcp"
+//   },
+//   {
+//     value: "tls",
+//     label: "tls"
+//   }
+// ];
 
 //Sync with parent: props.setting -> localSetting
 watchEffect(() => {

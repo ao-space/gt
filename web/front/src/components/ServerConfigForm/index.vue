@@ -291,15 +291,6 @@ const staticBasicTabs = reactive([
     updateSetting: updateSecuritySetting
   } as staticTabsType<ServerConfig.SecuritySetting>,
   {
-    title: i18n.global.t("sconfig.ConnectionSetting"),
-    name: "ConnectionSetting",
-    uuid: uuidv4(),
-    component: markRaw(ConnectionSetting),
-    ref: connectionSettingRef,
-    setting: connectionsSetting,
-    updateSetting: updateConnectionSetting
-  } as staticTabsType<ServerConfig.ConnectionSetting>,
-  {
     title: i18n.global.t("sconfig.APISetting"),
     name: "APISetting",
     uuid: uuidv4(),
@@ -310,6 +301,15 @@ const staticBasicTabs = reactive([
   } as staticTabsType<ServerConfig.APISetting>
 ]);
 const staticOptionTab = reactive([
+  {
+    title: i18n.global.t("sconfig.ConnectionSetting"),
+    name: "ConnectionSetting",
+    uuid: uuidv4(),
+    component: markRaw(ConnectionSetting),
+    ref: connectionSettingRef,
+    setting: connectionsSetting,
+    updateSetting: updateConnectionSetting
+  } as staticTabsType<ServerConfig.ConnectionSetting>,
   {
     title: i18n.global.t("sconfig.SentrySetting"),
     name: "SentrySetting",

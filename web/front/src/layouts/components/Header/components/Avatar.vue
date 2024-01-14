@@ -15,9 +15,9 @@
         <el-dropdown-item @click="shutdown">
           <el-icon><SwitchButton /></el-icon>{{ $t("layout_header.ShutdownSystem") }}
         </el-dropdown-item>
-        <el-dropdown-item @click="kill">
-          <el-icon><SwitchButton /></el-icon>{{ $t("layout_header.TerminateSystem") }}
-        </el-dropdown-item>
+        <!--        <el-dropdown-item @click="kill">-->
+        <!--          <el-icon><SwitchButton /></el-icon>{{ $t("layout_header.TerminateSystem") }}-->
+        <!--        </el-dropdown-item>-->
       </el-dropdown-menu>
     </template>
   </el-dropdown>
@@ -31,7 +31,7 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/modules/user";
 import { ElMessageBox, ElMessage } from "element-plus";
 import { computed, ref } from "vue";
-import { restartServerApi, stopServerApi, killServerApi } from "@/api/modules/server";
+import { restartServerApi, stopServerApi } from "@/api/modules/server";
 import InfoDialog from "./InfoDialog.vue";
 import i18n from "@/languages";
 
@@ -108,31 +108,31 @@ const shutdown = () => {
       ElMessage.info(i18n.global.t("layout_header.ShutdownCanceled"));
     });
 };
-
-const kill = () => {
-  ElMessageBox.confirm(i18n.global.t("layout_header.ConfirmKillSystem"), i18n.global.t("layout_header.Tips"), {
-    confirmButtonText: i18n.global.t("layout_header.Confirm"),
-    cancelButtonText: i18n.global.t("layout_header.Cancel"),
-    type: "warning"
-  })
-    .then(async () => {
-      try {
-        await killServerApi();
-        clearToken();
-        ElMessage.success(i18n.global.t("layout_header.KillSuccess"));
-        window.close();
-      } catch (e) {
-        if (e instanceof Error) {
-          ElMessage.error(e.message);
-        } else {
-          ElMessage.error(i18n.global.t("layout_header.KillFailed"));
-        }
-      }
-    })
-    .catch(() => {
-      ElMessage.info(i18n.global.t("layout_header.KillCanceled"));
-    });
-};
+//
+// const kill = () => {
+//   ElMessageBox.confirm(i18n.global.t("layout_header.ConfirmKillSystem"), i18n.global.t("layout_header.Tips"), {
+//     confirmButtonText: i18n.global.t("layout_header.Confirm"),
+//     cancelButtonText: i18n.global.t("layout_header.Cancel"),
+//     type: "warning"
+//   })
+//     .then(async () => {
+//       try {
+//         await killServerApi();
+//         clearToken();
+//         ElMessage.success(i18n.global.t("layout_header.KillSuccess"));
+//         window.close();
+//       } catch (e) {
+//         if (e instanceof Error) {
+//           ElMessage.error(e.message);
+//         } else {
+//           ElMessage.error(i18n.global.t("layout_header.KillFailed"));
+//         }
+//       }
+//     })
+//     .catch(() => {
+//       ElMessage.info(i18n.global.t("layout_header.KillCanceled"));
+//     });
+// };
 </script>
 
 <style scoped lang="scss">

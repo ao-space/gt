@@ -1,5 +1,5 @@
 <template>
-  <el-select v-model="lang" class="m-2" placeholder="Select" size="default">
+  <el-select v-model="lang" class="m-2" placeholder="Select" size="small">
     <el-option v-for="item in langs" :key="item.value" :label="item.label" :value="item.value" />
   </el-select>
 </template>
@@ -12,11 +12,11 @@ watch(lang, status.changeLangStatus);
 let langs = [
   {
     value: "zh",
-    label: "zh"
+    label: "中文"
   },
   {
     value: "en",
-    label: "en"
+    label: "English"
   }
 ];
 </script>

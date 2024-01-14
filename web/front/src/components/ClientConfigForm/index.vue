@@ -136,9 +136,9 @@ const updateSentrySetting = (newSetting: ClientConfig.SentrySetting) => {
 const updateWebRTCSetting = (newSetting: ClientConfig.WebRTCSetting) => {
   Object.assign(webRTCSetting, newSetting);
 };
-const updateTCPForwardSetting = (newSetting: ClientConfig.TCPForwardSetting) => {
-  Object.assign(tcpForwardSetting, newSetting);
-};
+// const updateTCPForwardSetting = (newSetting: ClientConfig.TCPForwardSetting) => {
+//   Object.assign(tcpForwardSetting, newSetting);
+// };
 const updateLogSetting = (newSetting: ClientConfig.LogSetting) => {
   Object.assign(logSetting, newSetting);
 };
@@ -197,15 +197,15 @@ const staticOptionTabs = reactive([
     setting: webRTCSetting,
     updateSetting: updateWebRTCSetting
   } as staticTabType<ClientConfig.WebRTCSetting>,
-  {
-    title: i18n.global.t("cconfig.TCPForwardSetting"),
-    name: "TCPForwardSetting",
-    uuid: uuidv4(),
-    component: markRaw(TCPForwardSetting),
-    ref: tcpForwardSettingRef,
-    setting: tcpForwardSetting,
-    updateSetting: updateTCPForwardSetting
-  } as staticTabType<ClientConfig.TCPForwardSetting>,
+  // {
+  //   title: i18n.global.t("cconfig.TCPForwardSetting"),
+  //   name: "TCPForwardSetting",
+  //   uuid: uuidv4(),
+  //   component: markRaw(TCPForwardSetting),
+  //   ref: tcpForwardSettingRef,
+  //   setting: tcpForwardSetting,
+  //   updateSetting: updateTCPForwardSetting
+  // } as staticTabType<ClientConfig.TCPForwardSetting>,
   {
     title: i18n.global.t("cconfig.LogSetting"),
     name: "LogSetting",
