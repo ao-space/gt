@@ -1,12 +1,14 @@
 diff --git a/dep/_msquic/submodules/CMakeLists.txt b/dep/_msquic/submodules/CMakeLists.txt
 --- a/dep/_msquic/submodules/CMakeLists.txt	
 +++ b/dep/_msquic/submodules/CMakeLists.txt	
-@@ -241,6 +241,8 @@
+@@ -241,6 +241,10 @@
                      set(OPENSSL_CONFIG_CMD ${CMAKE_CURRENT_SOURCE_DIR}/${QUIC_OPENSSL}/Configure linux-armv4)
                  endif()
                  list(APPEND OPENSSL_CONFIG_FLAGS -latomic)
 +            elseif (CMAKE_TARGET_ARCHITECTURE STREQUAL x64)
 +                set(OPENSSL_CONFIG_CMD ${CMAKE_CURRENT_SOURCE_DIR}/${QUIC_OPENSSL}/Configure linux-x86_64)
++            elseif (CMAKE_TARGET_ARCHITECTURE STREQUAL riscv64)
++                set(OPENSSL_CONFIG_CMD ${CMAKE_CURRENT_SOURCE_DIR}/${QUIC_OPENSSL}/Configure linux64-riscv64)
              else()
                  set(OPENSSL_CONFIG_CMD ${CMAKE_CURRENT_SOURCE_DIR}/${QUIC_OPENSSL}/config
                              CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER})
