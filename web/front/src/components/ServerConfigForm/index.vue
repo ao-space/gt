@@ -1,6 +1,6 @@
 <template>
   <el-row>
-    <h1 style="align-self: center">{{ $t("sconfig.BasicSettings") }}</h1>
+    <el-text class="setting_class">{{ $t("sconfig.BasicSettings") }}</el-text>
   </el-row>
   <Anchor :tab-list="tabList">
     <template v-for="tab in staticBasicTabs" :key="tab.uuid" #[tab.uuid]>
@@ -27,7 +27,7 @@
     </template>
   </Anchor>
   <el-row>
-    <h1 style="align-self: center">{{ $t("sconfig.OptionSettings") }}</h1>
+    <el-text class="setting_class">{{ $t("sconfig.OptionSettings") }}</el-text>
   </el-row>
   <Anchor :tab-list="tabList">
     <template v-for="tab in staticOptionTab" :key="tab.uuid" #[tab.uuid]>
@@ -289,16 +289,7 @@ const staticBasicTabs = reactive([
     ref: securitySettingRef,
     setting: securitySetting,
     updateSetting: updateSecuritySetting
-  } as staticTabsType<ServerConfig.SecuritySetting>,
-  {
-    title: i18n.global.t("sconfig.APISetting"),
-    name: "APISetting",
-    uuid: uuidv4(),
-    component: markRaw(APISetting),
-    ref: apiSettingRef,
-    setting: apiSetting,
-    updateSetting: updateAPISetting
-  } as staticTabsType<ServerConfig.APISetting>
+  } as staticTabsType<ServerConfig.SecuritySetting>
 ]);
 const staticOptionTab = reactive([
   {
@@ -310,6 +301,15 @@ const staticOptionTab = reactive([
     setting: connectionsSetting,
     updateSetting: updateConnectionSetting
   } as staticTabsType<ServerConfig.ConnectionSetting>,
+  {
+    title: i18n.global.t("sconfig.APISetting"),
+    name: "APISetting",
+    uuid: uuidv4(),
+    component: markRaw(APISetting),
+    ref: apiSettingRef,
+    setting: apiSetting,
+    updateSetting: updateAPISetting
+  } as staticTabsType<ServerConfig.APISetting>,
   {
     title: i18n.global.t("sconfig.SentrySetting"),
     name: "SentrySetting",

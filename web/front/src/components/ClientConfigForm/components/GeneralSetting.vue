@@ -101,7 +101,11 @@
             {{ $t("cconfig.RemoteCertInsecure") }}
             <UsageTooltip :usage-text="$t('cusage[\'RemoteCertInsecure\']')" />
           </template>
-          <el-switch v-model="localSetting.RemoteCertInsecure" active-text="true" inactive-text="false" />
+          <el-switch
+            v-model="localSetting.RemoteCertInsecure"
+            :active-text="$t('cconfig.true')"
+            :inactive-text="$t('cconfig.false')"
+          />
         </el-descriptions-item>
         <!-- RemoteConnections -->
         <el-descriptions-item>

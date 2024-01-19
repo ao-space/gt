@@ -270,6 +270,8 @@ export namespace en {
     AddNewRemote: "Add new Remote",
     BasicSettings: "BasicSettings",
     OptionSettings: "OptionSettings",
+    false: "false",
+    true: "true",
     //sentences
     SelectWebRtcLogLevel: "Select log level",
     SaveConfigConfirm: "Make sure you want to save the configuration to file.",

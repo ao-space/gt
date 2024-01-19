@@ -19,7 +19,7 @@
             <UsageTooltip :usage-text="$t('susage.TLSAddr')" />
           </template>
           <el-form-item prop="TLSAddr">
-            <el-input v-model="localSetting.TLSAddr" />
+            <el-input v-model="localSetting.TLSAddr" placeholder="443" />
           </el-form-item>
         </el-descriptions-item>
       </el-descriptions>

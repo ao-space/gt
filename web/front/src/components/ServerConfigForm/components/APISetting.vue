@@ -9,7 +9,7 @@
             <UsageTooltip :usage-text="$t('susage[\'APIAddr\']')" />
           </template>
           <el-form-item prop="APIAddr">
-            <el-input v-model="localSetting.APIAddr" />
+            <el-input v-model="localSetting.APIAddr" placeholder=":8080" />
           </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>

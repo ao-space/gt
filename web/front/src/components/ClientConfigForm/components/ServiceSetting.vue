@@ -29,7 +29,11 @@
             {{ $t("cconfig.RemoteTCPRandom") }}
             <UsageTooltip :usage-text="$t('cusage[\'RemoteTCPRandom\']')" />
           </template>
-          <el-switch v-model="localSetting.RemoteTCPRandom" active-text="true" inactive-text="false" />
+          <el-switch
+            v-model="localSetting.RemoteTCPRandom"
+            :active-text="$t('cconfig.true')"
+            :inactive-text="$t('cconfig.false')"
+          />
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
@@ -54,7 +58,11 @@
             {{ $t("cconfig.UseLocalAsHTTPHost") }}
             <UsageTooltip :usage-text="$t('cusage[\'UseLocalAsHTTPHost\']')" />
           </template>
-          <el-switch v-model="localSetting.UseLocalAsHTTPHost" active-text="true" inactive-text="false" />
+          <el-switch
+            v-model="localSetting.UseLocalAsHTTPHost"
+            :active-text="$t('cconfig.true')"
+            :inactive-text="$t('cconfig.false')"
+          />
         </el-descriptions-item>
       </el-descriptions>
     </div>

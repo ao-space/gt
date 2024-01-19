@@ -1,6 +1,6 @@
 <template>
   <el-row>
-    <h1 style="align-self: center">{{ $t("cconfig.BasicSettings") }}</h1>
+    <el-text class="setting_class">{{ $t("cconfig.BasicSettings") }}</el-text>
   </el-row>
   <Anchor :tab-list="tabList">
     <template v-for="tab in staticBasicTabs" :key="tab.uuid" #[tab.uuid]>
@@ -27,7 +27,7 @@
     </template>
   </Anchor>
   <el-row>
-    <h1 style="align-self: center">{{ $t("cconfig.OptionSettings") }}</h1>
+    <el-text class="setting_class">{{ $t("cconfig.OptionSettings") }}</el-text>
   </el-row>
   <Anchor :tab-list="tabList">
     <template v-for="tab in staticOptionTabs" :key="tab.uuid" #[tab.uuid]>
