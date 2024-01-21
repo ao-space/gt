@@ -66,16 +66,16 @@
                 </el-form-item>
               </el-descriptions-item>
             </el-descriptions>
+            <el-row :gutter="10" style="width: 100%">
+              <el-col :span="12">
+                <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
+              </el-col>
+              <el-col :span="12">
+                <HostSetting ref="hostSettingRef" :setting="hostSetting" @update:setting="updateHostSetting" />
+              </el-col>
+            </el-row>
           </el-collapse-item>
         </el-collapse>
-      </el-row>
-      <el-row :gutter="10" style="width: 100%">
-        <el-col :span="12">
-          <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
-        </el-col>
-        <el-col :span="12">
-          <HostSetting ref="hostSettingRef" :setting="hostSetting" @update:setting="updateHostSetting" />
-        </el-col>
       </el-row>
     </div>
   </el-form>

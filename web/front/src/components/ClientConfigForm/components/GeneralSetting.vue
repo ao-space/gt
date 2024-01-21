@@ -54,80 +54,86 @@
             <el-row>
               <el-form-item prop="Remote">
                 <el-input v-model="localSetting.Remote[index]" placeholder="tcp://127.0.0.1:8080" />
-                <!--                <el-select v-model="remote.protocol">-->
-                <!--                  <el-option v-for="item in Protocols" :key="item.value" :label="item.label" :value="item.value"></el-option>-->
-                <!--                </el-select>-->
-                <!--                <el-input v-model="remote.addr" placeholder="127.0.0.1" />-->
-                <!--                <el-input v-model="remote.port" placeholder="8080" />-->
               </el-form-item>
               <el-button @click="deleteRemote(index)">{{ $t("cconfig.Delete") }}</el-button>
               <el-button @click="addRemote()">{{ $t("cconfig.AddNewRemote") }}</el-button>
             </el-row>
           </el-descriptions-item>
         </template>
-        <!-- RemoteSTUN -->
-        <el-descriptions-item>
-          <template #label>
-            {{ $t("cconfig.RemoteSTUN") }}
-            <UsageTooltip :usage-text="$t('cusage[\'RemoteSTUN\']')" />
-          </template>
-          <el-form-item prop="RemoteSTUN">
-            <el-input v-model="localSetting.RemoteSTUN"></el-input>
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- RemoteAPI -->
-        <el-descriptions-item>
-          <template #label>
-            {{ $t("cconfig.RemoteAPI") }}
-            <UsageTooltip :usage-text="$t('cusage[\'RemoteAPI\']')" />
-          </template>
-          <el-form-item prop="RemoteAPI">
-            <el-input v-model="localSetting.RemoteAPI"></el-input>
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- RemoteCert -->
-        <el-descriptions-item>
-          <template #label>
-            {{ $t("cconfig.RemoteCert") }}
-            <UsageTooltip :usage-text="$t('cusage[\'RemoteCert\']')" />
-          </template>
-          <el-form-item prop="RemoteCert">
-            <el-input v-model="localSetting.RemoteCert"></el-input>
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- RemoteCertInsecure -->
-        <el-descriptions-item>
-          <template #label>
-            {{ $t("cconfig.RemoteCertInsecure") }}
-            <UsageTooltip :usage-text="$t('cusage[\'RemoteCertInsecure\']')" />
-          </template>
-          <el-switch
-            v-model="localSetting.RemoteCertInsecure"
-            :active-text="$t('cconfig.true')"
-            :inactive-text="$t('cconfig.false')"
-          />
-        </el-descriptions-item>
-        <!-- RemoteConnections -->
-        <el-descriptions-item>
-          <template #label>
-            {{ $t("cconfig.RemoteConnections") }}
-            <UsageTooltip :usage-text="$t('cusage[\'RemoteConnections\']')" />
-          </template>
-          <el-form-item prop="RemoteConnections">
-            <el-input-number v-model="localSetting.RemoteConnections" :min="1" :max="10" />
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- RemoteIdleConnections -->
-        <el-descriptions-item>
-          <template #label>
-            {{ $t("cconfig.RemoteIdleConnections") }}
-            <UsageTooltip :usage-text="$t('cusage[\'RemoteIdleConnections\']')" />
-          </template>
-          <el-form-item prop="RemoteIdleConnections">
-            <el-input-number v-model="localSetting.RemoteIdleConnections" :min="0" :max="localSetting.RemoteConnections" />
-          </el-form-item>
-        </el-descriptions-item>
       </el-descriptions>
+      <el-row style="width: 100%">
+        <el-collapse style="width: 100%">
+          <el-collapse-item>
+            <template #title>
+              <el-text size="large" style="width: 100%">{{ $t("cconfig.DetailSettings") }}</el-text>
+            </template>
+            <el-descriptions :column="2" :border="true">
+              <!-- RemoteSTUN -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteSTUN") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteSTUN\']')" />
+                </template>
+                <el-form-item prop="RemoteSTUN">
+                  <el-input v-model="localSetting.RemoteSTUN"></el-input>
+                </el-form-item>
+              </el-descriptions-item>
+              <!-- RemoteAPI -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteAPI") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteAPI\']')" />
+                </template>
+                <el-form-item prop="RemoteAPI">
+                  <el-input v-model="localSetting.RemoteAPI"></el-input>
+                </el-form-item>
+              </el-descriptions-item>
+              <!-- RemoteCert -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteCert") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteCert\']')" />
+                </template>
+                <el-form-item prop="RemoteCert">
+                  <el-input v-model="localSetting.RemoteCert"></el-input>
+                </el-form-item>
+              </el-descriptions-item>
+              <!-- RemoteCertInsecure -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteCertInsecure") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteCertInsecure\']')" />
+                </template>
+                <el-switch
+                  v-model="localSetting.RemoteCertInsecure"
+                  :active-text="$t('cconfig.true')"
+                  :inactive-text="$t('cconfig.false')"
+                />
+              </el-descriptions-item>
+              <!-- RemoteConnections -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteConnections") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteConnections\']')" />
+                </template>
+                <el-form-item prop="RemoteConnections">
+                  <el-input-number v-model="localSetting.RemoteConnections" :min="1" :max="10" />
+                </el-form-item>
+              </el-descriptions-item>
+              <!-- RemoteIdleConnections -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteIdleConnections") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteIdleConnections\']')" />
+                </template>
+                <el-form-item prop="RemoteIdleConnections">
+                  <el-input-number v-model="localSetting.RemoteIdleConnections" :min="0" :max="localSetting.RemoteConnections" />
+                </el-form-item>
+              </el-descriptions-item>
+            </el-descriptions>
+          </el-collapse-item>
+        </el-collapse>
+      </el-row>
     </div>
   </el-form>
 </template>
@@ -148,47 +154,6 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
   setting: () => ClientConfig.defaultGeneralSetting
 });
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
-// const remotes = reactive(
-//   localSetting.Remote.map(remote => {
-//     const parts = remote.split(":");
-//     return {
-//       protocol: parts[0].replace("//", ""), // Assuming protocol is the first part
-//       addr: parts[1].replace("//", ""), // Fix the assignment here
-//       port: parts[2]
-//     };
-//   })
-// );
-// watch(remotes, new_remotes => {
-//   Object.assign(
-//     localSetting.Remote,
-//     new_remotes.map(data => {
-//       return data.protocol + "://" + data.addr + ":" + data.port;
-//     })
-//   );
-// });
-// watch(localSetting.Remote, () => {
-//   Object.assign(
-//     remotes,
-//     localSetting.Remote.map(remote => {
-//       const parts = remote.split(":");
-//       return {
-//         protocol: parts[0].replace("//", ""), // Assuming protocol is the first part
-//         addr: parts[1].replace("//", ""), // Fix the assignment here
-//         port: parts[2]
-//       }; // Return the created 'res' object
-//     })
-//   );
-// });
-// const Protocols = [
-//   {
-//     value: "tcp",
-//     label: "tcp"
-//   },
-//   {
-//     value: "tls",
-//     label: "tls"
-//   }
-// ];
 
 //Sync with parent: props.setting -> localSetting
 watchEffect(() => {

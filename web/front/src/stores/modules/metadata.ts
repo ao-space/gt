@@ -28,20 +28,20 @@ export const useMetadataStore = defineStore("GT-metadata", () => {
     { name: "GeneralSetting", title: i18n.global.t("sconfig.GeneralSetting") },
     { name: "NetworkSetting", title: i18n.global.t("sconfig.NetworkSetting") },
     { name: "SecuritySetting", title: i18n.global.t("sconfig.SecuritySetting") },
+    { name: "User1Setting", title: i18n.global.t("sconfig.User") + 1 + i18n.global.t("sconfig.Setting") },
     { name: "ConnectionSetting", title: i18n.global.t("sconfig.ConnectionSetting") },
     { name: "APISetting", title: i18n.global.t("sconfig.APISetting") },
     { name: "SentrySetting", title: i18n.global.t("sconfig.SentrySetting") },
-    { name: "LogSetting", title: i18n.global.t("sconfig.LogSetting") },
-    { name: "User1Setting", title: i18n.global.t("sconfig.User") + 1 + i18n.global.t("sconfig.Setting") }
+    { name: "LogSetting", title: i18n.global.t("sconfig.LogSetting") }
   ]);
 
   let clientComponentList = reactive([
     { name: "GeneralSetting", title: i18n.global.t("cconfig.GeneralSetting") },
+    { name: "Service1Setting", title: i18n.global.t("cconfig.Service") + 1 + i18n.global.t("cconfig.Setting") },
     { name: "SentrySetting", title: i18n.global.t("cconfig.SentrySetting") },
     { name: "WebRTCSetting", title: i18n.global.t("cconfig.WebRTCSetting") },
-    { name: "TCPForwardSetting", title: i18n.global.t("cconfig.TCPForwardSetting") },
-    { name: "LogSetting", title: i18n.global.t("cconfig.LogSetting") },
-    { name: "Service1Setting", title: i18n.global.t("cconfig.Service") + 1 + i18n.global.t("cconfig.Setting") }
+    // { name: "TCPForwardSetting", title: i18n.global.t("cconfig.TCPForwardSetting") },
+    { name: "LogSetting", title: i18n.global.t("cconfig.LogSetting") }
   ]);
   let update = () => {
     Object.assign(serverComponentList, [

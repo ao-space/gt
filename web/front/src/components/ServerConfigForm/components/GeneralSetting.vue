@@ -35,13 +35,22 @@
           </el-form-item>
         </el-descriptions-item>
       </el-descriptions>
-      <el-row :gutter="10" style="width: 100%">
-        <el-col :span="12">
-          <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
-        </el-col>
-        <el-col :span="12">
-          <HostSetting ref="hostSettingRef" :setting="hostSetting" @update:setting="updateHostSetting" />
-        </el-col>
+      <el-row style="width: 100%">
+        <el-collapse style="width: 100%">
+          <el-collapse-item name="1">
+            <template #title>
+              <el-text style="width: 100%" size="large">{{ $t("cconfig.DetailSettings") }} </el-text>
+            </template>
+            <el-row :gutter="10" style="width: 100%">
+              <el-col :span="12">
+                <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
+              </el-col>
+              <el-col :span="12">
+                <HostSetting ref="hostSettingRef" :setting="hostSetting" @update:setting="updateHostSetting" />
+              </el-col>
+            </el-row>
+          </el-collapse-item>
+        </el-collapse>
       </el-row>
     </div>
   </el-form>
