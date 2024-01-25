@@ -329,7 +329,7 @@ export namespace zh {
   };
   export const cerror = {
     PleaseInputRemoteIdleConnections: "请输入有效的RemoteIdleConnections",
-    PleaseEnterValidRemote: "请输入有效的Remote格式（tcp://或tls://）",
+    PleaseEnterValidRemote: "请输入有效的Remote地址！",
     PleaseEnterValidRemoteAPI: "请输入有效的RemoteAPI格式（http://或https://）",
     PleaseInputID: "请输入ID",
     PleaseInputSecret: "请输入Secret",

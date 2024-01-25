@@ -79,7 +79,7 @@ func ChangeUserInfo(c *client.Client) gin.HandlerFunc {
 func GetUserInfo(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var userInfo request.UserInfo
-		cfg, err := service.GetConfigFromFile(c)
+		cfg, err := service.GetMergedConfig(c)
 		if err != nil {
 			userInfo = request.UserInfo{
 				Username:    cfg.Admin,
@@ -142,7 +142,7 @@ func GetRunningConfig(c *client.Client) gin.HandlerFunc {
 // if failed, try to fetch running config
 func GetConfigFromFile(c *client.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		cfg, err := service.GetConfigFromFile(c)
+		cfg, err := service.GetMergedConfig(c)
 		c.Logger.Info().Msg("get config from file")
 		if err != nil {
 			c.Logger.Info().Msg("get config from file failed, try to fetch running config")
@@ -172,6 +172,7 @@ func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 			response.FailWithMessage(err.Error(), ctx)
 			return
 		}
+		service.SeparateConfig(&cfg)
 		fullPath, err := service.SaveConfigToFile(&cfg)
 		if err != nil {
 			response.FailWithMessage(err.Error(), ctx)

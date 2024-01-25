@@ -28,10 +28,11 @@ import (
 
 // Config is a server config.
 type Config struct {
-	Version string          `yaml:"-" json:"-"` // 目前未使用
-	Users   map[string]user `yaml:"users,omitempty"`
-	TCPs    []tcp           `yaml:"tcp,omitempty" json:",omitempty"`
-	Host    host            `yaml:"host,omitempty" json:",omitempty"`
+	Version    string           `yaml:"-" json:"-"` // 目前未使用
+	ConfigType string           `yaml:"type,omitempty"`
+	Users      map[string]*user `yaml:"users,omitempty"`
+	TCPs       []tcp            `yaml:"tcp,omitempty" json:",omitempty"`
+	Host       host             `yaml:"host,omitempty" json:",omitempty"`
 	Options
 }
 
@@ -100,12 +101,13 @@ type Options struct {
 
 	Signal string `arg:"s" yaml:"-" json:"-" usage:"Send signal to client processes. Supports values: restart, stop, kill"`
 
-	QuicAddr string `yaml:"quicAddr" usage:"The address for quic connection (between GT client and GT server) to listen on. Supports values like: '443', ':443' or '0.0.0.0:443'"`
-	OpenBBR  bool   `yaml:"bbr" usage:"Use bbr as congestion control algorithm (through msquic) when GT use QUIC connection. Default algorithm is Cubic (through quic-go)."`
+	QuicAddr string `yaml:"quicAddr,omitempty" usage:"The address for quic connection (between GT client and GT server) to listen on. Supports values like: '443', ':443' or '0.0.0.0:443'"`
+	OpenBBR  bool   `yaml:"bbr,omitempty" usage:"Use bbr as congestion control algorithm (through msquic) when GT use QUIC connection. Default algorithm is Cubic (through quic-go)."`
 }
 
-func defaultConfig() Config {
+func DefaultConfig() Config {
 	return Config{
+		ConfigType: "Server",
 		Options: Options{
 			Timeout:          config.Duration{Duration: 90 * time.Second},
 			TLSMinVersion:    "tls1.2",
@@ -136,7 +138,7 @@ func defaultConfig() Config {
 // if you enable web service, it will set 'Config' if not specified
 
 func defaultConfigWithNoArgs() Config {
-	conf := defaultConfig()
+	conf := DefaultConfig()
 	conf.Options.Config = predef.GetDefaultServerConfigPath()
 	conf.Options.WebAddr = "127.0.0.1:8000"
 
@@ -167,9 +169,10 @@ type users struct {
 }
 
 // 合并 users 配置文件和命令行的 users
-func (u *users) mergeUsers(users map[string]user, ids, secrets []string) error {
+func (u *users) mergeUsers(users map[string]*user, ids, secrets []string) error {
 	for id, ud := range users {
-		u.Store(id, ud)
+		udCopy := *ud
+		u.Store(id, udCopy)
 	}
 
 	if len(ids) != len(secrets) {
@@ -233,9 +236,9 @@ func (u *users) isIDConflict(id string) bool {
 
 // host 管理
 type host struct {
-	Number   *uint32               `yaml:"number" json:",omitempty"`
-	RegexStr *config.Slice[string] `yaml:"regex" json:",omitempty"`
+	Number   *uint32               `yaml:"number,omitempty" json:",omitempty"`
+	RegexStr *config.Slice[string] `yaml:"regex,omitempty" json:",omitempty"`
 	Regex    *[]*regexp.Regexp     `yaml:"-" json:"-"`
-	WithID   *bool                 `yaml:"withID" json:",omitempty"`
+	WithID   *bool                 `yaml:"withID,omitempty" json:",omitempty"`
 	Prefixes map[string]struct{}   `yaml:"-" json:"-"`
 }

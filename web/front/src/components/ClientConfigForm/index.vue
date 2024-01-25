@@ -49,7 +49,7 @@
 <script setup lang="ts" name="ClientConfigForm">
 import { ElMessage, ElMessageBox } from "element-plus";
 import { markRaw, Ref, reactive, ref, watchEffect, onMounted, computed } from "vue";
-import { ClientConfig } from "./interface";
+import { ClientConfig, transToFrontConfig } from "./interface";
 import Anchor, { Tab } from "@/components/Anchor/index.vue";
 import GeneralSetting from "./components/GeneralSetting.vue";
 import SentrySetting from "./components/SentrySetting.vue";
@@ -71,6 +71,7 @@ import {
 } from "@/utils/map";
 import i18n from "@/languages";
 import { useMetadataStore } from "@/stores/modules/metadata";
+import transClientConfigRes = Config.Client.transClientConfigRes;
 
 //init the options
 const generalSetting = reactive<ClientConfig.GeneralSetting>({ ...ClientConfig.defaultGeneralSetting });
@@ -324,7 +325,7 @@ const getFromFile = async () => {
       type: "info"
     });
     const { data } = await getClientConfigFromFileApi();
-    updateData(data);
+    updateData(transClientConfigRes(data));
     ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
   } catch (e) {
     if (e instanceof Error) {
@@ -343,7 +344,7 @@ const getFromRunning = async () => {
       type: "info"
     });
     const { data } = await getRunningClientConfigApi();
-    updateData(data);
+    updateData(transClientConfigRes(data));
     ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
   } catch (e) {
     if (e instanceof Error) {
@@ -363,7 +364,7 @@ const reloadServices = async () => {
     });
     const runningConfig = await getRunningClientConfigApi();
     const fileConfig = await getClientConfigFromFileApi();
-    if (checkOptionsConsistency(runningConfig.data.config, fileConfig.data.config)) {
+    if (checkOptionsConsistency(transToFrontConfig(runningConfig.data.config), transToFrontConfig(fileConfig.data.config))) {
       await reloadServicesApi();
       ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
     } else {

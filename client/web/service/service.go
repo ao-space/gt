@@ -12,6 +12,7 @@ import (
 	"github.com/isrc-cas/gt/web/server/util"
 	"github.com/jinzhu/copier"
 	"github.com/shirou/gopsutil/v3/net"
+	"reflect"
 
 	"gopkg.in/yaml.v3"
 	"os"
@@ -38,6 +39,7 @@ func ChangeUserInfo(user request.UserInfo, c *client.Client) error {
 	conf4log := cfg
 	conf4log.Password = "******"
 	conf4log.SigningKey = "******"
+	SeparateConfig(&cfg)
 	_, err = SaveConfigToFile(&cfg)
 	if err != nil {
 		return err
@@ -238,11 +240,12 @@ func InheritImmutableConfigFields(original *client.Config, new *client.Config) (
 	new.SigningKey = original.SigningKey
 	new.Admin = original.Admin
 	new.Password = original.Password
+	new.ConfigType = original.ConfigType
 	return
 }
 func InheritConfig(c *client.Client) (cfg client.Config, err error) {
 	// Get From File
-	cfg, err = GetConfigFromFile(c)
+	cfg, err = GetMergedConfig(c)
 	if err != nil {
 		// Get From Running
 		err = copier.Copy(&cfg, c.Config()) // SigningKey is also copied
@@ -251,4 +254,37 @@ func InheritConfig(c *client.Client) (cfg client.Config, err error) {
 		}
 	}
 	return
+}
+func GetMergedConfig(c *client.Client) (cfg client.Config, err error) {
+	cfg, err = GetConfigFromFile(c)
+	if err != nil {
+		return
+	}
+	defaultConfig := client.DefaultConfig()
+	reflectedSavedConfig := reflect.ValueOf(&cfg.Options).Elem()
+	reflectedDefaultConfig := reflect.ValueOf(&defaultConfig.Options).Elem()
+
+	for i := 0; i < reflectedSavedConfig.NumField(); i++ {
+		field := reflectedSavedConfig.Field(i)
+		if field.IsZero() && field.Kind() != reflect.Slice && reflectedDefaultConfig.Field(i).IsZero() != true {
+			reflectedSavedConfig.Field(i).Set(reflectedDefaultConfig.Field(i))
+		}
+	}
+	return
+}
+
+func SeparateConfig(newConfig *client.Config) {
+	defaultConfig := client.DefaultConfig()
+	reflectedNewConfig := reflect.ValueOf(&newConfig.Options).Elem()
+	reflectedOldConfig := reflect.ValueOf(&defaultConfig.Options).Elem()
+
+	for i := 0; i < reflectedNewConfig.NumField(); i++ {
+		field := reflectedNewConfig.Field(i)
+		if field.Kind() == reflect.Slice {
+			continue
+		}
+		if reflect.DeepEqual(reflectedNewConfig.Field(i).Interface(), reflectedOldConfig.Field(i).Interface()) {
+			field.SetZero()
+		}
+	}
 }

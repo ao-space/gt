@@ -1,4 +1,4 @@
-import { ClientConfig } from "@/components/ClientConfigForm/interface";
+import { ClientConfig, ClientConfigBackend, transToFrontConfig } from "@/components/ClientConfigForm/interface";
 import { ServerConfig } from "@/components/ServerConfigForm/interface";
 
 // Request with no data
@@ -73,6 +73,14 @@ export namespace Config {
   export namespace Client {
     export interface ResConfig {
       config: ClientConfig.Config;
+    }
+    export interface ResConfigBackend {
+      config: ClientConfigBackend.Config;
+    }
+    export function transClientConfigRes(config: ResConfigBackend): ResConfig {
+      return {
+        config: transToFrontConfig(config.config)
+      };
     }
   }
   export namespace Server {

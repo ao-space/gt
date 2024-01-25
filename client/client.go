@@ -28,6 +28,7 @@ import (
 	"net/netip"
 	"net/url"
 	"os"
+	"reflect"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -54,6 +55,11 @@ import (
 func New(args []string, out io.Writer) (c *Client, err error) {
 	conf := getDefaultConfig(args)
 	err = config.ParseFlags(args, &conf, &conf.Options)
+	conf.ConfigType = "client"
+	err = MergeConfig(&conf)
+	if err != nil {
+		return
+	}
 	if err != nil {
 		return
 	}
@@ -98,11 +104,25 @@ func New(args []string, out io.Writer) (c *Client, err error) {
 	c.webrtcThreadPool = webrtc.NewThreadPool(3)
 	return
 }
+func MergeConfig(cfg *Config) (err error) {
+	defaultConfig := DefaultConfig()
+	reflectedSavedConfig := reflect.ValueOf(&cfg.Options).Elem()
+	reflectedDefaultConfig := reflect.ValueOf(&defaultConfig.Options).Elem()
+
+	for i := 0; i < reflectedSavedConfig.NumField(); i++ {
+		field := reflectedSavedConfig.Field(i)
+		if field.IsZero() && field.Kind() != reflect.Slice && reflectedDefaultConfig.Field(i).IsZero() != true {
+			field.Set(reflectedDefaultConfig.Field(i))
+		}
+	}
+	return
+}
+
 func getDefaultConfig(args []string) (conf Config) {
 	if predef.IsNoArgs() {
 		conf = defaultConfigWithNoArgs()
 	} else {
-		conf = defaultConfig()
+		conf = DefaultConfig()
 		if util.Contains(args, "-webAddr") {
 			conf.Config = predef.GetDefaultClientConfigPath()
 		}

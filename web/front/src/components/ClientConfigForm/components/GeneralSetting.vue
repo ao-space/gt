@@ -46,18 +46,19 @@
         </el-descriptions-item>
         <!-- Remote -->
         <template v-for="(remote, index) in localSetting.Remote" :key="index">
-          <el-descriptions-item>
+          <el-descriptions-item class="remote_des">
             <template #label>
               {{ $t("cconfig.Remote") }}
               <UsageTooltip :usage-text="$t('cusage[\'Remote\']')" />
             </template>
-            <el-row>
-              <el-form-item prop="Remote">
-                <el-input v-model="localSetting.Remote[index]" placeholder="tcp://127.0.0.1:8080" />
-              </el-form-item>
+            <el-form-item prop="Remote">
+              <el-select class="remote_select" placeholder="Protocol" v-model="localSetting.Remote[index].Protocol">
+                <el-option v-for="protocol in protocols" :label="protocol.label" :value="protocol.value" :key="protocol.value" />
+              </el-select>
+              <el-input style="display: inline-block" v-model="localSetting.Remote[index].Addr" placeholder="127.0.0.1:8080" />
               <el-button @click="deleteRemote(index)">{{ $t("cconfig.Delete") }}</el-button>
               <el-button @click="addRemote()">{{ $t("cconfig.AddNewRemote") }}</el-button>
-            </el-row>
+            </el-form-item>
           </el-descriptions-item>
         </template>
       </el-descriptions>
@@ -69,15 +70,17 @@
             </template>
             <el-descriptions :column="2" :border="true">
               <!-- RemoteSTUN -->
-              <el-descriptions-item>
-                <template #label>
-                  {{ $t("cconfig.RemoteSTUN") }}
-                  <UsageTooltip :usage-text="$t('cusage[\'RemoteSTUN\']')" />
-                </template>
-                <el-form-item prop="RemoteSTUN">
-                  <el-input v-model="localSetting.RemoteSTUN"></el-input>
-                </el-form-item>
-              </el-descriptions-item>
+              <template v-for="(stun, index) in localSetting.RemoteSTUN" :key="index">
+                <el-descriptions-item>
+                  <template #label>
+                    {{ $t("cconfig.RemoteSTUN") }}
+                    <UsageTooltip :usage-text="$t('cusage[\'RemoteSTUN\']')" />
+                  </template>
+                  <el-form-item prop="RemoteSTUN">
+                    <el-input v-model="localSetting.RemoteSTUN[index]"></el-input>
+                  </el-form-item>
+                </el-descriptions-item>
+              </template>
               <!-- RemoteAPI -->
               <el-descriptions-item>
                 <template #label>
@@ -155,6 +158,16 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
 });
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
 
+const protocols = [
+  {
+    label: "TCP",
+    value: "tcp"
+  },
+  {
+    label: "TLS",
+    value: "tls"
+  }
+];
 //Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
@@ -175,18 +188,14 @@ const validatorRemoteIdleConnections = (rule: any, value: number, callback: any)
   }
 };
 const validatorRemote = (index: number) => (rule: any, values: any, callback: any) => {
+  console.log("Calling validatorRemote");
   const value = localSetting.Remote[index];
-  if (!value || value.trim() === "") {
-    callback();
-  } else if (value.startsWith("tls://") || value.startsWith("tcp://")) {
-    console.log(`Valid remote format for remote ${index}`);
-    callback();
-  } else {
-    console.log(`Invalid remote format for remote ${index}`);
+  if (!value.Protocol || value.Protocol.trim() === "" || !value.Addr || value.Addr.trim() === "") {
     callback(new Error(i18n.global.t("cerror.PleaseEnterValidRemote")));
+  } else {
+    callback();
   }
 };
-
 const validatorRemoteAPI = (rule: any, value: any, callback: any) => {
   console.log("Calling validatorRemoteAPI");
   if (!value) {
@@ -206,7 +215,7 @@ const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
   RemoteTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }],
   Remote: localSetting.Remote.map((_, index) => ({
     validator: validatorRemote(index),
-    trigger: "blur"
+    trigger: "change"
   })),
   RemoteAPI: [{ validator: validatorRemoteAPI, trigger: "blur" }],
   RemoteConnections: [
@@ -228,7 +237,7 @@ const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
   ]
 });
 const addRemote = () => {
-  localSetting.Remote.push("");
+  localSetting.Remote.push({ Protocol: "", Addr: "" });
 };
 
 const deleteRemote = (index: number) => {
@@ -239,7 +248,7 @@ const deleteRemote = (index: number) => {
 
 const checkRemoteSetting = (): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
-    const isRemoteEmpty = localSetting.Remote.every(item => !item.trim());
+    const isRemoteEmpty = localSetting.Remote.every(item => !item.Addr.trim() && !item.Protocol.trim());
     const isRemoteAPIEmpty = !localSetting.RemoteAPI?.trim();
 
     if (isRemoteEmpty && isRemoteAPIEmpty) {

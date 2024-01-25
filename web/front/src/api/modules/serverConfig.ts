@@ -1,5 +1,5 @@
 import http from "@/api";
-import { Config } from "@/api/interface/index";
+import { Config } from "@/api/interface";
 import { ServerConfig } from "@/components/ServerConfigForm/interface";
 
 export const getRunningServerConfigApi = () => {

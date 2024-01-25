@@ -14,6 +14,7 @@ import (
 	"github.com/shirou/gopsutil/v3/net"
 	"gopkg.in/yaml.v3"
 	"os"
+	"reflect"
 )
 
 func VerifyUser(user request.User, s *server.Server) (err error) {
@@ -36,7 +37,7 @@ func ChangeUserInfo(user request.UserInfo, s *server.Server) error {
 	conf4Log := cfg
 	conf4Log.Password = "******"
 	conf4Log.SigningKey = "******"
-
+	SeparateConfig(&cfg)
 	_, err = SaveConfigToFile(&cfg)
 	if err != nil {
 		return err
@@ -230,12 +231,13 @@ func InheritImmutableConfigFields(original *server.Config, new *server.Config) (
 	new.SigningKey = original.SigningKey
 	new.Admin = original.Admin
 	new.Password = original.Password
+	new.ConfigType = original.ConfigType
 	return
 }
 
 func InheritConfig(s *server.Server) (cfg server.Config, err error) {
 	// Get From File
-	cfg, err = GetConfigFromFile(s)
+	cfg, err = GetMergedConfig(s)
 	if err != nil {
 		// Get From Running
 		err = copier.Copy(&cfg, s.Config()) // SigningKey is also copied
@@ -244,4 +246,61 @@ func InheritConfig(s *server.Server) (cfg server.Config, err error) {
 		}
 	}
 	return
+}
+
+func GetMergedConfig(s *server.Server) (cfg server.Config, err error) {
+	cfg, err = GetConfigFromFile(s)
+	if err != nil {
+		return
+	}
+	defaultConfig := server.DefaultConfig()
+	reflectedSavedConfig := reflect.ValueOf(&cfg.Options).Elem()
+	reflectedDefaultConfig := reflect.ValueOf(&defaultConfig.Options).Elem()
+
+	for i := 0; i < reflectedSavedConfig.NumField(); i++ {
+		field := reflectedSavedConfig.Field(i)
+		if field.IsZero() && field.Type().Kind() != reflect.Slice && reflectedDefaultConfig.Field(i).IsZero() != true {
+			field.Set(reflectedDefaultConfig.Field(i))
+		}
+	}
+	return
+}
+
+func SeparateConfig(newConfig *server.Config) {
+	defaultConfig := server.DefaultConfig()
+	reflectedNewConfig := reflect.ValueOf(&newConfig.Options).Elem()
+	reflectedOldConfig := reflect.ValueOf(&defaultConfig.Options).Elem()
+
+	for i := 0; i < reflectedNewConfig.NumField(); i++ {
+		field := reflectedNewConfig.Field(i)
+		if field.Type().Kind() == reflect.Slice {
+			continue
+		}
+		if reflect.DeepEqual(reflectedNewConfig.Field(i).Interface(), reflectedOldConfig.Field(i).Interface()) {
+			field.SetZero()
+		}
+	}
+	if newConfig.Host.RegexStr != nil && len(*newConfig.Host.RegexStr) == 0 {
+		newConfig.Host.RegexStr = nil
+	}
+	if newConfig.Host.Number != nil && *newConfig.Host.Number == 0 {
+		newConfig.Host.Number = nil
+	}
+	if newConfig.Host.WithID != nil && *newConfig.Host.WithID == false {
+		newConfig.Host.WithID = nil
+	}
+	for _, u := range newConfig.Users {
+		if u.TCPNumber != nil && *u.TCPNumber == 0 {
+			u.TCPNumber = nil
+		}
+		if u.Host.RegexStr != nil && len(*u.Host.RegexStr) == 0 {
+			u.Host.RegexStr = nil
+		}
+		if u.Host.Number != nil && *u.Host.Number == 0 {
+			u.Host.Number = nil
+		}
+		if u.Host.WithID != nil && *u.Host.WithID == false {
+			u.Host.WithID = nil
+		}
+	}
 }
