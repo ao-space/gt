@@ -41,7 +41,10 @@
             <UsageTooltip :usage-text="$t('cusage[\'LocalURL\']')" />
           </template>
           <el-form-item prop="LocalURL">
-            <el-input v-model="localSetting.LocalURL"></el-input>
+            <el-select class="remote_select" placeholder="Protocol" v-model="localSetting.LocalURL.Protocol">
+              <el-option v-for="protocol in protocols" :label="protocol.label" :value="protocol.value" :key="protocol.value" />
+            </el-select>
+            <el-input style="display: inline-block" v-model="localSetting.LocalURL.Addr" placeholder="127.0.0.1:8080" />
           </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
@@ -73,7 +76,7 @@ import { reactive, ref, watch, watchEffect } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { FormInstance, FormRules } from "element-plus";
-import { validatorLocalURL, validatorTimeFormat } from "@/utils/eleValidate";
+import { validatorTimeFormat } from "@/utils/eleValidate";
 import i18n from "@/languages";
 
 interface ServiceSettingProps {
@@ -81,6 +84,20 @@ interface ServiceSettingProps {
   index: number;
   isLast: boolean;
 }
+const protocols = [
+  {
+    label: "TCP",
+    value: "tcp"
+  },
+  {
+    label: "HTTP",
+    value: "http"
+  },
+  {
+    label: "HTTPS",
+    value: "https"
+  }
+];
 
 const props = withDefaults(defineProps<ServiceSettingProps>(), {
   setting: () => ClientConfig.defaultServiceSetting
@@ -106,7 +123,13 @@ watch(
   },
   { deep: true }
 );
-
+const validatorLocalURL = (rule: any, value: any, callback: any) => {
+  if (localSetting.LocalURL?.Addr.trim() === "" || localSetting.LocalURL?.Protocol.trim() === "") {
+    callback(new Error(i18n.global.t("cerror.PleaseInputLocalUrl")));
+  } else {
+    callback();
+  }
+};
 //Form Related
 const serviceSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.Service>>({
@@ -116,10 +139,13 @@ const rules = reactive<FormRules<ClientConfig.Service>>({
   ],
   LocalTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }]
 });
-
 const checkTCPSetting = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    if (localSetting.LocalURL?.startsWith("tcp://")) {
+    if (
+      localSetting.LocalURL?.Addr.trim() != "" &&
+      localSetting.LocalURL?.Protocol.trim() != "" &&
+      localSetting.LocalURL.Protocol == "tcp"
+    ) {
       if (!localSetting.RemoteTCPPort && !localSetting.RemoteTCPRandom) {
         reject(new Error(i18n.global.t("cerror.RemoteTCPPortOrRandomRequired")));
       }

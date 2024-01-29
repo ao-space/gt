@@ -42,7 +42,6 @@
   </Anchor>
   <el-button type="primary" @click="submit">{{ $t("sconfig.Submit") }}</el-button>
   <el-button type="primary" @click="getFromFile">{{ $t("sconfig.GetFromFile") }}</el-button>
-  <el-button type="primary" @click="getFromRunning">{{ $t("sconfig.GetFromRunning") }}</el-button>
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">
@@ -60,7 +59,7 @@ import UserSetting from "./components/UserSetting.vue";
 import SentrySetting from "@/components/ClientConfigForm/components/SentrySetting.vue";
 import LogSetting from "@/components/ClientConfigForm/components/LogSetting.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getRunningServerConfigApi, getServerConfigFromFileApi, saveServerConfigApi } from "@/api/modules/serverConfig";
+import { getServerConfigFromFileApi, saveServerConfigApi } from "@/api/modules/serverConfig";
 import { Config } from "@/api/interface";
 import {
   mapServerGeneralSetting,
@@ -462,25 +461,6 @@ const getFromFile = async () => {
       ElMessage.error(e.message);
     } else {
       ElMessage.error(i18n.global.t("sconfig.FailedToGetFromFile"));
-    }
-  }
-};
-
-const getFromRunning = async () => {
-  try {
-    await ElMessageBox.confirm(i18n.global.t("sconfig.GetFromRunningConfirm"), i18n.global.t("sconfig.GetFromRunningTitle"), {
-      confirmButtonText: i18n.global.t("sconfig.GetFromRunningConfirmBtn"),
-      cancelButtonText: i18n.global.t("sconfig.GetFromRunningCancelBtn"),
-      type: "info"
-    });
-    const { data } = await getRunningServerConfigApi();
-    updateData(data);
-    ElMessage.success(i18n.global.t("sconfig.GetFromRunningSuccess"));
-  } catch (e) {
-    if (e instanceof Error) {
-      ElMessage.error(e.message);
-    } else {
-      ElMessage.error(i18n.global.t("sconfig.FailedToGetFromRunning"));
     }
   }
 };

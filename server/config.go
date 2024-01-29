@@ -29,7 +29,7 @@ import (
 // Config is a server config.
 type Config struct {
 	Version    string           `yaml:"-" json:"-"` // 目前未使用
-	ConfigType string           `yaml:"type,omitempty"`
+	ConfigType string           `yaml:"type,omitempty" json:"-"`
 	Users      map[string]*user `yaml:"users,omitempty"`
 	TCPs       []tcp            `yaml:"tcp,omitempty" json:",omitempty"`
 	Host       host             `yaml:"host,omitempty" json:",omitempty"`

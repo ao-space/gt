@@ -178,8 +178,7 @@ export namespace zh {
     User: "用户",
     Setting: "设置",
     Submit: "提交",
-    GetFromFile: "从文件获取",
-    GetFromRunning: "从运行中获取",
+    GetFromFile: "获取配置",
     AddService: "添加服务",
     DetailSettings: "更多配置项",
     BasicSettings: "基本配置",
@@ -201,18 +200,11 @@ export namespace zh {
 
     GetFromFileConfirm:
       "确认是否从文件获取配置，如果无法从文件获取，则将从运行系统获取。注意：请确保所做的更改已保存，否则将被丢弃。",
-    GetFromFileTitle: "从文件获取配置",
+    GetFromFileTitle: "获取配置",
     GetFromFileConfirmBtn: "确认",
     GetFromFileCancelBtn: "取消",
-    GetFromFileSuccess: "从文件获取成功",
-    FailedToGetFromFile: "无法从文件获取！",
-
-    GetFromRunningConfirm: "确认是否从运行系统获取配置。注意：请确保所做的更改已保存，否则将被丢弃。",
-    GetFromRunningTitle: "从运行系统获取配置",
-    GetFromRunningConfirmBtn: "确认",
-    GetFromRunningCancelBtn: "取消",
-    GetFromRunningSuccess: "从运行系统获取成功",
-    FailedToGetFromRunning: "无法从运行系统获取！"
+    GetFromFileSuccess: "配置获取成功",
+    FailedToGetFromFile: "无法获取配置！"
   };
 
   export const cconfig = {
@@ -257,7 +249,7 @@ export namespace zh {
     TCPForwardSetting: "TCP转发设置",
     WebRTCSetting: "WebRTC设置",
     Submit: "提交",
-    GetFromFile: "从文件获取",
+    GetFromFile: "获取配置",
     GetFromRunning: "从运行中获取",
     ReloadServices: "重新加载服务",
     AddService: "添加服务",
@@ -282,14 +274,9 @@ export namespace zh {
 
     GetFromFileConfirm:
       "确保您要从文件获取配置，如果无法从文件获取，则将从运行系统获取。注意：请确保您所做的更改已保存，否则将被丢弃。",
-    GetFromFileTitle: "从文件获取配置",
+    GetFromFileTitle: "获取配置",
     GetFromFileConfirmBtn: "确认",
     GetFromFileCancelBtn: "取消",
-
-    GetFromRunningConfirm: "确保您要从运行系统获取配置。注意：请确保您所做的更改已保存，否则将被丢弃。",
-    GetFromRunningTitle: "从运行系统获取配置",
-    GetFromRunningConfirmBtn: "确认",
-    GetFromRunningCancelBtn: "取消",
 
     ReloadServicesConfirm: "您需要确保您所做的更改仅在服务部分生效，并确保已保存，否则系统将不会重新加载服务。",
     ReloadServicesTitle: "重新加载服务",
@@ -336,6 +323,7 @@ export namespace zh {
     PleaseInputRemoteConnections: "请输入RemoteConnections",
     PleaseInputRemoteConnectionsBetween1And10: "请输入1到10之间的RemoteConnections",
     PleaseInputRemoteOrRemoteAPI: "请输入Remote或RemoteAPI",
+    PleaseInputLocalUrl: "请输入LocalUrl!",
     GeneralSettingValidationFailedCheckInput: "General Setting验证失败，请检查您的输入",
     GeneralSettingNotReady: "General Setting尚未准备好",
     GeneralSettingValidationPassed: "General Setting验证通过",

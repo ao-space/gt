@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
@@ -200,7 +201,10 @@ func GetConfigFromFile(s *server.Server) (cfg server.Config, err error) {
 }
 
 func SaveConfigToFile(cfg *server.Config) (fullPath string, err error) {
-	yamlData, err := yaml.Marshal(cfg)
+	buff := bytes.Buffer{}
+	yamlEncoder := yaml.NewEncoder(&buff)
+	yamlEncoder.SetIndent(2)
+	err = yamlEncoder.Encode(cfg)
 	if err != nil {
 		return
 	}
@@ -210,7 +214,7 @@ func SaveConfigToFile(cfg *server.Config) (fullPath string, err error) {
 		fullPath = predef.GetDefaultServerConfigPath()
 		cfg.Options.Config = fullPath
 	}
-	err = util2.WriteYamlToFile(fullPath, yamlData)
+	err = util2.WriteYamlToFile(fullPath, buff.Bytes())
 	if err != nil {
 		return
 	}

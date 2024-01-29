@@ -42,7 +42,6 @@
   </Anchor>
   <el-button type="primary" @click="submit"> {{ $t("cconfig.Submit") }}</el-button>
   <el-button type="primary" @click="getFromFile">{{ $t("cconfig.GetFromFile") }}</el-button>
-  <el-button type="primary" @click="getFromRunning">{{ $t("cconfig.GetFromRunning") }}</el-button>
   <el-button type="primary" @click="reloadServices">{{ $t("cconfig.ReloadServices") }}</el-button>
 </template>
 
@@ -228,6 +227,7 @@ metadataStore.$subscribe(() => {
     value.title = i18n.global.t("cconfig." + value.name);
   });
 });
+
 interface dynamicTabType<T> {
   title: string;
   name: string;
@@ -329,26 +329,7 @@ const getFromFile = async () => {
     ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
   } catch (e) {
     if (e instanceof Error) {
-      ElMessage.error(e.message);
-    } else {
-      ElMessage.error(i18n.global.t("cconfig.FailedOperation"));
-    }
-  }
-};
-
-const getFromRunning = async () => {
-  try {
-    await ElMessageBox.confirm(i18n.global.t("cconfig.GetFromRunningConfirm"), i18n.global.t("cconfig.GetFromRunningTitle"), {
-      confirmButtonText: i18n.global.t("cconfig.GetFromRunningConfirmBtn"),
-      cancelButtonText: i18n.global.t("cconfig.GetFromRunningCancelBtn"),
-      type: "info"
-    });
-    const { data } = await getRunningClientConfigApi();
-    updateData(transClientConfigRes(data));
-    ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
-  } catch (e) {
-    if (e instanceof Error) {
-      ElMessage.error(e.message);
+      ElMessage.error("Error!:" + e.message);
     } else {
       ElMessage.error(i18n.global.t("cconfig.FailedOperation"));
     }

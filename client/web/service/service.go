@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
@@ -209,7 +210,10 @@ func GetConfigFromFile(c *client.Client) (cfg client.Config, err error) {
 func SaveConfigToFile(cfg *client.Config) (fullPath string, err error) {
 
 	// switch config type to yaml
-	yamlData, err := yaml.Marshal(cfg)
+	buff := bytes.Buffer{}
+	yamlEncoder := yaml.NewEncoder(&buff)
+	yamlEncoder.SetIndent(2)
+	err = yamlEncoder.Encode(cfg)
 	if err != nil {
 		return
 	}
@@ -219,7 +223,7 @@ func SaveConfigToFile(cfg *client.Config) (fullPath string, err error) {
 		fullPath = predef.GetDefaultClientConfigPath()
 		cfg.Options.Config = fullPath
 	}
-	err = util2.WriteYamlToFile(fullPath, yamlData)
+	err = util2.WriteYamlToFile(fullPath, buff.Bytes())
 	if err != nil {
 		return
 	}
@@ -285,6 +289,11 @@ func SeparateConfig(newConfig *client.Config) {
 		}
 		if reflect.DeepEqual(reflectedNewConfig.Field(i).Interface(), reflectedOldConfig.Field(i).Interface()) {
 			field.SetZero()
+		}
+	}
+	for index := range newConfig.Services {
+		if newConfig.Services[index].RemoteTCPRandom != nil && *newConfig.Services[index].RemoteTCPRandom == false {
+			newConfig.Services[index].RemoteTCPRandom = nil
 		}
 	}
 }

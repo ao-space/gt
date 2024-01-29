@@ -339,6 +339,7 @@ export namespace en {
     PleaseInputRemoteConnections: "Please input RemoteConnections",
     PleaseInputRemoteConnectionsBetween1And10: "Please input RemoteConnections between 1 and 10",
     PleaseInputRemoteOrRemoteAPI: "Please input Remote or RemoteAPI",
+    PleaseInputLocalUrl: "Please input LocalUrl!",
     GeneralSettingValidationFailedCheckInput: "General Setting validation failed, please check your input",
     GeneralSettingNotReady: "General Setting is not ready",
     GeneralSettingValidationPassed: "General Setting validation passed",

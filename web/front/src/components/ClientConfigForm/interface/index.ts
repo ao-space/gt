@@ -2,7 +2,7 @@ export namespace ClientConfig {
   export interface Config extends Options {
     Services?: Service[];
   }
-  export interface Remote {
+  export interface Url {
     Protocol: string;
     Addr: string;
   }
@@ -10,7 +10,7 @@ export namespace ClientConfig {
     ID: string;
     Secret: string;
     ReconnectDelay: string;
-    Remote: Remote[];
+    Remote: Url[];
     RemoteSTUN: string[];
     RemoteAPI: string;
     RemoteCert: string;
@@ -49,7 +49,7 @@ export namespace ClientConfig {
     HostPrefix: string;
     RemoteTCPPort: number;
     RemoteTCPRandom: boolean;
-    LocalURL: string;
+    LocalURL: Url;
     LocalTimeout: string;
     UseLocalAsHTTPHost: boolean;
   }
@@ -71,12 +71,12 @@ export namespace ClientConfig {
     RemoteAPI: "",
     RemoteCert: "",
     RemoteCertInsecure: false,
-    RemoteConnections: 1,
+    RemoteConnections: 3,
     RemoteIdleConnections: 0
   };
   export const defaultSentrySetting: SentrySetting = {
     SentryDSN: "",
-    SentryLevel: ["error", "fatal", "panic"],
+    SentryLevel: [],
     SentrySampleRate: 0,
     SentryRelease: "",
     SentryEnvironment: "",
@@ -104,7 +104,10 @@ export namespace ClientConfig {
     HostPrefix: "",
     RemoteTCPPort: 0,
     RemoteTCPRandom: false,
-    LocalURL: "",
+    LocalURL: {
+      Protocol: "",
+      Addr: ""
+    },
     LocalTimeout: "0s",
     UseLocalAsHTTPHost: false
   };
@@ -227,10 +230,19 @@ export function transToBackendConfig(config: ClientConfig.Config): ClientConfigB
     ...config,
     Remote: config.Remote.map(remote => {
       return remote.Protocol + "://" + remote.Addr;
+    }),
+    Services: config.Services?.map(service => {
+      return {
+        ...service,
+        LocalURL: service.LocalURL.Protocol + "://" + service.LocalURL.Addr
+      };
     })
   };
 }
 export function transToFrontConfig(config: ClientConfigBackend.Config): ClientConfig.Config {
+  if (config.Remote == undefined) {
+    config.Remote = [""];
+  }
   return {
     ...config,
     Remote: config.Remote.map(remote => {
@@ -238,6 +250,16 @@ export function transToFrontConfig(config: ClientConfigBackend.Config): ClientCo
       return {
         Protocol: protocol,
         Addr: address
+      };
+    }),
+    Services: config.Services?.map(service => {
+      const [protocol, address] = service.LocalURL.split("://");
+      return {
+        ...service,
+        LocalURL: {
+          Protocol: protocol,
+          Addr: address
+        }
       };
     })
   };
