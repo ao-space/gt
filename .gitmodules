@@ -13,12 +13,12 @@
 # limitations under the License.
 
 [submodule "dep/_google-webrtc"]
-	path = dep/_google-webrtc
+	path = libcs/dep/_google-webrtc
 	url = https://git.mirror.iscas.ac.cn/ao-space/google-webrtc.git
 	branch = main
 	shallow = true
 	ignore = dirty
 [submodule "dep/_msquic"]
-	path = dep/_msquic
+	path = libcs/dep/_msquic
 	url = https://github.com/microsoft/msquic
 	ignore = dirty
