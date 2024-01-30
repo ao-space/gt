@@ -38,6 +38,7 @@
     "vue": "^3.3.4",
     "vue-echarts": "^6.6.1",
     "vue-eslint-parser": "^9.3.1",
+    "vue-i18n": "^9.8.0",
     "vue-router": "^4.2.4"
   },
   "devDependencies": {

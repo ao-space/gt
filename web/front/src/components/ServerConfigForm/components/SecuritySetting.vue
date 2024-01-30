@@ -3,11 +3,11 @@
   <el-form ref="SecuritySettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title> Security Setting </template>
+        <template #title> {{ $t("sconfig.SecuritySetting") }}</template>
         <el-descriptions-item>
           <template #label>
-            CertFile
-            <UsageTooltip :usage-text="ServerConfig.usage['CertFile']" />
+            {{ $t("sconfig.CertFile") }}
+            <UsageTooltip :usage-text="$t('susage[\'CertFile\']')" />
           </template>
           <el-form-item prop="CertFile">
             <el-input v-model="localSetting.CertFile" />
@@ -15,8 +15,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            KeyFile
-            <UsageTooltip :usage-text="ServerConfig.usage['KeyFile']" />
+            {{ $t("sconfig.KeyFile") }}
+            <UsageTooltip :usage-text="$t('susage[\'KeyFile\']')" />
           </template>
           <el-form-item prop="KeyFile">
             <el-input v-model="localSetting.KeyFile" />
@@ -24,8 +24,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            AllowAnyClient
-            <UsageTooltip :usage-text="ServerConfig.usage['AllowAnyClient']" />
+            {{ $t("sconfig.AllowAnyClient") }}
+            <UsageTooltip :usage-text="$t('susage[\'AllowAnyClient\']')" />
           </template>
           <el-form-item prop="AllowAnyClient">
             <el-switch v-model="localSetting.AllowAnyClient" />
@@ -40,6 +40,7 @@ import { FormInstance, FormRules } from "element-plus";
 import { reactive, ref, watchEffect } from "vue";
 import { ServerConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
+import i18n from "@/languages";
 
 interface SecuritySettingProps {
   setting: ServerConfig.SecuritySetting;
@@ -71,14 +72,15 @@ const validateForm = (): Promise<void> => {
         if (valid) {
           resolve();
         } else {
-          reject(new Error("Security Setting validation failed, please check your input!"));
+          reject(new Error(i18n.global.t("serror.SecuritySettingValidationFailed")));
         }
       });
     } else {
-      reject(new Error("Security Setting is not ready!"));
+      reject(new Error(i18n.global.t("serror.SecuritySettingNotReady")));
     }
   });
 };
+
 defineExpose({
   validateForm
 });

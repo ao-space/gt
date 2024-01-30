@@ -3,12 +3,12 @@
   <el-form ref="generalSettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title>General Setting</template>
+        <template #title>{{ $t("sconfig.GeneralSetting") }}</template>
         <!-- Users -->
         <el-descriptions-item>
           <template #label>
-            Users
-            <UsageTooltip :usage-text="ServerConfig.usage['Users']" />
+            {{ $t("sconfig.Users") }}
+            <UsageTooltip :usage-text="$t('susage[\'Users\']')" />
           </template>
           <el-form-item prop="Users">
             <el-input v-model="localSetting.UserPath"></el-input>
@@ -17,8 +17,8 @@
         <!-- AuthAPI -->
         <el-descriptions-item>
           <template #label>
-            AuthAPI
-            <UsageTooltip :usage-text="ServerConfig.usage['AuthAPI']" />
+            {{ $t("sconfig.AuthAPI") }}
+            <UsageTooltip :usage-text="$t('susage[\'AuthAPI\']')" />
           </template>
           <el-form-item prop="AuthAPI">
             <el-input v-model="localSetting.AuthAPI"></el-input>
@@ -27,21 +27,30 @@
         <!-- TCP Number -->
         <el-descriptions-item>
           <template #label>
-            TCPNumber
-            <UsageTooltip :usage-text="ServerConfig.usage['TCPNumber']" />
+            {{ $t("sconfig.TCPNumber") }}
+            <UsageTooltip :usage-text="$t('susage[\'TCPNumber\']')" />
           </template>
           <el-form-item prop="TCPNumber">
             <el-input-number v-model="localSetting.TCPNumber" :min="0" />
           </el-form-item>
         </el-descriptions-item>
       </el-descriptions>
-      <el-row :gutter="10" style="width: 100%">
-        <el-col :span="12">
-          <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
-        </el-col>
-        <el-col :span="12">
-          <HostSetting ref="hostSettingRef" :setting="hostSetting" @update:setting="updateHostSetting" />
-        </el-col>
+      <el-row style="width: 100%">
+        <el-collapse style="width: 100%">
+          <el-collapse-item name="1">
+            <template #title>
+              <el-text style="width: 100%" size="large">{{ $t("cconfig.DetailSettings") }} </el-text>
+            </template>
+            <el-row :gutter="10" style="width: 100%">
+              <el-col :span="12">
+                <TCPSetting ref="tcpSettingRef" :setting="tcpSetting" @update:setting="updateTCPSetting" />
+              </el-col>
+              <el-col :span="12">
+                <HostSetting ref="hostSettingRef" :setting="hostSetting" @update:setting="updateHostSetting" />
+              </el-col>
+            </el-row>
+          </el-collapse-item>
+        </el-collapse>
       </el-row>
     </div>
   </el-form>
@@ -55,6 +64,7 @@ import { FormInstance, FormRules } from "element-plus";
 import TCPSetting from "./TCPSetting.vue";
 import HostSetting from "./HostSetting.vue";
 import cloneDeep from "lodash/cloneDeep";
+import i18n from "@/languages";
 
 interface GeneralSettingProps {
   setting: ServerConfig.GeneralSettingProps;
@@ -126,16 +136,16 @@ const validateForm = (): Promise<void> => {
           if (valid) {
             resolve();
           } else {
-            reject(new Error("General Setting validation failed, please check your input!"));
+            reject(new Error(i18n.global.t("serror.GeneralSettingValidationFailed")));
           }
         });
       } else {
-        reject(new Error("General Setting is not ready!"));
+        reject(new Error(i18n.global.t("serror.GeneralSettingNotReady")));
       }
     })
   ];
   return Promise.all(validations).then(() => {
-    console.log("General Setting validation passed!");
+    console.log(i18n.global.t("serror.GeneralSettingValidationPassed"));
   });
 };
 

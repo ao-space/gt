@@ -4,20 +4,20 @@
     <template #dropdown>
       <el-dropdown-menu>
         <el-dropdown-item id="userSetting" @click="openDialog('infoRef')">
-          <el-icon><User /></el-icon>User Setting
+          <el-icon><User /></el-icon>{{ $t("layout_header.UserSetting") }}
         </el-dropdown-item>
         <el-dropdown-item @click="logout">
-          <el-icon><SwitchButton /></el-icon>Log out
+          <el-icon><SwitchButton /></el-icon>{{ $t("layout_header.Logout") }}
         </el-dropdown-item>
         <el-dropdown-item divided @click="restart">
-          <el-icon><Refresh /></el-icon>Restart System
+          <el-icon><Refresh /></el-icon>{{ $t("layout_header.RestartSystem") }}
         </el-dropdown-item>
         <el-dropdown-item @click="shutdown">
-          <el-icon><SwitchButton /></el-icon>Shutdown System
+          <el-icon><SwitchButton /></el-icon>{{ $t("layout_header.ShutdownSystem") }}
         </el-dropdown-item>
-        <el-dropdown-item @click="kill">
-          <el-icon><SwitchButton /></el-icon>Terminate System
-        </el-dropdown-item>
+        <!--        <el-dropdown-item @click="kill">-->
+        <!--          <el-icon><SwitchButton /></el-icon>{{ $t("layout_header.TerminateSystem") }}-->
+        <!--        </el-dropdown-item>-->
       </el-dropdown-menu>
     </template>
   </el-dropdown>
@@ -31,8 +31,9 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/modules/user";
 import { ElMessageBox, ElMessage } from "element-plus";
 import { computed, ref } from "vue";
-import { restartServerApi, stopServerApi, killServerApi } from "@/api/modules/server";
+import { restartServerApi, stopServerApi } from "@/api/modules/server";
 import InfoDialog from "./InfoDialog.vue";
+import i18n from "@/languages";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -49,86 +50,89 @@ const openDialog = (ref: string) => {
 };
 
 const logout = () => {
-  ElMessageBox.confirm("Are you sure to log out?", "Tips", {
-    confirmButtonText: "Confirm",
-    cancelButtonText: "Cancel",
+  ElMessageBox.confirm(i18n.global.t("layout_header.ConfirmLogout"), i18n.global.t("layout_header.Tips"), {
+    confirmButtonText: i18n.global.t("layout_header.Confirm"),
+    cancelButtonText: i18n.global.t("layout_header.Cancel"),
     type: "warning"
   }).then(async () => {
     clearToken();
-    ElMessage.success("Logout success");
+    ElMessage.success(i18n.global.t("layout_header.LogoutSuccess"));
   });
 };
+
 const restart = () => {
-  ElMessageBox.confirm("Are you sure to restart the system?", "Tips", {
-    confirmButtonText: "Confirm",
-    cancelButtonText: "Cancel",
+  ElMessageBox.confirm(i18n.global.t("layout_header.ConfirmRestartSystem"), i18n.global.t("layout_header.Tips"), {
+    confirmButtonText: i18n.global.t("layout_header.Confirm"),
+    cancelButtonText: i18n.global.t("layout_header.Cancel"),
     type: "warning"
   })
     .then(async () => {
       try {
         await restartServerApi();
-        ElMessage.success("restart success!");
+        ElMessage.success(i18n.global.t("layout_header.RestartSuccess"));
         window.close();
       } catch (e) {
         if (e instanceof Error) {
           ElMessage.error(e.message);
         } else {
-          ElMessage.error("restart failed");
+          ElMessage.error(i18n.global.t("layout_header.RestartFailed"));
         }
       }
     })
     .catch(() => {
-      ElMessage.info("restart canceled");
+      ElMessage.info(i18n.global.t("layout_header.RestartCanceled"));
     });
 };
+
 const shutdown = () => {
-  ElMessageBox.confirm("Are you sure to shutdown the system?", "Tips", {
-    confirmButtonText: "Confirm",
-    cancelButtonText: "Cancel",
+  ElMessageBox.confirm(i18n.global.t("layout_header.ConfirmShutdownSystem"), i18n.global.t("layout_header.Tips"), {
+    confirmButtonText: i18n.global.t("layout_header.Confirm"),
+    cancelButtonText: i18n.global.t("layout_header.Cancel"),
     type: "warning"
   })
     .then(async () => {
       try {
         await stopServerApi();
         clearToken();
-        ElMessage.success("shutdown success");
+        ElMessage.success(i18n.global.t("layout_header.ShutdownSuccess"));
         window.close();
       } catch (e) {
         if (e instanceof Error) {
           ElMessage.error(e.message);
         } else {
-          ElMessage.error("shutdown failed");
+          ElMessage.error(i18n.global.t("layout_header.ShutdownFailed"));
         }
       }
     })
     .catch(() => {
-      ElMessage.info("shutdown canceled");
+      ElMessage.info(i18n.global.t("layout_header.ShutdownCanceled"));
     });
 };
-const kill = () => {
-  ElMessageBox.confirm("Are you sure to kill the system?", "Tips", {
-    confirmButtonText: "Confirm",
-    cancelButtonText: "Cancel",
-    type: "warning"
-  })
-    .then(async () => {
-      try {
-        await killServerApi();
-        clearToken();
-        ElMessage.success("kill success");
-        window.close();
-      } catch (e) {
-        if (e instanceof Error) {
-          ElMessage.error(e.message);
-        } else {
-          ElMessage.error("kill failed");
-        }
-      }
-    })
-    .catch(() => {
-      ElMessage.info("kill canceled");
-    });
-};
+//
+// const kill = () => {
+//   ElMessageBox.confirm(i18n.global.t("layout_header.ConfirmKillSystem"), i18n.global.t("layout_header.Tips"), {
+//     confirmButtonText: i18n.global.t("layout_header.Confirm"),
+//     cancelButtonText: i18n.global.t("layout_header.Cancel"),
+//     type: "warning"
+//   })
+//     .then(async () => {
+//       try {
+//         await killServerApi();
+//         clearToken();
+//         ElMessage.success(i18n.global.t("layout_header.KillSuccess"));
+//         window.close();
+//       } catch (e) {
+//         if (e instanceof Error) {
+//           ElMessage.error(e.message);
+//         } else {
+//           ElMessage.error(i18n.global.t("layout_header.KillFailed"));
+//         }
+//       }
+//     })
+//     .catch(() => {
+//       ElMessage.info(i18n.global.t("layout_header.KillCanceled"));
+//     });
+// };
 </script>
 
 <style scoped lang="scss">

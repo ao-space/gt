@@ -2,23 +2,23 @@
   <el-form ref="APISettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title> API Setting </template>
+        <template #title> {{ $t("sconfig.APISetting") }} </template>
         <el-descriptions-item>
           <template #label>
-            APIAddr
-            <UsageTooltip :usage-text="ServerConfig.usage['APIAddr']" />
+            {{ $t("sconfig.APIAddr") }}
+            <UsageTooltip :usage-text="$t('susage[\'APIAddr\']')" />
           </template>
           <el-form-item prop="APIAddr">
-            <el-input v-model="localSetting.APIAddr" />
+            <el-input v-model="localSetting.APIAddr" placeholder=":8080" />
           </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            APITLSMinVersion
-            <UsageTooltip :usage-text="ServerConfig.usage['APITLSMinVersion']" />
+            {{ $t("sconfig.APITLSMinVersion") }}
+            <UsageTooltip :usage-text="$t('susage[\'APITLSMinVersion\']')" />
           </template>
           <el-form-item prop="APITLSMinVersion">
-            <el-select v-model="localSetting.APITLSMinVersion" placeholder="Select APITLSMinVersion">
+            <el-select v-model="localSetting.APITLSMinVersion" :placeholder="$t('sconfig.SelectApiTLSMin')">
               <el-option label="tls1.1" value="tls1.1" />
               <el-option label="tls1.2" value="tls1.2" />
               <el-option label="tls1.3" value="tls1.3" />
@@ -27,8 +27,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            APICertFile
-            <UsageTooltip :usage-text="ServerConfig.usage['APICertFile']" />
+            {{ $t("sconfig.APICertFile") }}
+            <UsageTooltip :usage-text="$t('susage[\'APICertFile\']')" />
           </template>
           <el-form-item prop="APICertFile">
             <el-input v-model="localSetting.APICertFile" />
@@ -36,8 +36,8 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            APIKeyFile
-            <UsageTooltip :usage-text="ServerConfig.usage['APIKeyFile']" />
+            {{ $t("sconfig.APIKeyFile") }}
+            <UsageTooltip :usage-text="$t('susage[\'APIKeyFile\']')" />
           </template>
           <el-form-item prop="APIKeyFile">
             <el-input v-model="localSetting.APIKeyFile" />
@@ -53,6 +53,7 @@ import { reactive, ref, watchEffect } from "vue";
 import { ServerConfig } from "../interface";
 import { validatorAddr } from "@/utils/eleValidate";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
+import i18n from "@/languages";
 
 interface APISettingProps {
   setting: ServerConfig.APISetting;
@@ -87,11 +88,11 @@ const validateForm = (): Promise<void> => {
         if (valid) {
           resolve();
         } else {
-          reject(new Error("API Setting validation failed, please check your input!"));
+          reject(new Error(i18n.global.t("serror.APISettingValidationFailed")));
         }
       });
     } else {
-      reject(new Error("API Setting is not ready!"));
+      reject(new Error(i18n.global.t("serror.APISettingNotReady")));
     }
   });
 };

@@ -1,10 +1,6 @@
 import http from "@/api";
-import { Config } from "@/api/interface/index";
+import { Config } from "@/api/interface";
 import { ServerConfig } from "@/components/ServerConfigForm/interface";
-
-export const getRunningServerConfigApi = () => {
-  return http.get<Config.Server.ResConfig>(`/config/running`);
-};
 
 export const getServerConfigFromFileApi = () => {
   return http.get<Config.Server.ResConfig>(`/config/file`);

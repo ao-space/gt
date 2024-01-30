@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
@@ -12,6 +13,7 @@ import (
 	"github.com/isrc-cas/gt/web/server/util"
 	"github.com/jinzhu/copier"
 	"github.com/shirou/gopsutil/v3/net"
+	"reflect"
 
 	"gopkg.in/yaml.v3"
 	"os"
@@ -38,6 +40,7 @@ func ChangeUserInfo(user request.UserInfo, c *client.Client) error {
 	conf4log := cfg
 	conf4log.Password = "******"
 	conf4log.SigningKey = "******"
+	SeparateConfig(&cfg)
 	_, err = SaveConfigToFile(&cfg)
 	if err != nil {
 		return err
@@ -46,50 +49,97 @@ func ChangeUserInfo(user request.UserInfo, c *client.Client) error {
 	return nil
 }
 
-func GetMenu(c *client.Client) (menu []request.Menu) {
-	menu = []request.Menu{
-		//Home
-		{
-			Path:      "/home/index",
-			Name:      "home",
-			Component: "/home/index",
-			Meta: request.MetaProps{
-				Icon:        "HomeFilled",
-				Title:       "Home",
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     true,
-				IsKeepAlive: false,
+func GetMenu(c *client.Client, lang string) (menu []request.Menu) {
+	if lang == "zh" {
+		menu = []request.Menu{
+			//Home
+			{
+				Path:      "/home/index",
+				Name:      "home",
+				Component: "/home/index",
+				Meta: request.MetaProps{
+					Icon:        "HomeFilled",
+					Title:       "主页",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     true,
+					IsKeepAlive: false,
+				},
 			},
-		},
-		//Connection
-		{
-			Path:      "/connection",
-			Name:      "connection",
-			Component: "/connection/index",
-			Meta: request.MetaProps{
-				Icon:        "Connection",
-				Title:       "Connection Status",
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     false,
-				IsKeepAlive: false,
+			//Connection
+			{
+				Path:      "/connection",
+				Name:      "connection",
+				Component: "/connection/index",
+				Meta: request.MetaProps{
+					Icon:        "Connection",
+					Title:       "连接状态",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     false,
+					IsKeepAlive: false,
+				},
 			},
-		},
-		//Client Config
-		{
-			Path:      "/config/client",
-			Name:      "client",
-			Component: "/config/ClientConfig/index",
-			Meta: request.MetaProps{
-				Icon:        "Setting",
-				Title:       "Client",
-				IsHide:      false,
-				IsFull:      false,
-				IsAffix:     false,
-				IsKeepAlive: true,
+			//Client Config
+			{
+				Path:      "/config/client",
+				Name:      "client",
+				Component: "/config/ClientConfig/index",
+				Meta: request.MetaProps{
+					Icon:        "Setting",
+					Title:       "客户端",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     false,
+					IsKeepAlive: true,
+				},
 			},
-		},
+		}
+	} else {
+		menu = []request.Menu{
+			//Home
+			{
+				Path:      "/home/index",
+				Name:      "home",
+				Component: "/home/index",
+				Meta: request.MetaProps{
+					Icon:        "HomeFilled",
+					Title:       "Home",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     true,
+					IsKeepAlive: false,
+				},
+			},
+			//Connection
+			{
+				Path:      "/connection",
+				Name:      "connection",
+				Component: "/connection/index",
+				Meta: request.MetaProps{
+					Icon:        "Connection",
+					Title:       "Connection Status",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     false,
+					IsKeepAlive: false,
+				},
+			},
+			//Client Config
+			{
+				Path:      "/config/client",
+				Name:      "client",
+				Component: "/config/ClientConfig/index",
+				Meta: request.MetaProps{
+					Icon:        "Setting",
+					Title:       "Client",
+					IsHide:      false,
+					IsFull:      false,
+					IsAffix:     false,
+					IsKeepAlive: true,
+				},
+			},
+		}
 	}
 	//pprof
 	if c.Config().EnablePprof {
@@ -160,7 +210,10 @@ func GetConfigFromFile(c *client.Client) (cfg client.Config, err error) {
 func SaveConfigToFile(cfg *client.Config) (fullPath string, err error) {
 
 	// switch config type to yaml
-	yamlData, err := yaml.Marshal(cfg)
+	buff := bytes.Buffer{}
+	yamlEncoder := yaml.NewEncoder(&buff)
+	yamlEncoder.SetIndent(2)
+	err = yamlEncoder.Encode(cfg)
 	if err != nil {
 		return
 	}
@@ -170,7 +223,7 @@ func SaveConfigToFile(cfg *client.Config) (fullPath string, err error) {
 		fullPath = predef.GetDefaultClientConfigPath()
 		cfg.Options.Config = fullPath
 	}
-	err = util2.WriteYamlToFile(fullPath, yamlData)
+	err = util2.WriteYamlToFile(fullPath, buff.Bytes())
 	if err != nil {
 		return
 	}
@@ -191,11 +244,12 @@ func InheritImmutableConfigFields(original *client.Config, new *client.Config) (
 	new.SigningKey = original.SigningKey
 	new.Admin = original.Admin
 	new.Password = original.Password
+	new.ConfigType = original.ConfigType
 	return
 }
 func InheritConfig(c *client.Client) (cfg client.Config, err error) {
 	// Get From File
-	cfg, err = GetConfigFromFile(c)
+	cfg, err = GetMergedConfig(c)
 	if err != nil {
 		// Get From Running
 		err = copier.Copy(&cfg, c.Config()) // SigningKey is also copied
@@ -204,4 +258,42 @@ func InheritConfig(c *client.Client) (cfg client.Config, err error) {
 		}
 	}
 	return
+}
+func GetMergedConfig(c *client.Client) (cfg client.Config, err error) {
+	cfg, err = GetConfigFromFile(c)
+	if err != nil {
+		return
+	}
+	defaultConfig := client.DefaultConfig()
+	reflectedSavedConfig := reflect.ValueOf(&cfg.Options).Elem()
+	reflectedDefaultConfig := reflect.ValueOf(&defaultConfig.Options).Elem()
+
+	for i := 0; i < reflectedSavedConfig.NumField(); i++ {
+		field := reflectedSavedConfig.Field(i)
+		if field.IsZero() && field.Kind() != reflect.Slice && reflectedDefaultConfig.Field(i).IsZero() != true {
+			reflectedSavedConfig.Field(i).Set(reflectedDefaultConfig.Field(i))
+		}
+	}
+	return
+}
+
+func SeparateConfig(newConfig *client.Config) {
+	defaultConfig := client.DefaultConfig()
+	reflectedNewConfig := reflect.ValueOf(&newConfig.Options).Elem()
+	reflectedOldConfig := reflect.ValueOf(&defaultConfig.Options).Elem()
+
+	for i := 0; i < reflectedNewConfig.NumField(); i++ {
+		field := reflectedNewConfig.Field(i)
+		if field.Kind() == reflect.Slice {
+			continue
+		}
+		if reflect.DeepEqual(reflectedNewConfig.Field(i).Interface(), reflectedOldConfig.Field(i).Interface()) {
+			field.SetZero()
+		}
+	}
+	for index := range newConfig.Services {
+		if newConfig.Services[index].RemoteTCPRandom != nil && *newConfig.Services[index].RemoteTCPRandom == false {
+			newConfig.Services[index].RemoteTCPRandom = nil
+		}
+	}
 }

@@ -1,16 +1,20 @@
 <template>
+  <el-row>
+    <el-text class="setting_class">{{ $t("cconfig.BasicSettings") }}</el-text>
+  </el-row>
   <Anchor :tab-list="tabList">
-    <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
+    <template v-for="tab in staticBasicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
+        :id="tab.name"
         :is="tab.component"
         :ref="(el: InstanceType<typeof tab.component> | null) => tab.ref = el"
         :setting="tab.setting"
         @update:setting="tab.updateSetting"
       />
     </template>
-
     <template v-for="tab in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
+        :id="tab.name"
         :is="tab.component"
         :ref="serviceSettingRefs[tab.index]"
         :index="tab.index"
@@ -22,16 +26,29 @@
       />
     </template>
   </Anchor>
-  <el-button type="primary" @click="submit"> Submit</el-button>
-  <el-button type="primary" @click="getFromFile">GetFromFile</el-button>
-  <el-button type="primary" @click="getFromRunning">GetFromRunning</el-button>
-  <el-button type="primary" @click="reloadServices">Reload Services</el-button>
+  <el-row>
+    <el-text class="setting_class">{{ $t("cconfig.OptionSettings") }}</el-text>
+  </el-row>
+  <Anchor :tab-list="tabList">
+    <template v-for="tab in staticOptionTabs" :key="tab.uuid" #[tab.uuid]>
+      <component
+        :id="tab.name"
+        :is="tab.component"
+        :ref="(el: InstanceType<typeof tab.component> | null) => tab.ref = el"
+        :setting="tab.setting"
+        @update:setting="tab.updateSetting"
+      />
+    </template>
+  </Anchor>
+  <el-button type="primary" @click="submit"> {{ $t("cconfig.Submit") }}</el-button>
+  <el-button type="primary" @click="getFromFile">{{ $t("cconfig.GetFromFile") }}</el-button>
+  <el-button type="primary" @click="reloadServices">{{ $t("cconfig.ReloadServices") }}</el-button>
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
 import { ElMessage, ElMessageBox } from "element-plus";
 import { markRaw, Ref, reactive, ref, watchEffect, onMounted, computed } from "vue";
-import { ClientConfig } from "./interface";
+import { ClientConfig, transToFrontConfig } from "./interface";
 import Anchor, { Tab } from "@/components/Anchor/index.vue";
 import GeneralSetting from "./components/GeneralSetting.vue";
 import SentrySetting from "./components/SentrySetting.vue";
@@ -51,6 +68,9 @@ import {
   mapClientWebRTCSetting,
   mapClientServices
 } from "@/utils/map";
+import i18n from "@/languages";
+import { useMetadataStore } from "@/stores/modules/metadata";
+import transClientConfigRes = Config.Client.transClientConfigRes;
 
 //init the options
 const generalSetting = reactive<ClientConfig.GeneralSetting>({ ...ClientConfig.defaultGeneralSetting });
@@ -116,9 +136,9 @@ const updateSentrySetting = (newSetting: ClientConfig.SentrySetting) => {
 const updateWebRTCSetting = (newSetting: ClientConfig.WebRTCSetting) => {
   Object.assign(webRTCSetting, newSetting);
 };
-const updateTCPForwardSetting = (newSetting: ClientConfig.TCPForwardSetting) => {
-  Object.assign(tcpForwardSetting, newSetting);
-};
+// const updateTCPForwardSetting = (newSetting: ClientConfig.TCPForwardSetting) => {
+//   Object.assign(tcpForwardSetting, newSetting);
+// };
 const updateLogSetting = (newSetting: ClientConfig.LogSetting) => {
   Object.assign(logSetting, newSetting);
 };
@@ -147,18 +167,20 @@ interface staticTabType<T> {
   updateSetting: (newSetting: T) => void;
 }
 
-const staticTabs = reactive([
+const staticBasicTabs = reactive([
   {
-    title: "General Setting",
+    title: i18n.global.t("cconfig.GeneralSetting"),
     name: "GeneralSetting",
     uuid: uuidv4(),
     component: markRaw(GeneralSetting),
     ref: generalSettingRef,
     setting: generalSetting,
     updateSetting: updateGeneralSetting
-  } as staticTabType<ClientConfig.GeneralSetting>,
+  } as staticTabType<ClientConfig.GeneralSetting>
+]);
+const staticOptionTabs = reactive([
   {
-    title: "Sentry Setting",
+    title: i18n.global.t("cconfig.SentrySetting"),
     name: "SentrySetting",
     uuid: uuidv4(),
     component: markRaw(SentrySetting),
@@ -167,7 +189,7 @@ const staticTabs = reactive([
     updateSetting: updateSentrySetting
   } as staticTabType<ClientConfig.SentrySetting>,
   {
-    title: "WebRTC Setting",
+    title: i18n.global.t("cconfig.WebRTCSetting"),
     name: "WebRTCSetting",
     uuid: uuidv4(),
     component: markRaw(WebRTCSetting),
@@ -175,17 +197,17 @@ const staticTabs = reactive([
     setting: webRTCSetting,
     updateSetting: updateWebRTCSetting
   } as staticTabType<ClientConfig.WebRTCSetting>,
+  // {
+  //   title: i18n.global.t("cconfig.TCPForwardSetting"),
+  //   name: "TCPForwardSetting",
+  //   uuid: uuidv4(),
+  //   component: markRaw(TCPForwardSetting),
+  //   ref: tcpForwardSettingRef,
+  //   setting: tcpForwardSetting,
+  //   updateSetting: updateTCPForwardSetting
+  // } as staticTabType<ClientConfig.TCPForwardSetting>,
   {
-    title: "TCPForward Setting",
-    name: "TCPForwardSetting",
-    uuid: uuidv4(),
-    component: markRaw(TCPForwardSetting),
-    ref: tcpForwardSettingRef,
-    setting: tcpForwardSetting,
-    updateSetting: updateTCPForwardSetting
-  } as staticTabType<ClientConfig.TCPForwardSetting>,
-  {
-    title: "Log Setting",
+    title: i18n.global.t("cconfig.LogSetting"),
     name: "LogSetting",
     uuid: uuidv4(),
     component: markRaw(LogSetting),
@@ -194,6 +216,17 @@ const staticTabs = reactive([
     updateSetting: updateLogSetting
   } as staticTabType<ClientConfig.LogSetting>
 ]);
+let metadataStore = useMetadataStore();
+metadataStore.$subscribe(() => {
+  staticBasicTabs.map(value => {
+    value.title = i18n.global.t("cconfig." + value.name);
+  });
+});
+metadataStore.$subscribe(() => {
+  staticOptionTabs.map(value => {
+    value.title = i18n.global.t("cconfig." + value.name);
+  });
+});
 
 interface dynamicTabType<T> {
   title: string;
@@ -208,7 +241,7 @@ interface dynamicTabType<T> {
 
 const dynamicTabs = computed<dynamicTabType<ClientConfig.Service>[]>(() => {
   return services.map((service, index) => ({
-    title: `Service ${index + 1} Setting`,
+    title: i18n.global.t("cconfig.Service") + ` ${index + 1}` + i18n.global.t("cconfig.Setting"),
     name: `Service${index + 1}Setting`,
     uuid: uuids[index],
     component: markRaw(ServiceSetting),
@@ -220,8 +253,9 @@ const dynamicTabs = computed<dynamicTabType<ClientConfig.Service>[]>(() => {
 });
 
 const tabList = computed<Tab[]>(() => [
-  ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
-  ...dynamicTabs.value.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
+  ...staticBasicTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
+  ...dynamicTabs.value.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
+  ...staticOptionTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
 ]);
 
 const validateAllForms = (formRefs: Array<Ref<ClientConfig.FormRef | null>>) => {
@@ -259,9 +293,9 @@ const checkOptionsConsistency = (runningConfig: ClientConfig.Config, sendingConf
 //submit the configuration to save in file
 const submit = async () => {
   try {
-    await ElMessageBox.confirm("Make sure you want to save the configuration to file.", "Save The Configuration", {
-      confirmButtonText: "Confirm",
-      cancelButtonText: "Cancel",
+    await ElMessageBox.confirm(i18n.global.t("cconfig.SaveConfigConfirm"), i18n.global.t("cconfig.SaveConfigTitle"), {
+      confirmButtonText: i18n.global.t("cconfig.SaveConfigConfirmBtn"),
+      cancelButtonText: i18n.global.t("cconfig.SaveConfigCancelBtn"),
       type: "info"
     });
     await validateAllForms([
@@ -273,88 +307,55 @@ const submit = async () => {
       ...serviceSettingRefs
     ]);
     await saveClientConfigApi(clientConfig);
-    ElMessage.success("Operation Success!");
+    ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
   } catch (e) {
     if (e instanceof Error) {
       ElMessage.error(e.message);
     } else {
-      ElMessage.error("Failed to Save!");
+      ElMessage.error(i18n.global.t("cconfig.FailedOperation"));
     }
   }
 };
 
-//get the configuration
 const getFromFile = async () => {
   try {
-    await ElMessageBox.confirm(
-      "Make sure you want to get the configuration from file, if you fail to get from file, it will get from the running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
-      "Get Configuration From File",
-      {
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        type: "info"
-      }
-    );
+    await ElMessageBox.confirm(i18n.global.t("cconfig.GetFromFileConfirm"), i18n.global.t("cconfig.GetFromFileTitle"), {
+      confirmButtonText: i18n.global.t("cconfig.GetFromFileConfirmBtn"),
+      cancelButtonText: i18n.global.t("cconfig.GetFromFileCancelBtn"),
+      type: "info"
+    });
     const { data } = await getClientConfigFromFileApi();
-    updateData(data);
-    ElMessage.success("Operation Success!");
+    updateData(transClientConfigRes(data));
+    ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
   } catch (e) {
     if (e instanceof Error) {
-      ElMessage.error(e.message);
+      ElMessage.error("Error!:" + e.message);
     } else {
-      ElMessage.error("Failed to Get From File!");
+      ElMessage.error(i18n.global.t("cconfig.FailedOperation"));
     }
   }
 };
 
-const getFromRunning = async () => {
-  try {
-    await ElMessageBox.confirm(
-      "Make sure you want to get the configuration from running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
-      "Get Configuration From Running System",
-      {
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        type: "info"
-      }
-    );
-    const { data } = await getRunningClientConfigApi();
-    updateData(data);
-    ElMessage.success("Operation Success!");
-  } catch (e) {
-    if (e instanceof Error) {
-      ElMessage.error(e.message);
-    } else {
-      ElMessage.error("Failed to Get From Running System!");
-    }
-  }
-};
-
-//control the server
 const reloadServices = async () => {
   try {
-    await ElMessageBox.confirm(
-      "You need to make sure that the changes you make only happen in the services section,and make sure it has been saved, or the system won't reload the services.",
-      "Reload Services",
-      {
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        type: "info"
-      }
-    );
+    await ElMessageBox.confirm(i18n.global.t("cconfig.ReloadServicesConfirm"), i18n.global.t("cconfig.ReloadServicesTitle"), {
+      confirmButtonText: i18n.global.t("cconfig.ReloadServicesConfirmBtn"),
+      cancelButtonText: i18n.global.t("cconfig.ReloadServicesCancelBtn"),
+      type: "info"
+    });
     const runningConfig = await getRunningClientConfigApi();
     const fileConfig = await getClientConfigFromFileApi();
-    if (checkOptionsConsistency(runningConfig.data.config, fileConfig.data.config)) {
+    if (checkOptionsConsistency(transToFrontConfig(runningConfig.data.config), transToFrontConfig(fileConfig.data.config))) {
       await reloadServicesApi();
-      ElMessage.success("Operation Success!");
+      ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
     } else {
-      ElMessage.warning("The options you changed are not consistent with the running system!");
+      ElMessage.warning(i18n.global.t("cconfig.InconsistentOptionsWarning"));
     }
   } catch (e) {
     if (e instanceof Error) {
       ElMessage.error(e.message);
     } else {
-      ElMessage.error("Failed to Reload Services!");
+      ElMessage.error(i18n.global.t("cconfig.FailedOperation"));
     }
   }
 };

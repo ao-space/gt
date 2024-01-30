@@ -46,7 +46,7 @@ func TestUser(t *testing.T) {
 	if err != nil {
 		return
 	}
-	u := make(map[string]user)
+	u := make(map[string]*user)
 	err = config.Yaml2Interface(s.config.Options.Users, u)
 	if err != nil {
 		return

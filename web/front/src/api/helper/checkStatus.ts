@@ -1,4 +1,5 @@
 import { ElMessage } from "element-plus";
+import i18n from "@/languages";
 
 /**
  * @description: Validate the network request status code
@@ -8,36 +9,36 @@ import { ElMessage } from "element-plus";
 export const checkStatus = (status: number) => {
   switch (status) {
     case 400:
-      ElMessage.error("Request failed! Please try again later.");
+      ElMessage.error(i18n.global.t("result.RequestFailed"));
       break;
     case 401:
-      ElMessage.error("Login expired! Please log in again.");
+      ElMessage.error(i18n.global.t("result.LoginExpired"));
       break;
     case 403:
-      ElMessage.error("You do not have permission to access this resource.");
+      ElMessage.error(i18n.global.t("result.NoPermission"));
       break;
     case 404:
-      ElMessage.error("The resource you are trying to access does not exist!");
+      ElMessage.error(i18n.global.t("result.ResourceNotFound"));
       break;
     case 405:
-      ElMessage.error("Invalid request method! Please try again later");
+      ElMessage.error(i18n.global.t("result.InvalidRequestMethod"));
       break;
     case 408:
-      ElMessage.error("Request timed out! Please try again later");
+      ElMessage.error(i18n.global.t("result.RequestTimedOut"));
       break;
     case 500:
-      ElMessage.error("Internal server error.");
+      ElMessage.error(i18n.global.t("result.InternalServerError"));
       break;
     case 502:
-      ElMessage.error("Bad gateway.");
+      ElMessage.error(i18n.global.t("result.BadGateway"));
       break;
     case 503:
-      ElMessage.error("Service is currently unavailable. Please try again later.");
+      ElMessage.error(i18n.global.t("result.ServiceUnavailable"));
       break;
     case 504:
-      ElMessage.error("Gateway timeout. The server took too long to respond.");
+      ElMessage.error(i18n.global.t("result.GatewayTimeout"));
       break;
     default:
-      ElMessage.error("An unexpected error occurred. Please try again.");
+      ElMessage.error(i18n.global.t("result.UnexpectedError"));
   }
 };

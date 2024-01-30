@@ -1,12 +1,18 @@
 <template>
   <el-table ref="tableRef" :data="props.tableData" highlight-current-row stripe style="width: 100%">
     <el-table-column type="index"></el-table-column>
-    <el-table-column v-if="showID" prop="id" label="ID" :filters="idFilterOptions" :filter-method="filterID"></el-table-column>
-    <el-table-column prop="family" label="Family" :formatter="formatFamily"></el-table-column>
-    <el-table-column prop="type" label="Type" min-width="180" :formatter="formatType"></el-table-column>
+    <el-table-column
+      v-if="showID"
+      prop="id"
+      :label="$t('connection_table.ID')"
+      :filters="idFilterOptions"
+      :filter-method="filterID"
+    ></el-table-column>
+    <el-table-column prop="family" :label="$t('connection_table.Family')" :formatter="formatFamily"></el-table-column>
+    <el-table-column prop="type" :label="$t('connection_table.Type')" min-width="180" :formatter="formatType"></el-table-column>
     <el-table-column
       prop="localaddr"
-      label="Local Address"
+      :label="$t('connection_table.LocalAddress')"
       min-width="180"
       :formatter="formatAddress('localaddr')"
       :filters="localAddrFilterOptions"
@@ -14,13 +20,13 @@
     ></el-table-column>
     <el-table-column
       prop="remoteaddr"
-      label="Remote Address"
+      :label="$t('connection_table.RemoteAddress')"
       min-width="180"
       :formatter="formatAddress('remoteaddr')"
       :filters="remoteAddrFilterOptions"
       :filter-method="filterAddr"
     ></el-table-column>
-    <el-table-column prop="status" label="Status"></el-table-column>
+    <el-table-column prop="status" :label="$t('connection_table.Status')"></el-table-column>
   </el-table>
 </template>
 

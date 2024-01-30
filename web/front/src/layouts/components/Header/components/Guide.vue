@@ -8,6 +8,7 @@
 import { onMounted } from "vue";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
+import i18n from "@/languages";
 
 const guide = () => {
   const driverObj = driver({
@@ -19,70 +20,70 @@ const guide = () => {
 
 const config = {
   allowClose: false,
-  doneBtnText: "Finish",
-  closeBtnText: "Close",
-  nextBtnText: "Next",
-  prevBtnText: "Previous"
+  doneBtnText: i18n.global.t("layout_header.DoneBtnText"),
+  closeBtnText: i18n.global.t("layout_header.CloseBtnText"),
+  nextBtnText: i18n.global.t("layout_header.NextBtnText"),
+  prevBtnText: i18n.global.t("layout_header.PrevBtnText")
 };
 const steps = [
   {
     element: "#collapseIcon",
     popover: {
-      title: "Collapse Icon",
-      description: "Toggle the sidebar open or closed.",
+      title: i18n.global.t("layout_header.CollapseIconTitle"),
+      description: i18n.global.t("layout_header.CollapseIconDescription"),
       position: "right"
     }
   },
   {
     element: "#breadcrumb",
     popover: {
-      title: "Breadcrumb",
-      description: "Indicate the current page location",
+      title: i18n.global.t("layout_header.BreadcrumbTitle"),
+      description: i18n.global.t("layout_header.BreadcrumbDescription"),
       position: "right"
     }
   },
   {
     element: "#guide",
     popover: {
-      title: "Guide",
-      description: "Guide the user to use the system",
+      title: i18n.global.t("layout_header.GuideTitle"),
+      description: i18n.global.t("layout_header.GuideDescription"),
       position: "left"
     }
   },
   {
     element: "#assemblySize",
     popover: {
-      title: "Switch Assembly Size",
-      description: "Adjust the system's display size.",
+      title: i18n.global.t("layout_header.AssemblySizeTitle"),
+      description: i18n.global.t("layout_header.AssemblySizeDescription"),
       position: "left"
     }
   },
   {
     element: "#themeSetting",
     popover: {
-      title: "Setting theme",
-      description: "Customize the system's theme.",
+      title: i18n.global.t("layout_header.ThemeSettingTitle"),
+      description: i18n.global.t("layout_header.ThemeSettingDescription"),
       position: "left"
     }
   },
   {
     element: "#fullscreen",
     popover: {
-      title: "Full Screen",
-      description: "Enter or exit full-screen mode.",
+      title: i18n.global.t("layout_header.FullScreenTitle"),
+      description: i18n.global.t("layout_header.FullScreenDescription"),
       position: "left"
     }
   },
   {
     element: "#avatar",
     popover: {
-      title: "User",
-      description:
-        "Click here to open the System Settings.<br/> Upon the first launch, the system automatically generates a random username and password for you. <strong>We strongly recommend updating these details within 30 minutes</strong> to ensure smooth future logins.",
+      title: i18n.global.t("layout_header.UserTitle"),
+      description: i18n.global.t("layout_header.UserDescription"),
       position: "left"
     }
   }
 ];
+
 onMounted(() => {
   if (!localStorage.getItem("guide")) {
     guide();

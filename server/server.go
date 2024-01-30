@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"net/netip"
 	"os"
+	"reflect"
 	"regexp"
 	"runtime/debug"
 	"strconv"
@@ -87,12 +88,17 @@ func New(args []string, out io.Writer) (s *Server, err error) {
 	if predef.IsNoArgs() {
 		conf = defaultConfigWithNoArgs()
 	} else {
-		conf = defaultConfig()
+		conf = DefaultConfig()
 		if util.Contains(args, "-webAddr") {
 			conf.Config = predef.GetDefaultServerConfigPath()
 		}
 	}
 	err = config.ParseFlags(args, &conf, &conf.Options)
+	if err != nil {
+		return
+	}
+	conf.ConfigType = "server"
+	err = MergeConfig(&conf)
 	if err != nil {
 		return
 	}
@@ -334,7 +340,7 @@ func (s *Server) Start() (err error) {
 	if err != nil {
 		return
 	}
-	users := make(map[string]user)
+	users := make(map[string]*user)
 	err = config.Yaml2Interface(s.config.Options.Users, users)
 	if err != nil {
 		return
@@ -1117,5 +1123,19 @@ func (s *Server) GetConnectionInfo() (info []ConnectionInfo) {
 		info = append(info, clientInfo...)
 		return true
 	})
+	return
+}
+
+func MergeConfig(cfg *Config) (err error) {
+	defaultConfig := DefaultConfig()
+	reflectedSavedConfig := reflect.ValueOf(&cfg.Options).Elem()
+	reflectedDefaultConfig := reflect.ValueOf(&defaultConfig.Options).Elem()
+
+	for i := 0; i < reflectedSavedConfig.NumField(); i++ {
+		field := reflectedSavedConfig.Field(i)
+		if field.IsZero() && field.Kind() != reflect.Slice && reflectedDefaultConfig.Field(i).IsZero() != true {
+			field.Set(reflectedDefaultConfig.Field(i))
+		}
+	}
 	return
 }

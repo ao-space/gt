@@ -1,15 +1,15 @@
 import http from "@/api";
 import { Config } from "@/api/interface/index";
-import { ClientConfig } from "@/components/ClientConfigForm/interface";
+import { ClientConfig, ClientConfigBackend, transToBackendConfig } from "@/components/ClientConfigForm/interface";
 
 export const getRunningClientConfigApi = () => {
-  return http.get<Config.Client.ResConfig>(`/config/running`);
+  return http.get<Config.Client.ResConfigBackend>(`/config/running`);
 };
 
 export const getClientConfigFromFileApi = () => {
-  return http.get<Config.Client.ResConfig>(`/config/file`);
+  return http.get<Config.Client.ResConfigBackend>(`/config/file`);
 };
 
 export const saveClientConfigApi = (data: ClientConfig.Config) => {
-  return http.post<ClientConfig.Config>(`/config/save`, data);
+  return http.post<ClientConfigBackend.Config>(`/config/save`, transToBackendConfig(data));
 };

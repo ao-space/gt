@@ -3,15 +3,15 @@
   <el-form ref="serviceSettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title> Service {{ index + 1 }} Setting </template>
+        <template #title>{{ $t("cconfig.Service") }} {{ index + 1 }} {{ $t("cconfig.Setting") }} </template>
         <template #extra>
-          <el-button v-if="isLast" type="primary" @click="emit('addService')">Add Service</el-button>
-          <el-button type="danger" @click="emit('removeService', props.index)">Delete</el-button>
+          <el-button v-if="isLast" type="primary" @click="emit('addService')">{{ $t("cconfig.AddService") }}</el-button>
+          <el-button type="danger" @click="emit('removeService', props.index)">{{ $t("cconfig.Delete") }}</el-button>
         </template>
         <el-descriptions-item>
           <template #label>
-            HostPrefix
-            <UsageTooltip :usage-text="ClientConfig.usage['HostPrefix']" />
+            {{ $t("cconfig.HostPrefix") }}
+            <UsageTooltip :usage-text="$t('cusage[\'HostPrefix\']')" />
           </template>
           <el-form-item prop="HostPrefix">
             <el-input v-model="localSetting.HostPrefix"></el-input>
@@ -19,31 +19,38 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            RemoteTCPPort
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteTCPPort']" />
+            {{ $t("cconfig.RemoteTCPPort") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteTCPPort\']')" />
           </template>
           <el-input-number v-model="localSetting.RemoteTCPPort" :min="0" :max="65535" />
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            RemoteTCPRandom
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteTCPRandom']" />
+            {{ $t("cconfig.RemoteTCPRandom") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteTCPRandom\']')" />
           </template>
-          <el-switch v-model="localSetting.RemoteTCPRandom" active-text="true" inactive-text="false" />
+          <el-switch
+            v-model="localSetting.RemoteTCPRandom"
+            :active-text="$t('cconfig.true')"
+            :inactive-text="$t('cconfig.false')"
+          />
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            LocalURL
-            <UsageTooltip :usage-text="ClientConfig.usage['LocalURL']" />
+            {{ $t("cconfig.LocalURL") }}
+            <UsageTooltip :usage-text="$t('cusage[\'LocalURL\']')" />
           </template>
           <el-form-item prop="LocalURL">
-            <el-input v-model="localSetting.LocalURL"></el-input>
+            <el-select class="remote_select" placeholder="Protocol" v-model="localSetting.LocalURL.Protocol">
+              <el-option v-for="protocol in protocols" :label="protocol.label" :value="protocol.value" :key="protocol.value" />
+            </el-select>
+            <el-input style="display: inline-block" v-model="localSetting.LocalURL.Addr" placeholder="127.0.0.1:8080" />
           </el-form-item>
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            LocalTimeout
-            <UsageTooltip :usage-text="ClientConfig.usage['LocalTimeout']" />
+            {{ $t("cconfig.LocalTimeout") }}
+            <UsageTooltip :usage-text="$t('cusage[\'LocalTimeout\']')" />
           </template>
           <el-form-item prop="LocalTimeout">
             <el-input v-model="localSetting.LocalTimeout"></el-input>
@@ -51,10 +58,14 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            UseLocalAsHTTPHost
-            <UsageTooltip :usage-text="ClientConfig.usage['UseLocalAsHTTPHost']" />
+            {{ $t("cconfig.UseLocalAsHTTPHost") }}
+            <UsageTooltip :usage-text="$t('cusage[\'UseLocalAsHTTPHost\']')" />
           </template>
-          <el-switch v-model="localSetting.UseLocalAsHTTPHost" active-text="true" inactive-text="false" />
+          <el-switch
+            v-model="localSetting.UseLocalAsHTTPHost"
+            :active-text="$t('cconfig.true')"
+            :inactive-text="$t('cconfig.false')"
+          />
         </el-descriptions-item>
       </el-descriptions>
     </div>
@@ -65,13 +76,28 @@ import { reactive, ref, watch, watchEffect } from "vue";
 import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { FormInstance, FormRules } from "element-plus";
-import { validatorLocalURL, validatorTimeFormat } from "@/utils/eleValidate";
+import { validatorTimeFormat } from "@/utils/eleValidate";
+import i18n from "@/languages";
 
 interface ServiceSettingProps {
   setting: ClientConfig.Service;
   index: number;
   isLast: boolean;
 }
+const protocols = [
+  {
+    label: "TCP",
+    value: "tcp"
+  },
+  {
+    label: "HTTP",
+    value: "http"
+  },
+  {
+    label: "HTTPS",
+    value: "https"
+  }
+];
 
 const props = withDefaults(defineProps<ServiceSettingProps>(), {
   setting: () => ClientConfig.defaultServiceSetting
@@ -97,22 +123,31 @@ watch(
   },
   { deep: true }
 );
-
+const validatorLocalURL = (rule: any, value: any, callback: any) => {
+  if (localSetting.LocalURL?.Addr.trim() === "" || localSetting.LocalURL?.Protocol.trim() === "") {
+    callback(new Error(i18n.global.t("cerror.PleaseInputLocalUrl")));
+  } else {
+    callback();
+  }
+};
 //Form Related
 const serviceSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ClientConfig.Service>>({
   LocalURL: [
     { validator: validatorLocalURL, trigger: "blur" },
-    { required: true, message: "LocalURL is required", trigger: "blur" }
+    { required: true, message: i18n.global.t("cerror.LocalURLIsRequired"), trigger: "blur" }
   ],
   LocalTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }]
 });
-
 const checkTCPSetting = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    if (localSetting.LocalURL?.startsWith("tcp://")) {
+    if (
+      localSetting.LocalURL?.Addr.trim() != "" &&
+      localSetting.LocalURL?.Protocol.trim() != "" &&
+      localSetting.LocalURL.Protocol == "tcp"
+    ) {
       if (!localSetting.RemoteTCPPort && !localSetting.RemoteTCPRandom) {
-        reject(new Error("RemoteTCPPort or RemoteTCPRandom option should be set when LocalURL begin with tcp://"));
+        reject(new Error(i18n.global.t("cerror.RemoteTCPPortOrRandomRequired")));
       }
     }
     resolve();
@@ -128,16 +163,16 @@ const validateForm = (): Promise<void> => {
           if (valid) {
             resolve();
           } else {
-            reject(new Error("Service Setting validation failed, please check your input"));
+            reject(new Error(i18n.global.t("cerror.ServiceSettingValidationFailedCheckInput")));
           }
         });
       } else {
-        reject(new Error("Service Setting is not ready"));
+        reject(new Error(i18n.global.t("cerror.ServiceSettingNotReady")));
       }
     })
   ];
   return Promise.all(validations).then(() => {
-    console.log("ServiceSetting validation passed!");
+    console.log(i18n.global.t("cerror.ServiceSettingValidationPassed"));
   });
 };
 

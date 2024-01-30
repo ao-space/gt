@@ -1,9 +1,9 @@
 <template>
-  <el-affix :offset="120">
-    <el-tabs tab-position="right" @tab-click="handleClick">
-      <el-tab-pane v-for="tab in tabList" :key="tab.uuid" :label="tab.title" :name="tab.uuid"> </el-tab-pane>
-    </el-tabs>
-  </el-affix>
+  <!--  <el-affix :offset="120">-->
+  <!--    <el-tabs tab-position="right" @tab-click="handleClick">-->
+  <!--      <el-tab-pane v-for="tab in tabList" :key="tab.uuid" :label="tab.title" :name="tab.uuid"> </el-tab-pane>-->
+  <!--    </el-tabs>-->
+  <!--  </el-affix>-->
   <div v-for="tab in tabList" :key="tab.uuid" :ref="el => (tabRefs[tab.uuid] = el as HTMLDivElement)">
     <slot :name="tab.uuid"></slot>
   </div>
@@ -11,7 +11,7 @@
 
 <script setup lang="ts" name="Anchor">
 import { PropType, Ref, ref } from "vue";
-import type { TabsPaneContext } from "element-plus";
+// import type { TabsPaneContext } from "element-plus";
 export interface Tab {
   title: string;
   name: string;
@@ -26,11 +26,11 @@ defineProps({
 });
 
 const tabRefs: Ref<{ [key: string]: HTMLDivElement | null }> = ref({});
-const handleClick = (pane: TabsPaneContext) => {
-  if (pane.props.name !== undefined && tabRefs.value[pane.props.name.toString()]) {
-    tabRefs.value[pane.props.name.toString()]!.scrollIntoView({ behavior: "smooth" });
-  }
-};
+// const handleClick = (pane: TabsPaneContext) => {
+//   if (pane.props.name !== undefined && tabRefs.value[pane.props.name.toString()]) {
+//     tabRefs.value[pane.props.name.toString()]!.scrollIntoView({ behavior: "smooth" });
+//   }
+// };
 </script>
 
 <style scoped lang="scss">

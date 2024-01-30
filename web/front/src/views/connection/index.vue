@@ -11,7 +11,7 @@
     <el-row v-if="poolForServer.length != 0">
       <el-card>
         <template #header>
-          <div class="card_header">Server Pool Info</div>
+          <div class="card_header">{{ $t("view_connection.Server_Pool_Info") }}</div>
         </template>
         <ConnectionTable :table-data="poolForServer" :show-i-d="true" />
       </el-card>
@@ -21,7 +21,7 @@
     <el-row>
       <el-card>
         <template #header>
-          <div class="card_header">External Connection</div>
+          <div class="card_header">{{ $t("view_connection.External_Connection") }}</div>
         </template>
         <ConnectionTable :table-data="connection" :show-i-d="false" />
       </el-card>
@@ -41,6 +41,7 @@ import type { TitleComponentOption, TooltipComponentOption, LegendComponentOptio
 import type { ECharts } from "echarts";
 import { CanvasRenderer } from "echarts/renderers";
 import { getConnectionApi } from "@/api/modules/connection";
+import i18n from "@/languages";
 
 use([CanvasRenderer, PolarComponent, TitleComponent, TooltipComponent, LegendComponent, PieChart]);
 
@@ -52,7 +53,7 @@ const chartOptions = reactive<EChartsOption>({
     fontWeight: 300
   },
   title: {
-    text: "Connection Pool Status",
+    text: i18n.global.t("connection_table.ConnectionPoolStatus"),
     left: "center"
   },
   tooltip: {
@@ -62,7 +63,11 @@ const chartOptions = reactive<EChartsOption>({
   legend: {
     orient: "vertical",
     left: "left",
-    data: ["Running", "Idle", "Wait"]
+    data: [
+      i18n.global.t("connection_table.Running"),
+      i18n.global.t("connection_table.Idle"),
+      i18n.global.t("connection_table.Wait")
+    ]
   },
   series: [
     {

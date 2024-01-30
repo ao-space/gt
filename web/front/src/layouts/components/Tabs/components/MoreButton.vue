@@ -1,7 +1,7 @@
 <template>
   <el-dropdown trigger="click" :teleported="false">
     <el-button size="small" type="primary">
-      <span>More</span>
+      <span>{{ $t("layout_tabs.More") }}</span>
       <el-icon class="el-icon--right">
         <arrow-down />
       </el-icon>
@@ -9,19 +9,19 @@
     <template #dropdown>
       <el-dropdown-menu>
         <el-dropdown-item @click="refresh">
-          <el-icon><Refresh /></el-icon>Refresh
+          <el-icon><Refresh /></el-icon>{{ $t("layout_tabs.Refresh") }}
         </el-dropdown-item>
         <el-dropdown-item @click="maximize">
-          <el-icon><FullScreen /></el-icon>Maximize
+          <el-icon><FullScreen /></el-icon>{{ $t("layout_tabs.Maximize") }}
         </el-dropdown-item>
         <el-dropdown-item divided @click="closeCurrentTab">
-          <el-icon><Remove /></el-icon>Close Current Tab
+          <el-icon><Remove /></el-icon>{{ $t("layout_tabs.CloseCurrentTab") }}
         </el-dropdown-item>
         <el-dropdown-item @click="closeOtherTab">
-          <el-icon><CircleClose /></el-icon>Close Other Tabs
+          <el-icon><CircleClose /></el-icon>{{ $t("layout_tabs.CloseOtherTabs") }}
         </el-dropdown-item>
         <el-dropdown-item @click="closeAllTab">
-          <el-icon><FolderDelete /></el-icon>Close All Tabs
+          <el-icon><FolderDelete /></el-icon>{{ $t("layout_tabs.CloseAllTabs") }}
         </el-dropdown-item>
       </el-dropdown-menu>
     </template>

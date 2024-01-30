@@ -1,16 +1,20 @@
 <template>
+  <el-row>
+    <el-text class="setting_class">{{ $t("sconfig.BasicSettings") }}</el-text>
+  </el-row>
   <Anchor :tab-list="tabList">
-    <template v-for="tab in staticTabs" :key="tab.uuid" #[tab.uuid]>
+    <template v-for="tab in staticBasicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
+        :id="tab.name"
         :is="tab.component"
         :ref="(el: InstanceType<typeof tab.component> | null) => tab.ref = el"
         :setting="tab.setting"
         @update:setting="tab.updateSetting"
       />
     </template>
-
     <template v-for="(tab, index) in dynamicTabs" :key="tab.uuid" #[tab.uuid]>
       <component
+        :id="tab.name"
         :is="tab.component"
         :ref="userSettingRefs[index]"
         :index="index"
@@ -22,9 +26,22 @@
       />
     </template>
   </Anchor>
-  <el-button type="primary" @click="submit">Submit</el-button>
-  <el-button type="primary" @click="getFromFile">Get From File</el-button>
-  <el-button type="primary" @click="getFromRunning">Get From Running</el-button>
+  <el-row>
+    <el-text class="setting_class">{{ $t("sconfig.OptionSettings") }}</el-text>
+  </el-row>
+  <Anchor :tab-list="tabList">
+    <template v-for="tab in staticOptionTab" :key="tab.uuid" #[tab.uuid]>
+      <component
+        :id="tab.name"
+        :is="tab.component"
+        :ref="(el: InstanceType<typeof tab.component> | null) => tab.ref = el"
+        :setting="tab.setting"
+        @update:setting="tab.updateSetting"
+      />
+    </template>
+  </Anchor>
+  <el-button type="primary" @click="submit">{{ $t("sconfig.Submit") }}</el-button>
+  <el-button type="primary" @click="getFromFile">{{ $t("sconfig.GetFromFile") }}</el-button>
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">
@@ -42,7 +59,7 @@ import UserSetting from "./components/UserSetting.vue";
 import SentrySetting from "@/components/ClientConfigForm/components/SentrySetting.vue";
 import LogSetting from "@/components/ClientConfigForm/components/LogSetting.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getRunningServerConfigApi, getServerConfigFromFileApi, saveServerConfigApi } from "@/api/modules/serverConfig";
+import { getServerConfigFromFileApi, saveServerConfigApi } from "@/api/modules/serverConfig";
 import { Config } from "@/api/interface";
 import {
   mapServerGeneralSetting,
@@ -57,6 +74,8 @@ import {
   mapServerUserSetting
 } from "@/utils/map";
 import cloneDeep from "lodash/cloneDeep";
+import i18n from "@/languages";
+import { useMetadataStore } from "@/stores/modules/metadata";
 
 //Global Setting
 const tcps = reactive<ServerConfig.TCP[]>([]);
@@ -242,9 +261,9 @@ interface staticTabsType<T> {
   setting: T;
   updateSetting: (newSetting: T) => void;
 }
-const staticTabs = reactive([
+const staticBasicTabs = reactive([
   {
-    title: "General Setting",
+    title: i18n.global.t("sconfig.GeneralSetting"),
     name: "GeneralSetting",
     uuid: uuidv4(),
     component: markRaw(GeneralSetting),
@@ -253,7 +272,7 @@ const staticTabs = reactive([
     updateSetting: updateGeneralSetting
   } as staticTabsType<ServerConfig.GeneralSettingProps>,
   {
-    title: "Network Setting",
+    title: i18n.global.t("sconfig.NetworkSetting"),
     name: "NetworkSetting",
     uuid: uuidv4(),
     component: markRaw(NetworkSetting),
@@ -262,16 +281,18 @@ const staticTabs = reactive([
     updateSetting: updateNetworkSetting
   } as staticTabsType<ServerConfig.NetworkSetting>,
   {
-    title: "Security Setting",
+    title: i18n.global.t("sconfig.SecuritySetting"),
     name: "SecuritySetting",
     uuid: uuidv4(),
     component: markRaw(SecuritySetting),
     ref: securitySettingRef,
     setting: securitySetting,
     updateSetting: updateSecuritySetting
-  } as staticTabsType<ServerConfig.SecuritySetting>,
+  } as staticTabsType<ServerConfig.SecuritySetting>
+]);
+const staticOptionTab = reactive([
   {
-    title: "Connection Setting",
+    title: i18n.global.t("sconfig.ConnectionSetting"),
     name: "ConnectionSetting",
     uuid: uuidv4(),
     component: markRaw(ConnectionSetting),
@@ -280,7 +301,7 @@ const staticTabs = reactive([
     updateSetting: updateConnectionSetting
   } as staticTabsType<ServerConfig.ConnectionSetting>,
   {
-    title: "API Setting",
+    title: i18n.global.t("sconfig.APISetting"),
     name: "APISetting",
     uuid: uuidv4(),
     component: markRaw(APISetting),
@@ -289,7 +310,7 @@ const staticTabs = reactive([
     updateSetting: updateAPISetting
   } as staticTabsType<ServerConfig.APISetting>,
   {
-    title: "Sentry Setting",
+    title: i18n.global.t("sconfig.SentrySetting"),
     name: "SentrySetting",
     uuid: uuidv4(),
     component: markRaw(SentrySetting),
@@ -298,7 +319,7 @@ const staticTabs = reactive([
     updateSetting: updateSentrySetting
   } as staticTabsType<ServerConfig.SentrySetting>,
   {
-    title: "Log Setting",
+    title: i18n.global.t("sconfig.LogSetting"),
     name: "LogSetting",
     uuid: uuidv4(),
     component: markRaw(LogSetting),
@@ -307,6 +328,17 @@ const staticTabs = reactive([
     updateSetting: updateLogSetting
   } as staticTabsType<ServerConfig.LogSetting>
 ]);
+let metadataStore = useMetadataStore();
+metadataStore.$subscribe(() => {
+  staticBasicTabs.map(value => {
+    value.title = i18n.global.t("sconfig." + value.name);
+  });
+});
+metadataStore.$subscribe(() => {
+  staticOptionTab.map(value => {
+    value.title = i18n.global.t("sconfig." + value.name);
+  });
+});
 interface dynamicTabType<T> {
   title: string;
   name: string;
@@ -320,7 +352,7 @@ interface dynamicTabType<T> {
 
 const dynamicTabs = computed<dynamicTabType<ServerConfig.UserSetting>[]>(() => {
   return userList.map((user, index) => ({
-    title: `User ${index + 1} Setting`,
+    title: i18n.global.t("sconfig.User") + `${index + 1}` + i18n.global.t("sconfig.Setting"),
     name: `User${index + 1}Setting`,
     uuid: uuids[index],
     component: markRaw(UserSetting),
@@ -332,7 +364,8 @@ const dynamicTabs = computed<dynamicTabType<ServerConfig.UserSetting>[]>(() => {
 });
 
 const tabList = computed<Tab[]>(() => [
-  ...staticTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
+  ...staticBasicTabs.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
+  ...staticOptionTab.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid })),
   ...dynamicTabs.value.map(tab => ({ title: tab.title, name: tab.name, uuid: tab.uuid }))
 ]);
 
@@ -359,14 +392,16 @@ const checkIDConflict = () => {
   const ids = userList.map(user => user.ID);
   const uniqueIDs = new Set(ids);
   if (uniqueIDs.size !== ids.length) {
-    throw new Error("ID conflict in user setting, please check.");
+    throw new Error(i18n.global.t("sconfig.IDConflictError"));
   }
 };
+
 const clearUsers = () => {
   for (const key of Object.keys(users)) {
     delete users[key];
   }
 };
+
 const updateUsersFormUserList = () => {
   userList.forEach(user => {
     users[user.ID] = {
@@ -380,12 +415,11 @@ const updateUsersFormUserList = () => {
   });
 };
 
-//submit the configuration to save in file
 const submit = async () => {
   try {
-    await ElMessageBox.confirm("Make sure you want to save the configuration file", "Save The Configuration", {
-      confirmButtonText: "Confirm",
-      cancelButtonText: "Cancel",
+    await ElMessageBox.confirm(i18n.global.t("sconfig.SaveConfigConfirm"), i18n.global.t("sconfig.SaveConfigTitle"), {
+      confirmButtonText: i18n.global.t("sconfig.SaveConfigConfirmBtn"),
+      cancelButtonText: i18n.global.t("sconfig.SaveConfigCancelBtn"),
       type: "info"
     });
     await validateAllForms([
@@ -402,58 +436,31 @@ const submit = async () => {
     clearUsers();
     updateUsersFormUserList();
     await saveServerConfigApi(serverConfig);
-    ElMessage.success("Submit success");
+    ElMessage.success(i18n.global.t("sconfig.SubmitSuccess"));
   } catch (e) {
     if (e instanceof Error) {
       ElMessage.error(e.message);
     } else {
-      ElMessage.error("Failed to save the configuration file!");
+      ElMessage.error(i18n.global.t("sconfig.FailedToSaveConfig"));
     }
   }
 };
 
-//get the configuration
 const getFromFile = async () => {
   try {
-    await ElMessageBox.confirm(
-      "Make sure you want to get the configuration from file, if you fail to get from file, it will get from the running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
-      "Get Configuration From File",
-      {
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        type: "info"
-      }
-    );
+    await ElMessageBox.confirm(i18n.global.t("sconfig.GetFromFileConfirm"), i18n.global.t("sconfig.GetFromFileTitle"), {
+      confirmButtonText: i18n.global.t("sconfig.GetFromFileConfirmBtn"),
+      cancelButtonText: i18n.global.t("sconfig.GetFromFileCancelBtn"),
+      type: "info"
+    });
     const { data } = await getServerConfigFromFileApi();
     updateData(data);
-    ElMessage.success("Get from file success");
+    ElMessage.success(i18n.global.t("sconfig.GetFromFileSuccess"));
   } catch (e) {
     if (e instanceof Error) {
       ElMessage.error(e.message);
     } else {
-      ElMessage.error("Failed to get from file!");
-    }
-  }
-};
-const getFromRunning = async () => {
-  try {
-    await ElMessageBox.confirm(
-      "Make sure you want to get the configuration from running system. NOTE: please make sure the change you made is saved, or it will be discarded.",
-      "Get Configuration From Running System",
-      {
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        type: "info"
-      }
-    );
-    const { data } = await getRunningServerConfigApi();
-    updateData(data);
-    ElMessage.success("Get from running system success");
-  } catch (e) {
-    if (e instanceof Error) {
-      ElMessage.error(e.message);
-    } else {
-      ElMessage.error("Failed to get from running system!");
+      ElMessage.error(i18n.global.t("sconfig.FailedToGetFromFile"));
     }
   }
 };

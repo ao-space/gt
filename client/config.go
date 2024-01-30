@@ -30,8 +30,9 @@ import (
 
 // Config is a client config.
 type Config struct {
-	Version  string `yaml:"-" json:"-"` // 目前未使用
-	Services services
+	Version    string `yaml:"-" json:"-"` // 目前未使用
+	ConfigType string `yaml:"type,omitempty"`
+	Services   services
 	Options
 }
 
@@ -66,7 +67,7 @@ type Options struct {
 	SentryDebug       bool                 `yaml:"sentryDebug,omitempty" json:",omitempty" usage:"Sentry debug mode, the debug information is printed to help you understand what sentry is doing"`
 
 	WebRTCConnectionIdleTimeout config.Duration `yaml:"webrtcConnectionIdleTimeout,omitempty" usage:"The timeout of WebRTC connection. Supports values like '30s', '5m'"`
-	WebRTCRemoteConnections     uint            `yaml:"webrtcConnections" usage:"The max number of webrtc connections. Valid value is 1 to 50"`
+	WebRTCRemoteConnections     uint            `yaml:"webrtcConnections,omitempty" usage:"The max number of webrtc connections. Valid value is 1 to 50"`
 	WebRTCLogLevel              string          `yaml:"webrtcLogLevel,omitempty" json:",omitempty" usage:"WebRTC log level: verbose, info, warning, error"`
 	WebRTCMinPort               uint16          `yaml:"webrtcMinPort,omitempty" json:",omitempty" usage:"The min port of WebRTC peer connection"`
 	WebRTCMaxPort               uint16          `yaml:"webrtcMaxPort,omitempty" json:",omitempty" usage:"The max port of WebRTC peer connection"`
@@ -92,13 +93,14 @@ type Options struct {
 
 	Signal string `arg:"s" yaml:"-" json:"-" usage:"Send signal to client processes. Supports values: reload, restart, stop, kill"`
 
-	OpenBBR bool `yaml:"bbr" usage:"Use bbr as congestion control algorithm (through msquic) when GT use QUIC connection. Default algorithm is Cubic (through quic-go)."`
+	OpenBBR bool `yaml:"bbr,omitempty" usage:"Use bbr as congestion control algorithm (through msquic) when GT use QUIC connection. Default algorithm is Cubic (through quic-go)."`
 }
 
 // if you enable web service, it will set 'Config' if not specified
 
-func defaultConfig() Config {
+func DefaultConfig() Config {
 	return Config{
+		ConfigType: "Client",
 		Options: Options{
 			ReconnectDelay:        config.Duration{Duration: 5 * time.Second},
 			RemoteTimeout:         config.Duration{Duration: 45 * time.Second},
@@ -124,7 +126,7 @@ func defaultConfig() Config {
 }
 
 func defaultConfigWithNoArgs() Config {
-	conf := defaultConfig()
+	conf := DefaultConfig()
 	conf.Config = predef.GetDefaultClientConfigPath()
 	conf.WebAddr = "127.0.0.1:7000"
 	return conf

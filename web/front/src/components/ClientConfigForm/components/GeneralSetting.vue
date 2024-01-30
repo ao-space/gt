@@ -3,12 +3,12 @@
   <el-form ref="generalSettingRef" :model="localSetting" :rules="rules">
     <div class="card content-box">
       <el-descriptions :column="2" :border="true">
-        <template #title> General Setting </template>
+        <template #title> {{ $t("cconfig.GeneralSetting") }} </template>
         <!-- ID -->
         <el-descriptions-item>
           <template #label>
-            ID
-            <UsageTooltip :usage-text="ClientConfig.usage['ID']" />
+            {{ $t("cconfig.ID") }}
+            <UsageTooltip :usage-text="$t('cusage[\'ID\']')" />
           </template>
           <el-form-item prop="ID">
             <el-input v-model="localSetting.ID"></el-input>
@@ -17,8 +17,8 @@
         <!-- Secret -->
         <el-descriptions-item>
           <template #label>
-            Secret
-            <UsageTooltip :usage-text="ClientConfig.usage['Secret']" />
+            {{ $t("cconfig.Secret") }}
+            <UsageTooltip :usage-text="$t('cusage[\'Secret\']')" />
           </template>
           <el-form-item prop="Secret">
             <el-input v-model="localSetting.Secret" type="password" show-password></el-input>
@@ -27,8 +27,8 @@
         <!-- ReconnectDelay -->
         <el-descriptions-item>
           <template #label>
-            ReconnectDelay
-            <UsageTooltip :usage-text="ClientConfig.usage['ReconnectDelay']" />
+            {{ $t("cconfig.ReconnectDelay") }}
+            <UsageTooltip :usage-text="$t('cusage[\'ReconnectDelay\']')" />
           </template>
           <el-form-item prop="ReconnectDelay">
             <el-input v-model="localSetting.ReconnectDelay"></el-input>
@@ -37,82 +37,106 @@
         <!-- RemoteTimeout -->
         <el-descriptions-item>
           <template #label>
-            RemoteTimeout
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteTimeout']" />
+            {{ $t("cconfig.RemoteTimeout") }}
+            <UsageTooltip :usage-text="$t('cusage[\'RemoteTimeout\']')" />
           </template>
           <el-form-item prop="RemoteTimeout">
             <el-input v-model="localSetting.RemoteTimeout"></el-input>
           </el-form-item>
         </el-descriptions-item>
         <!-- Remote -->
-        <el-descriptions-item>
-          <template #label>
-            Remote
-            <UsageTooltip :usage-text="ClientConfig.usage['Remote']" />
-          </template>
-          <el-form-item prop="Remote">
-            <el-input v-model="localSetting.Remote" />
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- RemoteSTUN -->
-        <el-descriptions-item>
-          <template #label>
-            RemoteSTUN
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteSTUN']" />
-          </template>
-          <el-form-item prop="RemoteSTUN">
-            <el-input v-model="localSetting.RemoteSTUN"></el-input>
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- RemoteAPI -->
-        <el-descriptions-item>
-          <template #label>
-            RemoteAPI
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteAPI']" />
-          </template>
-          <el-form-item prop="RemoteAPI">
-            <el-input v-model="localSetting.RemoteAPI"></el-input>
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- RemoteCert -->
-        <el-descriptions-item>
-          <template #label>
-            RemoteCert
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteCert']" />
-          </template>
-          <el-form-item prop="RemoteCert">
-            <el-input v-model="localSetting.RemoteCert"></el-input>
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- RemoteCertInsecure -->
-        <el-descriptions-item>
-          <template #label>
-            RemoteCertInsecure
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteCertInsecure']" />
-          </template>
-          <el-switch v-model="localSetting.RemoteCertInsecure" active-text="true" inactive-text="false" />
-        </el-descriptions-item>
-        <!-- RemoteConnections -->
-        <el-descriptions-item>
-          <template #label>
-            RemoteConnections
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteConnections']" />
-          </template>
-          <el-form-item prop="RemoteConnections">
-            <el-input-number v-model="localSetting.RemoteConnections" :min="1" :max="10" />
-          </el-form-item>
-        </el-descriptions-item>
-        <!-- RemoteIdleConnections -->
-        <el-descriptions-item>
-          <template #label>
-            RemoteIdleConnections
-            <UsageTooltip :usage-text="ClientConfig.usage['RemoteIdleConnections']" />
-          </template>
-          <el-form-item prop="RemoteIdleConnections">
-            <el-input-number v-model="localSetting.RemoteIdleConnections" :min="0" :max="localSetting.RemoteConnections" />
-          </el-form-item>
-        </el-descriptions-item>
+        <template v-for="(remote, index) in localSetting.Remote" :key="index">
+          <el-descriptions-item class="remote_des">
+            <template #label>
+              {{ $t("cconfig.Remote") }}
+              <UsageTooltip :usage-text="$t('cusage[\'Remote\']')" />
+            </template>
+            <el-form-item prop="Remote">
+              <el-select class="remote_select" placeholder="Protocol" v-model="localSetting.Remote[index].Protocol">
+                <el-option v-for="protocol in protocols" :label="protocol.label" :value="protocol.value" :key="protocol.value" />
+              </el-select>
+              <el-input style="display: inline-block" v-model="localSetting.Remote[index].Addr" placeholder="127.0.0.1:8080" />
+              <el-button @click="deleteRemote(index)">{{ $t("cconfig.Delete") }}</el-button>
+              <el-button @click="addRemote()">{{ $t("cconfig.AddNewRemote") }}</el-button>
+            </el-form-item>
+          </el-descriptions-item>
+        </template>
       </el-descriptions>
+      <el-row style="width: 100%">
+        <el-collapse style="width: 100%">
+          <el-collapse-item>
+            <template #title>
+              <el-text size="large" style="width: 100%">{{ $t("cconfig.DetailSettings") }}</el-text>
+            </template>
+            <el-descriptions :column="2" :border="true">
+              <!-- RemoteSTUN -->
+              <template v-for="(stun, index) in localSetting.RemoteSTUN" :key="index">
+                <el-descriptions-item>
+                  <template #label>
+                    {{ $t("cconfig.RemoteSTUN") }}
+                    <UsageTooltip :usage-text="$t('cusage[\'RemoteSTUN\']')" />
+                  </template>
+                  <el-form-item prop="RemoteSTUN">
+                    <el-input v-model="localSetting.RemoteSTUN[index]"></el-input>
+                  </el-form-item>
+                </el-descriptions-item>
+              </template>
+              <!-- RemoteAPI -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteAPI") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteAPI\']')" />
+                </template>
+                <el-form-item prop="RemoteAPI">
+                  <el-input v-model="localSetting.RemoteAPI"></el-input>
+                </el-form-item>
+              </el-descriptions-item>
+              <!-- RemoteCert -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteCert") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteCert\']')" />
+                </template>
+                <el-form-item prop="RemoteCert">
+                  <el-input v-model="localSetting.RemoteCert"></el-input>
+                </el-form-item>
+              </el-descriptions-item>
+              <!-- RemoteCertInsecure -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteCertInsecure") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteCertInsecure\']')" />
+                </template>
+                <el-switch
+                  v-model="localSetting.RemoteCertInsecure"
+                  :active-text="$t('cconfig.true')"
+                  :inactive-text="$t('cconfig.false')"
+                />
+              </el-descriptions-item>
+              <!-- RemoteConnections -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteConnections") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteConnections\']')" />
+                </template>
+                <el-form-item prop="RemoteConnections">
+                  <el-input-number v-model="localSetting.RemoteConnections" :min="1" :max="10" />
+                </el-form-item>
+              </el-descriptions-item>
+              <!-- RemoteIdleConnections -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.RemoteIdleConnections") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'RemoteIdleConnections\']')" />
+                </template>
+                <el-form-item prop="RemoteIdleConnections">
+                  <el-input-number v-model="localSetting.RemoteIdleConnections" :min="0" :max="localSetting.RemoteConnections" />
+                </el-form-item>
+              </el-descriptions-item>
+            </el-descriptions>
+          </el-collapse-item>
+        </el-collapse>
+      </el-row>
     </div>
   </el-form>
 </template>
@@ -123,6 +147,7 @@ import { ClientConfig } from "../interface";
 import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { validatorTimeFormat } from "@/utils/eleValidate";
+import i18n from "@/languages";
 
 interface GeneralSettingProps {
   setting: ClientConfig.GeneralSetting;
@@ -133,6 +158,16 @@ const props = withDefaults(defineProps<GeneralSettingProps>(), {
 });
 const localSetting = reactive<ClientConfig.GeneralSetting>({ ...props.setting });
 
+const protocols = [
+  {
+    label: "TCP",
+    value: "tcp"
+  },
+  {
+    label: "TLS",
+    value: "tls"
+  }
+];
 //Sync with parent: props.setting -> localSetting
 watchEffect(() => {
   Object.assign(localSetting, props.setting);
@@ -144,25 +179,21 @@ watchEffect(() => {
   emit("update:setting", localSetting);
 });
 
-//Form Related
 const generalSettingRef = ref<FormInstance>();
 const validatorRemoteIdleConnections = (rule: any, value: number, callback: any) => {
   if (value < 0 || value > localSetting.RemoteConnections) {
-    callback(new Error("Please input RemoteIdleConnections between 0 and RemoteConnections"));
+    callback(new Error(i18n.global.t("cerror.PleaseInputRemoteIdleConnections")));
   } else {
     callback();
   }
 };
-const validatorRemote = (rule: any, value: any, callback: any) => {
+const validatorRemote = (index: number) => (rule: any, values: any, callback: any) => {
   console.log("Calling validatorRemote");
-  if (!value) {
-    callback();
-  } else if (value.startsWith("tls://") || value.startsWith("tcp://")) {
-    console.log("Valid remote format");
-    callback();
+  const value = localSetting.Remote[index];
+  if (!value.Protocol || value.Protocol.trim() === "" || !value.Addr || value.Addr.trim() === "") {
+    callback(new Error(i18n.global.t("cerror.PleaseEnterValidRemote")));
   } else {
-    console.log("Invalid remote format");
-    callback(new Error("Please enter a valid Remote format (tcp:// or tls://)"));
+    callback();
   }
 };
 const validatorRemoteAPI = (rule: any, value: any, callback: any) => {
@@ -174,42 +205,54 @@ const validatorRemoteAPI = (rule: any, value: any, callback: any) => {
     callback();
   } else {
     console.log("Invalid remoteAPI format");
-    callback(new Error("Please enter a valid RemoteAPI format (http:// or https://)"));
+    callback(new Error(i18n.global.t("cerror.PleaseEnterValidRemoteAPI")));
   }
 };
 const rules = reactive<FormRules<ClientConfig.GeneralSetting>>({
-  ID: [{ required: true, message: "Please input ID", trigger: "blur" }],
-  Secret: [{ message: "Please input Secret", trigger: "blur" }],
+  ID: [{ required: true, message: i18n.global.t("cerror.PleaseInputID"), trigger: "blur" }],
+  Secret: [{ message: i18n.global.t("cerror.PleaseInputSecret"), trigger: "blur" }],
   ReconnectDelay: [{ validator: validatorTimeFormat, trigger: "blur" }],
   RemoteTimeout: [{ validator: validatorTimeFormat, trigger: "blur" }],
-  Remote: [{ validator: validatorRemote, trigger: "blur" }],
+  Remote: localSetting.Remote.map((_, index) => ({
+    validator: validatorRemote(index),
+    trigger: "change"
+  })),
   RemoteAPI: [{ validator: validatorRemoteAPI, trigger: "blur" }],
   RemoteConnections: [
-    { type: "number", message: "Please input RemoteConnections", trigger: "blur" },
+    { type: "number", message: i18n.global.t("cerror.PleaseInputRemoteConnections"), trigger: "blur" },
     {
       type: "number",
       min: 1,
       max: 10,
-      message: "Please input RemoteConnections between 1 and 10",
+      message: i18n.global.t("cerror.PleaseInputRemoteConnectionsBetween1And10"),
       trigger: "blur"
     }
   ],
   RemoteIdleConnections: [
-    { type: "number", message: "Please input RemoteIdleConnections", trigger: "blur" },
+    { type: "number", message: i18n.global.t("cerror.PleaseInputRemoteIdleConnections"), trigger: "blur" },
     {
       validator: validatorRemoteIdleConnections,
       trigger: "change"
     }
   ]
 });
+const addRemote = () => {
+  localSetting.Remote.push({ Protocol: "", Addr: "" });
+};
+
+const deleteRemote = (index: number) => {
+  if (localSetting.Remote.length != 1) {
+    localSetting.Remote.splice(index, 1);
+  }
+};
 
 const checkRemoteSetting = (): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
-    const isRemoteEmpty = !localSetting.Remote?.trim();
+    const isRemoteEmpty = localSetting.Remote.every(item => !item.Addr.trim() && !item.Protocol.trim());
     const isRemoteAPIEmpty = !localSetting.RemoteAPI?.trim();
 
     if (isRemoteEmpty && isRemoteAPIEmpty) {
-      reject(new Error("Please input Remote or RemoteAPI"));
+      reject(new Error(i18n.global.t("cerror.PleaseInputRemoteOrRemoteAPI")));
     } else {
       resolve();
     }
@@ -223,21 +266,21 @@ const validateForm = (): Promise<void> => {
       if (generalSettingRef.value) {
         generalSettingRef.value.validate(valid => {
           if (valid) {
-            console.log("General Setting validation passed!");
+            console.log(i18n.global.t("cerror.GeneralSettingValidationPassed"));
             resolve();
           } else {
-            console.log("General Setting validation failed!");
-            reject(new Error("General Setting validation failed, please check your input"));
+            console.log(i18n.global.t("cerror.GeneralSettingValidationFailed"));
+            reject(new Error(i18n.global.t("cerror.GeneralSettingValidationFailedCheckInput")));
           }
         });
       } else {
-        reject(new Error("General Setting is not ready"));
+        reject(new Error(i18n.global.t("cerror.GeneralSettingNotReady")));
       }
     })
   ];
   return Promise.all(validations).then(
     () => {
-      console.log("General Setting validation passed!");
+      console.log(i18n.global.t("cerror.GeneralSettingValidationPassed"));
       return Promise.resolve();
     },
     error => {

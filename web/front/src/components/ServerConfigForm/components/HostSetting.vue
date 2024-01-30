@@ -1,12 +1,12 @@
 <template>
   <el-card>
     <el-form ref="hostSettingRef" :model="form">
-      <el-divider content-position="left">Host Setting</el-divider>
+      <el-divider content-position="left">{{ $t("sconfig.HostSetting") }}</el-divider>
       <el-descriptions :column="2" :border="true">
         <el-descriptions-item>
           <template #label>
-            HostNumber
-            <UsageTooltip :usage-text="ServerConfig.usage['HostNumber']" />
+            {{ $t("sconfig.HostNumber") }}
+            <UsageTooltip :usage-text="$t('susage[\'HostNumber\']')" />
           </template>
           <el-form-item prop="Number" :rules="rules.Number">
             <el-input-number v-model="form.Number" :min="0" />
@@ -14,20 +14,20 @@
         </el-descriptions-item>
         <el-descriptions-item>
           <template #label>
-            WithID
-            <UsageTooltip :usage-text="ServerConfig.usage['HostWithID']" />
+            {{ $t("sconfig.WithID") }}
+            <UsageTooltip :usage-text="$t('susage[\'HostWithID\']')" />
           </template>
           <el-switch v-model="form.WithID" />
         </el-descriptions-item>
       </el-descriptions>
       <el-table :data="form.tableData" table-layout="auto" show-overflow-tooltip highlight-current-row>
-        <template #empty> Please Add A Host Regex</template>
+        <template #empty>{{ $t("sconfig.AddHostRegex") }}</template>
         <el-table-column type="index"></el-table-column>
         <el-table-column prop="Regex">
           <template #header>
             <div>
-              HostRegex
-              <UsageTooltip :usage-text="ServerConfig.usage['HostRegex']" />
+              {{ $t("sconfig.HostRegex") }}
+              <UsageTooltip :usage-text="$t('susage[\'HostRegex\']')" />
             </div>
           </template>
           <template #default="scope">
@@ -39,18 +39,18 @@
         </el-table-column>
         <el-table-column fixed="right">
           <template #header>
-            <div>Operation</div>
+            <div>{{ $t("sconfig.Operation") }}</div>
           </template>
           <template #default="scope">
             <el-button v-if="scope.row.isEdit" icon="Check" type="success" size="small" @click="finishEdit(scope.$index)">
-              Done
+              {{ $t("sconfig.Done") }}
             </el-button>
             <el-button v-else type="primary" icon="Edit" size="small" @click="editRow(scope.$index)">Edit</el-button>
             <el-button icon="Delete" type="danger" size="small" @click="deleteRow(scope.$index)" />
           </template>
         </el-table-column>
       </el-table>
-      <el-button icon="Plus" style="width: 100%" @click="addRow">Add</el-button>
+      <el-button icon="Plus" style="width: 100%" @click="addRow">{{ $t("sconfig.Add") }}</el-button>
     </el-form>
   </el-card>
 </template>
@@ -59,6 +59,7 @@ import UsageTooltip from "@/components/UsageTooltip/index.vue";
 import { ServerConfig } from "../interface";
 import { reactive, ref, watch, watchEffect } from "vue";
 import { ElMessage, FormInstance, FormRules } from "element-plus";
+import i18n from "@/languages";
 
 interface HostSettingProps {
   setting: ServerConfig.Host;
@@ -72,12 +73,12 @@ const props = withDefaults(defineProps<HostSettingProps>(), {
 const hostSettingRef = ref<FormInstance>();
 const rules = reactive<FormRules<ServerConfig.Host>>({
   Number: [
-    { required: true, message: "Please input host number", trigger: "blur" },
-    { type: "number", message: "Please input a number", trigger: "blur" }
+    { required: true, message: i18n.global.t("serror.PleaseInputHostNumber"), trigger: "blur" },
+    { type: "number", message: i18n.global.t("serror.PleaseInputANumber"), trigger: "blur" }
   ],
   RegexStr: [
-    { required: true, message: "Please input host regex", trigger: "blur" },
-    { type: "regexp", message: "Please input a valid regex", trigger: "blur" }
+    { required: true, message: i18n.global.t("serror.PleaseInputHostRegex"), trigger: "blur" },
+    { type: "regexp", message: i18n.global.t("serror.PleaseInputAValidRegex"), trigger: "blur" }
   ]
 });
 
@@ -97,7 +98,7 @@ const form = reactive<formType>({
   WithID: props.setting.WithID
 });
 
-//Sync with parent: props.setting -> form
+// 同步到父组件: props.setting -> form
 watch(
   () => props.setting,
   newSetting => {
@@ -112,6 +113,7 @@ watch(
   },
   { deep: true }
 );
+
 function isSettingEqual(form: formType, setting: ServerConfig.Host): boolean {
   return (
     form.Number === setting.Number &&
@@ -123,7 +125,8 @@ function isSettingEqual(form: formType, setting: ServerConfig.Host): boolean {
 
 const emit = defineEmits(["update:setting"]);
 let prevFormState = JSON.stringify(form);
-//Sync with parent: form -> emit("update:setting")
+
+// 同步到父组件: form -> emit("update:setting")
 watchEffect(() => {
   const currentFormState = JSON.stringify(form);
   if (currentFormState !== prevFormState) {
@@ -141,7 +144,7 @@ watchEffect(() => {
   }
 });
 
-//Table Related
+// 表格相关
 const addRow = () => {
   form.tableData.push({
     RegexStr: "",
@@ -157,7 +160,7 @@ const finishEdit = async (index: number) => {
       await hostSettingRef.value.validateField(`tableData[${index}].RegexStr`);
       form.tableData[index].isEdit = false;
     } catch (e) {
-      ElMessage.error("Please check your host regex input");
+      ElMessage.error(i18n.global.t("serror.PleaseCheckYourHostRegexInput"));
     }
   }
 };
@@ -167,10 +170,10 @@ const deleteRow = (index: number) => {
 
 const validateForm = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    //check if there is any row is editing
+    // 检查是否有任何行正在编辑
     const allNotEdit = form.tableData.every(item => !item.isEdit);
     if (!allNotEdit) {
-      reject(new Error("Please finish editing before submit"));
+      reject(new Error(i18n.global.t("serror.PleaseFinishEditingBeforeSubmit")));
       return;
     }
     if (hostSettingRef.value) {
@@ -180,10 +183,10 @@ const validateForm = (): Promise<void> => {
           resolve();
         })
         .catch(() => {
-          reject(new Error("Host Setting Validation Failed, Please Check Your Input"));
+          reject(new Error(i18n.global.t("serror.HostSettingValidationFailed")));
         });
     } else {
-      reject(new Error("Host Setting is not ready"));
+      reject(new Error(i18n.global.t("serror.HostSettingNotReady")));
     }
   });
 };

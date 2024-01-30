@@ -3,7 +3,7 @@
     v-model="dialogVisible"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
-    title="User Setting"
+    :title="$t('layout_header.UserSetting')"
     width="500px"
     draggable
   >
