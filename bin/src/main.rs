@@ -1,0 +1,101 @@
+use std::env;
+use std::path::PathBuf;
+
+use clap::Parser;
+use clap::Subcommand;
+use env_logger::Env;
+use log::{error, info};
+
+use gt::manager::Signal;
+use gt::*;
+
+use crate::cs::{ClientArgs, ServerArgs};
+use crate::manager::ManagerArgs;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+
+    /// Path to the config file or the directory containing the config files
+    #[arg(short, long)]
+    config: Option<PathBuf>,
+    /// Send signal to the running GT processes
+    #[arg(short, long, value_enum)]
+    signal: Option<Signal>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Run GT Server
+    Server(ServerArgs),
+    /// Run GT Client
+    Client(ClientArgs),
+
+    #[command(hide = true)]
+    SubP2P,
+    #[command(hide = true)]
+    SubServer(ServerArgs),
+    #[command(hide = true)]
+    SubClient(ClientArgs),
+}
+
+fn main() {
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    let cli = Cli::parse();
+    if let Some(signal) = cli.signal {
+        if let Err(e) = manager::send_signal(signal) {
+            error!("failed to send {signal:?} signal: {:?}", e);
+        } else {
+            info!("{signal:?} signal sent");
+        }
+        return;
+    }
+    let mut manager_args = ManagerArgs {
+        config: cli.config,
+        server_args: None,
+        client_args: None,
+    };
+    if let Some(command) = cli.command {
+        match command {
+            Commands::Server(args) => {
+                manager_args.server_args = Some(args);
+            }
+            Commands::Client(args) => {
+                manager_args.client_args = Some(args);
+            }
+            Commands::SubP2P => {
+                info!("GT SubP2P");
+                peer::start_peer_connection();
+                info!("GT SubP2P done");
+                return;
+            }
+            Commands::SubServer(args) => {
+                info!("GT SubServer");
+                cs::run_server(args);
+                info!("GT SubServer done");
+                return;
+            }
+            Commands::SubClient(args) => {
+                info!("GT SubClient");
+                cs::run_client(args);
+                info!("GT SubClient done");
+                return;
+            }
+        }
+    }
+
+    let mut args = env::args();
+    if args.len() == 0 {
+        error!("no command provided");
+        return;
+    }
+    let program = args.next().unwrap();
+    let m = manager::Manager::new(program, manager_args);
+    info!("GT");
+    if let Err(e) = m.run_manager() {
+        error!("GT Manager error: {:?}", e);
+    }
+    info!("GT done");
+}

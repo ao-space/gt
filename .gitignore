@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-build
-release
+/cs/build
+/cs/release
+/cs/dep/_msquic/out
+/cs/dep/_google-webrtc/src/out
+/target/
 .dockerignore
 .DS_Store
 # IDE files

@@ -1,0 +1,28 @@
+[package]
+name = "gt"
+version = "2.1.6"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.4.17", features = ["derive"] }
+env_logger = "0.10.1"
+log = "0.4.20"
+anyhow = "1.0.79"
+bytes = "1.5.0"
+http-body-util = "0.1.0"
+hyper = { version = "1.1.0", features = ["http1", "client"] }
+serde = { version = "1.0.195", features = ["derive"] }
+serde_json = "1.0.111"
+thiserror = "1.0.56"
+tokio = { version = "1.35.1", features = ["process"] }
+url = "2.5.0"
+webrtc = "0.9.0"
+serde_yaml = "0.9.30"
+notify = { version = "6.1.1", default-features = false, features = ["macos_kqueue"] }
+
+[patch.crates-io]
+webrtc = { git = "https://github.com/vyloy/webrtc.git", branch = "master" }
+rcgen = { git = "https://github.com/vyloy/rcgen.git", branch = "main" }
+x509-parser = { git = "https://github.com/vyloy/x509-parser.git", branch = "master" }
