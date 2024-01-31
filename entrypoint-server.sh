@@ -31,4 +31,4 @@ options:
   reconnectTimes: ${NETWORK_RECONNECTTIMES:-3}
 EOF
 
-exec /usr/bin/gt manager -c /opt/aonetwork-server.yml
+exec /usr/bin/gt server -c /opt/aonetwork-server.yml

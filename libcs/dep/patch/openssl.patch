@@ -1,6 +1,6 @@
-diff --git a/dep/_msquic/submodules/CMakeLists.txt b/dep/_msquic/submodules/CMakeLists.txt
---- a/dep/_msquic/submodules/CMakeLists.txt	
-+++ b/dep/_msquic/submodules/CMakeLists.txt	
+diff --git a/libcs/dep/_msquic/submodules/CMakeLists.txt b/libcs/dep/_msquic/submodules/CMakeLists.txt
+--- a/libcs/dep/_msquic/submodules/CMakeLists.txt
++++ b/libcs/dep/_msquic/submodules/CMakeLists.txt
 @@ -241,6 +241,10 @@
                      set(OPENSSL_CONFIG_CMD ${CMAKE_CURRENT_SOURCE_DIR}/${QUIC_OPENSSL}/Configure linux-armv4)
                  endif()

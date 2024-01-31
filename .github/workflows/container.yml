@@ -42,12 +42,12 @@ jobs:
       run: |-
         sudo apt-get update && sudo apt-get install make git gn ninja-build python3 python3-pip libgtk-3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu gcc-riscv64-linux-gnu g++-riscv64-linux-gnu rustc upx -y
         rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu riscv64gc-unknown-linux-gnu
-        make release
+        make linux
         mkdir -p release
         cp target/x86_64-unknown-linux-gnu/release/gt release/linux-x86_64-gt
         cp target/aarch64-unknown-linux-gnu/release/gt release/linux-aarch64-gt
-        cp target/riscv64gc-unknown-linux-gnu/release/gt release/linux-riscv64-gt
         upx release/*
+        cp target/riscv64gc-unknown-linux-gnu/release/gt release/linux-riscv64-gt
 
     - name: Archive GT artifacts
       uses: actions/upload-artifact@v3

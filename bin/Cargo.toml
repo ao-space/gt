@@ -1,7 +1,9 @@
 [package]
 name = "gt"
-version = "2.1.6"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -21,8 +23,3 @@ url = "2.5.0"
 webrtc = "0.9.0"
 serde_yaml = "0.9.30"
 notify = { version = "6.1.1", default-features = false, features = ["macos_kqueue"] }
-
-[patch.crates-io]
-webrtc = { git = "https://github.com/vyloy/webrtc.git", branch = "master" }
-rcgen = { git = "https://github.com/vyloy/rcgen.git", branch = "main" }
-x509-parser = { git = "https://github.com/vyloy/x509-parser.git", branch = "master" }

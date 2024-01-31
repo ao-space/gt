@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-/cs/build
-/cs/release
-/cs/dep/_msquic/out
-/cs/dep/_google-webrtc/src/out
+/libcs/build
+/libcs/release
+/libcs/dep/_msquic/out
+/libcs/dep/_google-webrtc/src/out
 /target/
 .dockerignore
 .DS_Store
