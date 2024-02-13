@@ -328,12 +328,15 @@ func (c *client) close() {
 	})
 }
 
-func (c *client) shutdown() {
+func (c *client) reconnect() {
 	c.tunnelsRWMtx.Lock()
+	var sent bool
 	for t := range c.tunnels {
-		t.Shutdown()
+		if !sent {
+			t.SendReconnectSignal()
+			sent = true
+		}
 	}
-	c.closeTCPListeners()
 	c.tunnelsRWMtx.Unlock()
 }
 
@@ -445,13 +448,11 @@ func (c *client) openSpecifiedTCPPort(serviceIndex uint16, l *tcpListener, tcpPo
 		}()
 		tunnel.Logger.Info().Uint16("serviceIndex", serviceIndex).Uint16("tcpPort", tcpPort).Msg("tcp forward start")
 		conn.serviceIndex = serviceIndex
-		conn.handle(func() bool {
+		conn.handle(func() {
 			err = c.process(conn)
 			if err != nil {
 				conn.Logger.Error().Err(err).Msg("tcp handle")
-				return false
 			}
-			return true
 		})
 	})
 

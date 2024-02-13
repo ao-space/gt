@@ -97,11 +97,6 @@ func (c *Connection) IsClosingByRemote() (closingByRemote bool) {
 	return c.Closing.Load() == CloseByRemote
 }
 
-// Shutdown closes Connection gracefully
-func (c *Connection) Shutdown() {
-	c.Closing.Store(Close)
-}
-
 // Signal is alias type of uint32 for specify signal in the protocol
 type Signal = uint32
 
@@ -118,6 +113,8 @@ const (
 	InfoSignal
 	// ServicesSignal is a signal used for services changes
 	ServicesSignal
+	// ReconnectSignal is a signal used for services changes
+	ReconnectSignal
 
 	// PreservedSignal is a signal used for preserved signals
 	PreservedSignal Signal = math.MaxUint32 - 3000
@@ -139,6 +136,7 @@ var (
 	errTCPNumberLimited                    = []byte{0xFF, 0xFF, 0xFF, 0xFC, 0x00, 0x09}
 	infoTCPPortOpened                      = []byte{0xFF, 0xFF, 0xFF, 0xFB, 0x00, 0x01}
 	ServicesBytes                          = []byte{0xFF, 0xFF, 0xFF, 0xFA}
+	reconnectBytes                         = []byte{0xFF, 0xFF, 0xFF, 0xF9}
 )
 
 // Error represents a specific error signal
@@ -221,6 +219,17 @@ func (c *Connection) SendCloseSignal() {
 	if predef.Debug {
 		if err != nil {
 			c.Logger.Trace().Err(err).Msg("failed to send close signal")
+		}
+	}
+}
+
+// SendReconnectSignal sends reconnect signal to the other side
+func (c *Connection) SendReconnectSignal() {
+	c.Logger.Info().Msg("sending reconnect signal")
+	_, err := c.Write(reconnectBytes)
+	if predef.Debug {
+		if err != nil {
+			c.Logger.Trace().Err(err).Msg("failed to send reconnect signal")
 		}
 	}
 }

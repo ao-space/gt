@@ -66,7 +66,6 @@ type Server struct {
 	quicListener net.Listener
 	accepted     uint64
 	served       uint64
-	failed       uint64
 	tunneling    uint64
 	apiServer    *api.Server
 	apiListener  net.Listener
@@ -331,7 +330,10 @@ func (s *Server) acceptLoop(l net.Listener, handle func(*conn)) {
 		}
 		atomic.AddUint64(&s.accepted, 1)
 		c := newConn(conn, s)
-		go handle(c)
+		go func() {
+			defer atomic.AddUint64(&s.served, 1)
+			handle(c)
+		}()
 	}
 }
 
@@ -677,14 +679,10 @@ func (s *Server) IsClosing() (closing bool) {
 
 // Shutdown stops the server gracefully.
 func (s *Server) Shutdown() {
-	defer s.Logger.Close()
-	s.ShutdownWithoutClosingLogger()
-}
-
-func (s *Server) ShutdownWithoutClosingLogger() {
 	if !atomic.CompareAndSwapUint32(&s.closing, 0, 1) {
 		return
 	}
+	defer s.Logger.Close()
 	event := s.Logger.Info()
 	if s.apiServer != nil {
 		event.AnErr("api", s.apiServer.Close())
@@ -701,33 +699,24 @@ func (s *Server) ShutdownWithoutClosingLogger() {
 	if s.sniListener != nil {
 		event.AnErr("sniListener", s.sniListener.Close())
 	}
-	for {
+	s.id2Client.Range(func(key, value interface{}) bool {
+		if c, ok := value.(*client); ok && c != nil {
+			c.reconnect()
+		}
+		return true
+	})
+	for i := 0; i < 40; i++ {
 		accepted := s.GetAccepted()
 		served := s.GetServed()
-		failed := s.GetFailed()
 		tunneling := s.GetTunneling()
-		if accepted == served+failed+tunneling {
-			break
-		}
-
-		i := 0
-		s.id2Client.Range(func(key, value interface{}) bool {
-			i++
-			if c, ok := value.(*client); ok && c != nil {
-				c.shutdown()
-			}
-			return true
-		})
-		if i == 0 {
-			break
-		}
-
 		s.Logger.Info().
 			Uint64("accepted", accepted).
 			Uint64("served", served).
-			Uint64("failed", failed).
 			Uint64("tunneling", tunneling).
 			Msg("server shutting down")
+		if accepted == served+tunneling {
+			break
+		}
 		time.Sleep(3 * time.Second)
 	}
 	s.id2Client.Range(func(key, value interface{}) bool {
@@ -795,11 +784,6 @@ func (s *Server) GetAccepted() uint64 {
 // GetServed returns value of served
 func (s *Server) GetServed() uint64 {
 	return atomic.LoadUint64(&s.served)
-}
-
-// GetFailed returns value of served
-func (s *Server) GetFailed() uint64 {
-	return atomic.LoadUint64(&s.failed)
 }
 
 // GetTunneling returns value of tunneling

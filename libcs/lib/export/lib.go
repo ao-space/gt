@@ -1,10 +1,24 @@
+/*
+ * Copyright (c) 2022 Institute of Software, Chinese Academy of Sciences (ISCAS)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package main
 
 import "C"
 import (
-	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"github.com/isrc-cas/gt/client"
 	"github.com/isrc-cas/gt/lib/client"
 	"github.com/isrc-cas/gt/lib/server"
@@ -12,7 +26,6 @@ import (
 	"github.com/isrc-cas/gt/server"
 	"github.com/isrc-cas/gt/util"
 	"github.com/rs/zerolog/log"
-	"io"
 	"os"
 	"os/signal"
 	"syscall"
@@ -21,82 +34,29 @@ import (
 
 func main() {}
 
-type op struct {
-	OP OPValue `json:"op,omitempty"`
-}
-
-type OPValue string
-
-const (
-	ready                OPValue = "ready"
-	gracefulShutdown     OPValue = "gracefulShutdown"
-	gracefulShutdownDone OPValue = "gracefulShutdownDone"
-	shutdown             OPValue = "shutdown"
-	shutdownDone         OPValue = "shutdownDone"
-)
-
-func writeJson(json []byte) (err error) {
-	l := [4]byte{}
-	binary.BigEndian.PutUint32(l[:], uint32(len(json)))
-	_, err = os.Stdout.Write(l[:])
-	if err != nil {
-		return
-	}
-	_, err = os.Stdout.Write(json)
-	return
-}
-
-func readJson() (json []byte, err error) {
-	l := [4]byte{}
-	_, err = os.Stdin.Read(l[:])
-	if err != nil {
-		return
-	}
-	jl := binary.BigEndian.Uint32(l[:])
-	if jl > 8*1024 {
-		err = errors.New("json too large")
-		return
-	}
-	json = make([]byte, jl)
-	_, err = io.ReadFull(os.Stdin, json)
-	return
-}
-
 func handleStdIO(logger logger.Logger, ch chan os.Signal) {
 	go func() {
 		var err error
 		defer logger.Info().Err(err).Msg("handleStdIO done")
 		for {
 			var bs []byte
-			bs, err = readJson()
+			bs, err = util.ReadJson()
 			if err != nil {
 				return
 			}
-			var op op
+			var op util.OP
 			err = json.Unmarshal(bs, &op)
 			if err != nil {
 				return
 			}
 			switch op.OP {
-			case gracefulShutdown:
+			case util.GracefulShutdown:
 				ch <- syscall.SIGQUIT
-			case shutdown:
+			case util.Shutdown:
 				ch <- syscall.SIGTERM
 			}
 		}
 	}()
-}
-
-func writeOP(logger logger.Logger, op op) {
-	bs, err := json.Marshal(op)
-	if err != nil {
-		logger.Info().Err(err).Interface("op", op).Msg("failed to marshal op")
-		return
-	}
-	err = writeJson(bs)
-	if err != nil {
-		logger.Info().Err(err).Interface("op", op).Msg("failed to write op")
-	}
 }
 
 //export RunServer
@@ -130,7 +90,10 @@ func RunServer(args []string) {
 				s.Logger.Error().Err(err).Msg("failed to start GT Server, please utilize the web server interface for further GT Server configuration.")
 			}
 		} else {
-			writeOP(s.Logger, op{OP: ready})
+			err := util.WriteOP(util.OP{OP: util.Ready})
+			if err != nil {
+				s.Logger.Error().Err(err).Msg("failed to send ready signal to stdio")
+			}
 		}
 	}
 
@@ -155,9 +118,15 @@ func RunServer(args []string) {
 			s.Shutdown()
 			switch sig {
 			case syscall.SIGQUIT:
-				writeOP(s.Logger, op{OP: gracefulShutdownDone})
+				err := util.WriteOP(util.OP{OP: util.GracefulShutdownDone})
+				if err != nil {
+					s.Logger.Error().Err(err).Msg("failed to send graceful shutdown signal to stdio")
+				}
 			case syscall.SIGTERM:
-				writeOP(s.Logger, op{OP: shutdownDone})
+				err := util.WriteOP(util.OP{OP: util.ShutdownDone})
+				if err != nil {
+					s.Logger.Error().Err(err).Msg("failed to send shutdown signal to stdio")
+				}
 			}
 			os.Exit(0)
 		}
@@ -198,7 +167,10 @@ func RunClient(args []string) {
 			go func() {
 				for i := 0; i < 10; i++ {
 					if c.WaitUntilReady(30*time.Second) == nil {
-						writeOP(c.Logger, op{OP: ready})
+						err := util.WriteOP(util.OP{OP: util.Ready})
+						if err != nil {
+							c.Logger.Error().Err(err).Msg("failed to send ready signal to stdio")
+						}
 						break
 					}
 				}
@@ -231,9 +203,15 @@ func RunClient(args []string) {
 			c.Shutdown()
 			switch sig {
 			case syscall.SIGQUIT:
-				writeOP(c.Logger, op{OP: gracefulShutdownDone})
+				err := util.WriteOP(util.OP{OP: util.GracefulShutdownDone})
+				if err != nil {
+					c.Logger.Error().Err(err).Msg("failed to send graceful shutdown signal to stdio")
+				}
 			case syscall.SIGTERM:
-				writeOP(c.Logger, op{OP: shutdownDone})
+				err := util.WriteOP(util.OP{OP: util.ShutdownDone})
+				if err != nil {
+					c.Logger.Error().Err(err).Msg("failed to send shutdown signal to stdio")
+				}
 			}
 			os.Exit(0)
 		}

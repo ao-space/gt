@@ -16,6 +16,7 @@ package client
 
 import (
 	"errors"
+	"github.com/isrc-cas/gt/util"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -239,6 +240,12 @@ func (c *conn) readLoop(connID uint) {
 			}
 			isClosing = true
 			continue
+		case connection.ReconnectSignal:
+			c.Logger.Info().Msg("read reconnect signal")
+			err := util.WriteOP(util.OP{OP: util.Reconnect})
+			if err != nil {
+				c.Logger.Error().Err(err).Msg("failed to send reconnect signal to stdio")
+			}
 		case connection.ReadySignal:
 			c.client.addTunnel(c)
 			c.Logger.Info().Msg("tunnel started")

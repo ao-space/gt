@@ -92,11 +92,10 @@ func (c *conn) getTask(taskID uint32) (conn *conn, ok bool) {
 	return
 }
 
-func (c *conn) handle(handleFunc func() bool) {
+func (c *conn) handle(handleFunc func()) {
 	startTime := time.Now()
 	reader := pool.GetReader(c.Conn)
 	c.Reader = reader
-	handled := false
 	defer func() {
 		c.Close()
 		pool.PutReader(reader)
@@ -107,9 +106,6 @@ func (c *conn) handle(handleFunc func() bool) {
 			}
 		}
 		c.Logger.Info().Dur("cost", endTime.Sub(startTime)).Msg("closed")
-		if !handled {
-			atomic.AddUint64(&c.server.failed, 1)
-		}
 	}()
 	if c.server.config.Timeout.Duration > 0 {
 		dl := startTime.Add(c.server.config.Timeout.Duration)
@@ -161,7 +157,7 @@ func (c *conn) handle(handleFunc func() bool) {
 			}
 
 			// 不能将 reconnectTimes 传参，多线程环境下这个值应该实时获取
-			handled = c.handleTunnelLoop(remoteIP)
+			c.handleTunnelLoop(remoteIP)
 			return
 		case 0x02:
 			_, err = reader.Discard(2)
@@ -169,14 +165,14 @@ func (c *conn) handle(handleFunc func() bool) {
 				c.Logger.Warn().Err(err).Msg("failed to discard version field")
 				return
 			}
-			handled = c.handleProbe(reader)
+			c.handleProbe(reader)
 			return
 		}
 	}
-	handled = handleFunc()
+	handleFunc()
 }
 
-func (c *conn) handleProbe(r *bufio.Reader) (handled bool) {
+func (c *conn) handleProbe(r *bufio.Reader) {
 	op, err := r.ReadByte()
 	if err != nil {
 		c.Logger.Warn().Err(err).Msg("handleProbe read op error")
@@ -203,10 +199,9 @@ func (c *conn) handleProbe(r *bufio.Reader) (handled bool) {
 			}
 		}
 	}
-	return true
 }
 
-func (c *conn) handleSNI() (handled bool) {
+func (c *conn) handleSNI() {
 	var err error
 	var host []byte
 	defer func() {
@@ -218,8 +213,6 @@ func (c *conn) handleSNI() (handled bool) {
 				c.Logger.Error().Msgf("recovered panic: %#v\n%s", e, debug.Stack())
 			}
 		}
-		atomic.AddUint64(&c.server.served, 1)
-		handled = true
 	}()
 
 	host, err = peekTLSHost(c.Reader)
@@ -238,18 +231,22 @@ func (c *conn) handleSNI() (handled bool) {
 		err = ErrInvalidID
 		return
 	}
-	client, ok := c.server.getTLSHostPrefix(string(id))
-	if ok {
-		c.serviceIndex = client.serviceIndex
-		err = client.process(c)
-	} else {
-		err = ErrIDNotFound
+	for i := 0; i < 3; i++ {
+		client, ok := c.server.getTLSHostPrefix(string(id))
+		if ok {
+			c.serviceIndex = client.serviceIndex
+			err = client.process(c)
+			break
+		} else {
+			err = ErrIDNotFound
+			c.Logger.Info().Err(err).Bytes("id", id).Int("times", i).Msg("will try again later")
+			time.Sleep(time.Second * 1)
+		}
 	}
-
 	return
 }
 
-func (c *conn) handleHTTP() (handled bool) {
+func (c *conn) handleHTTP() {
 	var err error
 	var host []byte
 	var id []byte
@@ -262,8 +259,6 @@ func (c *conn) handleHTTP() (handled bool) {
 				c.Logger.Error().Msgf("recovered panic: %#v\n%s", e, debug.Stack())
 			}
 		}
-		atomic.AddUint64(&c.server.served, 1)
-		handled = true
 	}()
 	if c.server.config.HTTPMUXHeader == "Host" {
 		host, err = peekHost(c.Reader)
@@ -288,17 +283,22 @@ func (c *conn) handleHTTP() (handled bool) {
 		err = ErrInvalidID
 		return
 	}
-	client, ok := c.server.getHostPrefix(string(id))
-	if ok {
-		c.serviceIndex = client.serviceIndex
-		err = client.process(c)
-	} else {
-		err = ErrIDNotFound
+	for i := 0; i < 3; i++ {
+		client, ok := c.server.getHostPrefix(string(id))
+		if ok {
+			c.serviceIndex = client.serviceIndex
+			err = client.process(c)
+			break
+		} else {
+			err = ErrIDNotFound
+			c.Logger.Info().Err(err).Bytes("id", id).Int("times", i).Msg("will try again later")
+			time.Sleep(time.Second * 1)
+		}
 	}
 	return
 }
 
-func (c *conn) handleTunnelLoop(remoteIP string) (handled bool) {
+func (c *conn) handleTunnelLoop(remoteIP string) {
 	var reload bool
 	var cli *client
 	clients := make(map[*client]struct{})
@@ -306,9 +306,11 @@ func (c *conn) handleTunnelLoop(remoteIP string) (handled bool) {
 		for cli := range clients {
 			cli.removeTunnel(c)
 		}
+		atomic.AddUint64(&c.server.tunneling, ^uint64(0))
 	}()
+	atomic.AddUint64(&c.server.tunneling, 1)
 	for {
-		handled, reload, cli = c.handleTunnel(remoteIP, reload)
+		reload, cli = c.handleTunnel(remoteIP, reload)
 		if cli != nil {
 			clients[cli] = struct{}{}
 		}
@@ -319,7 +321,7 @@ func (c *conn) handleTunnelLoop(remoteIP string) (handled bool) {
 	return
 }
 
-func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli *client) {
+func (c *conn) handleTunnel(remoteIP string, r bool) (reload bool, cli *client) {
 	reader := c.Reader
 
 	// id
@@ -481,7 +483,6 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 	}
 
 	if !r {
-		atomic.AddUint64(&c.server.tunneling, 1)
 		err = c.SendReadySignal()
 	} else {
 		err = c.SendServicesSignal()
@@ -491,7 +492,6 @@ func (c *conn) handleTunnel(remoteIP string, r bool) (handled, reload bool, cli 
 		return
 	}
 
-	handled = true
 	reload = c.readLoop(cli)
 	return
 }

@@ -30,7 +30,7 @@ ifdef WITH_OFFICIAL_WEBRTC
 endif
 RELEASE_OPTIONS=$(GO_RACE) -tags release -trimpath -ldflags "$(GO_STATIC_LINK_FLAG) -s -w -X 'github.com/isrc-cas/gt/predef.Version=$(VERSION)'"
 DEBUG_OPTIONS=$(GO_RACE) -trimpath -ldflags "$(GO_STATIC_LINK_FLAG) -X 'github.com/isrc-cas/gt/predef.Version=$(VERSION)'"
-SOURCES=$(shell ls -1 **/*.go)
+SOURCES=$(shell find . -path ./dep -prune -o -type f -name "*.go")
 FRONTEND_DIR=web/front
 SOURCES_FRONT = $(shell find $(FRONTEND_DIR) -type d \( -name 'node_modules' -o -name 'dist' \) -prune -o -type f \( -name '*.ts' -o -name '*.vue' -o -name '*.scss' -o -name '*.json' -o -name '*.cjs' -o -name '*.config.ts' -o -name '*.html' \) -print)
 SERVER_FRONT_DIR=server/web
