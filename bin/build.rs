@@ -19,8 +19,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
-    println!("cargo:rerun-if-changed=build.rs");
     let target = env::var("TARGET").unwrap();
+    println!("cargo:rerun-if-changed=libcs/release/{target}");
     println!("cargo:rustc-link-search=libcs/release/{target}");
     println!("cargo:rustc-link-lib=static=cs");
     println!("cargo:rustc-link-lib=static=webrtc");

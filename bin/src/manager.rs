@@ -21,15 +21,17 @@ use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use std::{env, fs, io, process};
+use std::{env, fs, future, io, process};
 
 use anyhow::{anyhow, Context, Error, Result};
 use clap::ValueEnum;
+use futures::future::{BoxFuture, FutureExt};
 use log::{error, info, warn};
 use notify::{ErrorKind, Event, PollWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::{ChildStdin, ChildStdout, Command};
+use tokio::sync::oneshot::{Receiver, Sender};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio::time::timeout;
 
@@ -104,7 +106,7 @@ impl Manager {
 
     async fn process_signal<F>(&self, sender: F) -> Result<()>
     where
-        F: for<'a> SendShutdownCallback<'a> + Copy + Send + 'static,
+        F: for<'a> SendShutdownCallback<'a> + Copy + Send + Sync + 'static,
     {
         let (configs, old_configs) = self.collect_configs().await?;
         if let Some(old_configs) = old_configs {
@@ -156,14 +158,89 @@ impl Manager {
         Ok(watcher)
     }
 
+    fn run_sync<F>(
+        program: String,
+        cmd_map: Arc<Mutex<HashMap<ProcessConfigEnum, Cmd>>>,
+        configs: Vec<ProcessConfigEnum>,
+        sub_cmd: &'static str,
+        sender: F,
+    ) -> BoxFuture<'static, Result<()>>
+    where
+        F: for<'a> SendShutdownCallback<'a> + Copy + Send + Sync + 'static,
+    {
+        async move { Self::run(program, cmd_map, configs, sub_cmd, sender).await }.boxed()
+    }
+
+    async fn handle_stdout(
+        mut stdout: Option<ChildStdout>,
+        mut shutdown_tx: Option<Sender<()>>,
+        program: String,
+        cmd_map: Arc<Mutex<HashMap<ProcessConfigEnum, Cmd>>>,
+        config: ProcessConfigEnum,
+        sub_cmd: &'static str,
+    ) {
+        loop {
+            let res = match stdout {
+                Some(ref mut o) => read_json(o).await,
+                None => future::pending().await,
+            };
+            match res {
+                Ok(op) => match op {
+                    OP::ShutdownDone | OP::GracefulShutdownDone => {
+                        if let Some(tx) = shutdown_tx.take() {
+                            info!("{sub_cmd} ({config:?}) shutdown done op received");
+                            match tx.send(()) {
+                                Ok(_) => {
+                                    info!("{sub_cmd} ({config:?}) shutdown_tx send");
+                                }
+                                Err(_) => {
+                                    error!("{sub_cmd} ({config:?}) failed to shutdown_tx send");
+                                }
+                            }
+                        } else {
+                            error!("{sub_cmd} ({config:?}) shutdown done op received again");
+                            future::pending::<()>().await;
+                        }
+                    }
+                    OP::Reconnect => {
+                        info!("{sub_cmd} ({config:?}) reconnect op received");
+                        let program = program.clone();
+                        let cmds = cmd_map.clone();
+                        let config = config.clone();
+                        if let Err(e) = Self::run_sync(
+                            program,
+                            cmds,
+                            vec![config.clone()],
+                            sub_cmd,
+                            send_shutdown,
+                        )
+                        .await
+                        {
+                            error!("{sub_cmd} ({config:?}) reconnect run_sync failed: {:?}", e);
+                        }
+                        future::pending::<()>().await;
+                    }
+                    _ => {
+                        error!("{sub_cmd} ({config:?}) unexpected op received: {:?}", op);
+                    }
+                },
+                Err(e) => {
+                    error!("{sub_cmd} ({config:?}) read_json failed: {:?}", e);
+                    future::pending::<()>().await;
+                }
+            }
+        }
+    }
+
     async fn run<F>(
-        &self,
+        program: String,
+        cmd_map: Arc<Mutex<HashMap<ProcessConfigEnum, Cmd>>>,
         configs: Vec<ProcessConfigEnum>,
         sub_cmd: &'static str,
         sender: F,
     ) -> Result<()>
     where
-        F: for<'a> SendShutdownCallback<'a> + Copy + Send + 'static,
+        F: for<'a> SendShutdownCallback<'a> + Copy + Send + Sync + 'static,
     {
         macro_rules! cmd_config {
             ($cmd:expr, $config:expr) => {
@@ -190,7 +267,7 @@ impl Manager {
             .into_iter()
             .map(|config| {
                 info!("run {sub_cmd} config: {:?}", config);
-                let mut cmd = Command::new(self.program.clone());
+                let mut cmd = Command::new(program.clone());
                 cmd.arg(sub_cmd);
                 cmd_config!(cmd, config);
                 cmd.spawn()
@@ -217,28 +294,55 @@ impl Manager {
         }
 
         for (mut c, config) in cmds {
-            let name = self.program.clone();
-            let cmds = self.cmds.clone();
+            let program = program.clone();
+            let cmd_map = cmd_map.clone();
+            let spawn_time = Instant::now();
             tokio::spawn(async move {
-                let mut start_time = Instant::now();
                 loop {
+                    let start_time = Instant::now();
                     let stdin = c.stdin.take();
                     let stdout = c.stdout.take();
-                    let (tx, rx) = oneshot::channel();
-                    process_shutdown(
-                        config.clone(),
-                        cmds.lock().await.insert(
-                            config.clone(),
-                            Cmd {
-                                stdin,
-                                stdout,
-                                tx: Some(tx),
-                            },
-                        ),
-                        sender,
-                    )
-                    .await;
+                    let (kill_tx, kill_rx) = oneshot::channel();
+                    let (shutdown_tx, shutdown_rx) = oneshot::channel();
+                    let cmd = {
+                        let mut cmd_map = cmd_map.lock().await;
+                        match cmd_map.get(&config) {
+                            None => {
+                                let cmd = Cmd {
+                                    stdin,
+                                    kill_tx: Some(kill_tx),
+                                    shutdown_rx: Some(shutdown_rx),
+                                    spawn_time,
+                                };
+                                cmd_map.insert(config.clone(), cmd)
+                            }
+                            Some(v) => {
+                                if v.spawn_time > spawn_time {
+                                    match c.kill().await {
+                                        Ok(_) => info!(
+                                            "{sub_cmd} ({config:?}) killed(newer proc spawned)"
+                                        ),
+                                        Err(e) => {
+                                            error!("{sub_cmd} ({config:?}) failed to kill(newer proc spawned): {:?}", e)
+                                        }
+                                    }
+                                    return;
+                                } else {
+                                    let cmd = Cmd {
+                                        stdin,
+                                        kill_tx: Some(kill_tx),
+                                        shutdown_rx: Some(shutdown_rx),
+                                        spawn_time,
+                                    };
+                                    cmd_map.insert(config.clone(), cmd)
+                                }
+                            }
+                        }
+                    };
+                    process_shutdown(config.clone(), cmd, sender).await;
+                    let shutdown_tx = Some(shutdown_tx);
                     tokio::select! {
+                        _ = Self::handle_stdout(stdout, shutdown_tx, program.clone(), cmd_map.clone(), config.clone(), sub_cmd) => {},
                         ref res = c.wait() => {
                             match res {
                                 Ok(s) => {
@@ -249,7 +353,7 @@ impl Manager {
                                 }
                             }
                         },
-                        res = rx => {
+                        res = kill_rx => {
                             match res {
                                 Ok(_) => {
                                     match c.kill().await {
@@ -272,8 +376,8 @@ impl Manager {
                             return;
                         }
                     }
-                    let wait_time = if start_time.elapsed() < Duration::from_secs(60) {
-                        warn!("{sub_cmd} ({config:?}) exited too quick");
+                    let mut wait_time = if start_time.elapsed() < Duration::from_secs(60) {
+                        warn!("{sub_cmd} ({config:?}) exited too quickly");
                         Duration::from_secs(60)
                     } else {
                         Duration::from_secs(3)
@@ -281,17 +385,23 @@ impl Manager {
                     loop {
                         info!("restarting {sub_cmd} ({config:?}) in {wait_time:?}");
                         tokio::time::sleep(wait_time).await;
-                        let mut cmd = Command::new(&name);
+                        if let Some(cmd) = cmd_map.lock().await.get(&config) {
+                            if cmd.spawn_time > spawn_time {
+                                info!("{sub_cmd} ({config:?}) newer proc is running, exit");
+                                return;
+                            }
+                        }
+                        let mut cmd = Command::new(&program);
                         cmd.arg(sub_cmd);
                         cmd_config!(cmd, config);
                         match cmd.spawn() {
                             Ok(child) => {
-                                start_time = Instant::now();
                                 c = child;
                                 info!("restarted {sub_cmd} ({config:?})");
                                 break;
                             }
                             Err(e) => {
+                                wait_time = Duration::from_secs(3 * 60);
                                 error!("failed to restart {sub_cmd} ({config:?}): {:?}", e);
                             }
                         }
@@ -304,7 +414,7 @@ impl Manager {
 
     async fn run_configs<F>(&self, configs: Vec<ProcessConfigEnum>, sender: F) -> Result<()>
     where
-        F: for<'a> SendShutdownCallback<'a> + Copy + Send + 'static,
+        F: for<'a> SendShutdownCallback<'a> + Copy + Send + Sync + 'static,
     {
         let mut server_config = vec![];
         let mut client_config = vec![];
@@ -322,15 +432,27 @@ impl Manager {
             }
         }
         if !server_config.is_empty() {
-            self.run(server_config, "sub-server", sender)
-                .await
-                .context("run_server failed")?;
+            Self::run(
+                self.program.clone(),
+                self.cmds.clone(),
+                server_config,
+                "sub-server",
+                sender,
+            )
+            .await
+            .context("run_server failed")?;
         }
 
         if !client_config.is_empty() {
-            self.run(client_config, "sub-client", sender)
-                .await
-                .context("run_client failed")?;
+            Self::run(
+                self.program.clone(),
+                self.cmds.clone(),
+                client_config,
+                "sub-client",
+                sender,
+            )
+            .await
+            .context("run_client failed")?;
         }
         Ok(())
     }
@@ -443,9 +565,9 @@ where
 {
     match cmd {
         Some(mut cmd) => {
-            let res = timeout(Duration::from_secs(10), sender(&config, &mut cmd)).await;
+            let res = timeout(Duration::from_secs(120), sender(&config, &mut cmd)).await;
             let mut kill = || {
-                if let Some(tx) = cmd.tx.take() {
+                if let Some(tx) = cmd.kill_tx.take() {
                     info!("{config:?} being killed");
                     if let Err(e) = tx.send(()) {
                         error!("{config:?} kill channel send error: {e:?}");
@@ -478,6 +600,7 @@ pub enum OP {
     GracefulShutdownDone,
     Shutdown,
     ShutdownDone,
+    Reconnect,
 }
 
 async fn read_json(reader: &mut ChildStdout) -> Result<OP> {
@@ -551,17 +674,19 @@ async fn send_nop(_: &ProcessConfigEnum, _: &mut Cmd) -> Result<()> {
 async fn send_op(path: &ProcessConfigEnum, c: &mut Cmd, op: OP) -> Result<()> {
     write_json(c.stdin.as_mut().ok_or(anyhow!("no stdin"))?, &op).await?;
     info!("signal({op:?}) {path:?} sent");
-    info!(
-        "signal({op:?}) {path:?} recv: {:?}",
-        read_json(c.stdout.as_mut().ok_or(anyhow!("no stdout"))?).await?
-    );
+    c.shutdown_rx
+        .take()
+        .ok_or(anyhow!("shutdown_rx has been taken"))?
+        .await?;
+    info!("signal({op:?}) {path:?} shutdown done recv");
     Ok(())
 }
 
 struct Cmd {
     stdin: Option<ChildStdin>,
-    stdout: Option<ChildStdout>,
-    tx: Option<oneshot::Sender<()>>,
+    kill_tx: Option<Sender<()>>,
+    shutdown_rx: Option<Receiver<()>>,
+    spawn_time: Instant,
 }
 
 fn create_signal_files() -> Result<PathBuf> {

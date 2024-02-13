@@ -34,7 +34,7 @@ struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
 
-    /// Path to the config file or the directory containing the config files
+    /// Path to the config file or the directory contains the config files
     #[arg(short, long)]
     config: Option<PathBuf>,
     /// Send signal to the running GT processes
