@@ -23,6 +23,6 @@ ENV TZ=Asia/Shanghai
 RUN apt update && DEBIAN_FRONTEND=noninteractive TZ=Asia/Shanghai apt-get -y install tzdata ca-certificates && rm -rf /var/lib/apt/lists/*
 
 COPY release/* /
-RUN cp /linux-`arch`-gt /usr/bin/gt && ln -s /usr/bin/gt /usr/bin/client && rm -f /*-gt
+RUN cp /gt-linux-`arch` /usr/bin/gt && ln -s /usr/bin/gt /usr/bin/client && rm -f /*-gt
 
 ENTRYPOINT ["/usr/bin/gt", "client", "-c", "/opt/config/aonetwork-client.yml"]

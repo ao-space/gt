@@ -6,7 +6,7 @@ GT 是一个高性能的 WebSocket(s)/HTTP(s)/TCP 中转代理。
 
 具有以下设计特点：
 - 多进程+多线程架构
-  - reload 过程中，保持转发可以成功。压力测试过程中 reload， 测试结果 0 error
+  - reload 过程中，保持转发可以成功。压力测试过程中 reload，测试结果 0 error
   - 进程守护，工作进程崩溃自动重启
   - 加载配置文件目录，可以同时启动多个服务端，客户端
 - 注重性能，在保持跨平台和功能稳定的前提下，会尝试采用性能更高的技术方案
@@ -44,6 +44,22 @@ GT 是一个高性能的 WebSocket(s)/HTTP(s)/TCP 中转代理。
 └─────────────┘   └─────────────┘   └─────────────┘
 ```
 
+## 下载
+
+### Github
+
+从 <https://github.com/ao-space/gt/releases> 选择合适的版本下载。
+
+### Docker 容器
+
+更多容器镜像信息可以从 <https://github.com/ao-space/gt/pkgs/container/gt> 获取。
+
+```shell
+docker pull ghcr.io/ao-space/gt:server-dev
+
+docker pull ghcr.io/ao-space/gt:client-dev
+```
+
 ## 用法
 
 ```shell
@@ -59,7 +75,7 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          Path to the config file or the directory containing the config files
+          Path to the config file or the directory contains the config files
 
   -s, --signal <SIGNAL>
           Send signal to the running GT processes
@@ -74,6 +90,46 @@ Options:
 
   -V, --version
           Print version
+```
+
+### 配置文件
+
+配置文件可以通过 Web 管理后台编辑生成，推荐直接使用 Web 管理后台编辑。
+
+### 服务端
+
+使用默认配置运行，运行后可从日志获取 Web 管理后台地址，用浏览器打开后，进行配置项编辑：
+
+```shell
+gt server
+```
+
+通过指定配置文件运行：
+
+```shell
+gt server -c ./config.yml
+```
+
+### 客户端
+
+使用默认配置运行，运行后可从日志获取 Web 管理后台地址，用浏览器打开后，进行配置项编辑：
+
+```shell
+gt client
+```
+
+通过指定配置文件运行：
+
+```shell
+gt client -c ./config.yml
+```
+
+### 批量启动
+
+通过指定配置文件目录批量启动：
+
+```shell
+gt -c ./conf.d
 ```
 
 ## 性能测试
@@ -246,127 +302,9 @@ Requests/sec:  41334.52
 Transfer/sec:      5.09MB
 ```
 
-## 运行
+## 贡献者
 
-### Docker 容器运行
+感谢以下人员为项目做出的贡献：
 
-更多容器镜像信息可以从<https://github.com/ao-space/gt/pkgs/container/gt>获取。
-
-```shell
-docker pull ghcr.io/ao-space/gt:server-dev
-
-docker pull ghcr.io/ao-space/gt:client-dev
-```
-
-## 编译
-
-### 在 Ubuntu/Debian 上编译
-
-#### 安装依赖
-
-```shell
-apt-get update
-apt-get install make git gn ninja-build python3 python3-pip libgtk-3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu -y
-```
-
-#### 获取代码并编译
-
-你可以选择从镜像或者官方获取 WebRTC 并编译 GT：
-
-##### 从 ISCAS 镜像获取 WebRTC 并编译 GT
-
-1. 获取代码
-
-      ```shell
-      git clone <url>
-      cd <folder>
-      ```
-
-2. 编译
-
-      ```shell
-      make release
-      ```
-
-   编译后的可执行文件在 release 目录下。
-
-##### 从官方获取 WebRTC 并编译 GT
-
-1. 获取代码
-
-      ```shell
-      git clone <url>
-      cd <folder>
-      ```
-
-2. 从官方获取 WebRTC
-
-      ```shell
-      mkdir -p dep/_google-webrtc
-      cd dep/_google-webrtc
-      git clone https://webrtc.googlesource.com/src
-      ```
-
-   然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
-
-3. 编译
-
-      ```shell
-      WITH_OFFICIAL_WEBRTC=1 make release
-      ```
-
-   编译后的可执行文件在 release 目录下。
-
-### 在 Ubuntu/Debian 上通过 Docker 编译
-
-#### 安装依赖
-
-[安装 Docker](https://docs.docker.com/engine/install/)
-
-#### 获取代码并编译
-
-你可以选择从镜像或者官方获取 WebRTC 并编译 GT：
-
-##### 从 ISCAS 镜像获取 WebRTC 并编译 GT
-
-1. 获取代码
-
-      ```shell
-      git clone <url>
-      cd <folder>
-      ```
-
-2. 编译
-
-      ```shell
-      make docker_release_linux_amd64 # docker_release_linux_arm64
-      ```
-
-   编译后的可执行文件在 release 目录下。
-
-##### 从官方获取 WebRTC 并编译 GT
-
-1. 获取代码
-
-      ```shell
-      git clone <url>
-      cd <folder>
-      ```
-
-2. 从官方获取 WebRTC
-
-      ```shell
-      mkdir -p dep/_google-webrtc
-      cd dep/_google-webrtc
-      git clone https://webrtc.googlesource.com/src
-      ```
-
-   然后按照[这个链接中的步骤](https://webrtc.googlesource.com/src/+/main/docs/native-code/development/)检出构建工具链和许多依赖项。
-
-3. 编译
-
-      ```shell
-      WITH_OFFICIAL_WEBRTC=1 make docker_release_linux_amd64 # docker_release_linux_arm64
-      ```
-
-   编译后的可执行文件在 release 目录下。
+- [zhiyi](https://github.com/vyloy)
+- [jianti](https://github.com/FH0)
