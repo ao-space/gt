@@ -18,7 +18,8 @@ export const mapClientGeneralSetting = (data: Config.Client.ResConfig): ClientCo
   RemoteCertInsecure: data.config.RemoteCertInsecure,
   RemoteConnections: data.config.RemoteConnections,
   RemoteIdleConnections: data.config.RemoteIdleConnections,
-  RemoteTimeout: humanizeDuration(data.config.RemoteTimeout)
+  RemoteTimeout: humanizeDuration(data.config.RemoteTimeout),
+  WebAddr: data.config.WebAddr
 });
 
 /**
@@ -202,7 +203,8 @@ export const mapServerUserSetting = (data: Config.Server.ResConfig): ServerConfi
 export const mapServerGeneralSetting = (data: Config.Server.ResConfig): ServerConfig.GeneralSetting => ({
   UserPath: data.config.UserPath,
   AuthAPI: data.config.AuthAPI,
-  TCPNumber: data.config.TCPNumber
+  TCPNumber: data.config.TCPNumber,
+  WebAddr: data.config.WebAddr
 });
 
 /**

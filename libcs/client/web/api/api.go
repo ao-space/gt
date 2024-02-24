@@ -1,5 +1,6 @@
 package api
 
+import "C"
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/isrc-cas/gt/client"
@@ -9,6 +10,8 @@ import (
 	"github.com/isrc-cas/gt/web/server/model/request"
 	"github.com/isrc-cas/gt/web/server/model/response"
 	"github.com/isrc-cas/gt/web/server/util"
+	"os"
+	"os/exec"
 )
 
 func HealthCheck(ctx *gin.Context) {
@@ -179,19 +182,24 @@ func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 			return
 		}
 		c.Logger.Info().Str("config", fullPath).Msg("save config to file")
+
+		err = ReloadServicesCommand(c)
+		if err != nil {
+			response.FailWithMessage(err.Error(), ctx)
+			return
+		}
 		response.SuccessWithMessage("save config to "+fullPath, ctx)
 	}
 }
-
-// ReloadServices reloads the services in the config file
-// without restarting the current process
-func ReloadServices(ctx *gin.Context) {
-	err := util.SendSignal("reload")
+func ReloadServicesCommand(c *client.Client) (err error) {
+	execPath := os.Args[0]
+	command := exec.Command(execPath, "-s", "reload")
+	_, err = command.CombinedOutput()
 	if err != nil {
-		response.FailWithMessage(err.Error(), ctx)
+		c.Logger.Logger.Info().Msg("failed to exec command-reload:" + err.Error())
 		return
 	}
-	response.SuccessWithMessage("reload services done", ctx)
+	return
 }
 
 // Restart for a brand-new config process,
