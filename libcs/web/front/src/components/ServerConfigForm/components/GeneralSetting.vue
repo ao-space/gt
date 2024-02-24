@@ -34,6 +34,16 @@
             <el-input-number v-model="localSetting.TCPNumber" :min="0" />
           </el-form-item>
         </el-descriptions-item>
+        <!-- WebAddr -->
+        <el-descriptions-item>
+          <template #label>
+            {{ $t("sconfig.WebAddr") }}
+            <UsageTooltip :usage-text="$t('susage[\'WebAddr\']')" />
+          </template>
+          <el-form-item prop="WebAddr">
+            <el-input v-model="localSetting.WebAddr"></el-input>
+          </el-form-item>
+        </el-descriptions-item>
       </el-descriptions>
       <el-row style="width: 100%">
         <el-collapse style="width: 100%">
@@ -88,7 +98,7 @@ watch(
     localSetting.UserPath = props.setting.UserPath;
     localSetting.AuthAPI = props.setting.AuthAPI;
     localSetting.TCPNumber = props.setting.TCPNumber;
-
+    localSetting.WebAddr = props.setting.WebAddr;
     tcpSetting.splice(0, tcpSetting.length, ...props.setting.TCPs);
     hostSetting.Number = props.setting.Host.Number;
     hostSetting.RegexStr.splice(0, hostSetting.RegexStr.length, ...props.setting.Host?.RegexStr);

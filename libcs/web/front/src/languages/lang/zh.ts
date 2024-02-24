@@ -8,6 +8,7 @@ export namespace zh {
     TLSMinVersion: "TLS 的最小版本。支持的值：tls1.1、tls1.2、tls1.3",
     CertFile: "证书文件的路径",
     KeyFile: "密钥文件的路径",
+    WebAddr: "Web服务地址，默认地址为：127.0.0.1:8000，当地址为0.0.0.0:8000时，可以向外部网络主机提供服务",
 
     IDs: "用户 ID",
     Secrets: "用户 ID 的密钥",
@@ -92,6 +93,7 @@ export namespace zh {
     RemoteIdleConnections: "保持在连接池中的空闲服务器连接数",
     RemoteTimeout: "远程连接的超时时间。支持值如 '30s'、'5m'",
     Version: "显示此程序的版本",
+    WebAddr: "Web服务地址，默认地址为：127.0.0.1:7000，当地址为0.0.0.0:7000时，可以向外部网络主机提供服务",
 
     // 服务设置
     HostPrefix: "服务器将识别此主机前缀并将数据转发到本地",
@@ -130,6 +132,7 @@ export namespace zh {
     SelectLogLevel: "请选择日志等级"
   };
   export const sconfig = {
+    WebAddr: "Web 服务地址",
     APIAddr: "API 地址",
     APITLSMinVersion: "API TLS 最小版本",
     APICertFile: "API 证书文件",
@@ -210,6 +213,7 @@ export namespace zh {
   export const cconfig = {
     ID: "ID",
     ReconnectDelay: "重连延迟",
+    WebAddr: "Web 服务地址",
     RemoteTimeout: "GT-Server超时时间",
     Remote: "GT-Server地址",
     RemoteSTUN: "STUN 地址",

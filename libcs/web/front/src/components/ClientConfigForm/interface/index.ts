@@ -10,6 +10,7 @@ export namespace ClientConfig {
     ID: string;
     Secret: string;
     ReconnectDelay: string;
+    WebAddr: string;
     Remote: Url[];
     RemoteSTUN: string[];
     RemoteAPI: string;
@@ -60,6 +61,7 @@ export namespace ClientConfig {
     ID: "",
     Secret: "",
     ReconnectDelay: "0s",
+    WebAddr: "",
     RemoteTimeout: "0s",
     Remote: [
       {
@@ -128,6 +130,7 @@ export namespace ClientConfigBackend {
     ID: string;
     Secret: string;
     ReconnectDelay: string;
+    WebAddr: string;
     Remote: string[];
     RemoteSTUN: string[];
     RemoteAPI: string;

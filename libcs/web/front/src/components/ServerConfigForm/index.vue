@@ -41,7 +41,6 @@
     </template>
   </Anchor>
   <el-button type="primary" @click="submit">{{ $t("sconfig.Submit") }}</el-button>
-  <el-button type="primary" @click="getFromFile">{{ $t("sconfig.GetFromFile") }}</el-button>
 </template>
 
 <script setup lang="ts" name="ServerConfigForm">
@@ -111,7 +110,6 @@ watch(
   },
   { deep: true }
 );
-
 //generalSetting is used for serverConfig
 //generalSettingProps is used for child component -- GeneralSetting
 const generalSetting = reactive<ServerConfig.GeneralSetting>({ ...ServerConfig.defaultGeneralSetting });
@@ -121,7 +119,6 @@ const generalSettingProps = reactive<ServerConfig.GeneralSettingProps>({
   TCPs: tcps, //global Setting
   Host: host //global Setting
 });
-
 //Sync generalSetting with generalSettingProps
 watch(
   () => generalSetting,
@@ -136,6 +133,7 @@ watch(
     generalSetting.UserPath = newSetting.UserPath;
     generalSetting.AuthAPI = newSetting.AuthAPI;
     generalSetting.TCPNumber = newSetting.TCPNumber;
+    generalSetting.WebAddr = newSetting.WebAddr;
   },
   { deep: true }
 );
@@ -191,6 +189,7 @@ const updateGeneralSetting = (newSetting: ServerConfig.GeneralSettingProps) => {
   generalSettingProps.UserPath = newSetting.UserPath;
   generalSettingProps.AuthAPI = newSetting.AuthAPI;
   generalSettingProps.TCPNumber = newSetting.TCPNumber;
+  generalSettingProps.WebAddr = newSetting.WebAddr;
   tcps.splice(0, tcps.length, ...newSetting.TCPs);
   host.Number = newSetting.Host.Number;
   host.RegexStr.splice(0, host.RegexStr.length, ...newSetting.Host.RegexStr);
@@ -448,11 +447,6 @@ const submit = async () => {
 
 const getFromFile = async () => {
   try {
-    await ElMessageBox.confirm(i18n.global.t("sconfig.GetFromFileConfirm"), i18n.global.t("sconfig.GetFromFileTitle"), {
-      confirmButtonText: i18n.global.t("sconfig.GetFromFileConfirmBtn"),
-      cancelButtonText: i18n.global.t("sconfig.GetFromFileCancelBtn"),
-      type: "info"
-    });
     const { data } = await getServerConfigFromFileApi();
     updateData(data);
     ElMessage.success(i18n.global.t("sconfig.GetFromFileSuccess"));

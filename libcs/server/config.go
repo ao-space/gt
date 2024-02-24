@@ -92,7 +92,7 @@ type Options struct {
 	LogLevel        string `yaml:"logLevel,omitempty" json:",omitempty" usage:"Log level: trace, debug, info, warn, error, fatal, panic, disable"`
 	Version         bool   `arg:"version" yaml:"-" json:"-" usage:"Show the version of this program"`
 
-	WebAddr     string `arg:"webAddr"  yaml:"webAddr,omitempty" json:"-" usage:"The address to listen on for web server"`
+	WebAddr     string `arg:"webAddr"  yaml:"webAddr,omitempty" json:"webAddr,omitempty" usage:"The address to listen on for web server"`
 	WebCertFile string `arg:"webCertFile" yaml:"webCertFile,omitempty" json:"-" usage:"The path to cert file for GT-Web server"`
 	WebKeyFile  string `arg:"webKeyFile" yaml:"webKeyFile,omitempty" json:"-" usage:"The path to key file for GT-Web server"`
 	EnablePprof bool   `arg:"pprof"  yaml:"pprof,omitempty" json:"-" usage:"Enable pprof in web server"`

@@ -177,7 +177,6 @@ func setRoutes(c *client.Client, tm *server.TokenManager, r *gin.Engine) error {
 		serverGroup := apiGroup.Group("/server")
 		{
 			serverGroup.GET("/info", api.GetServerInfo)
-			serverGroup.PUT("/reload", api.ReloadServices)
 			serverGroup.PUT("/restart", api.Restart)
 			serverGroup.PUT("/stop", api.Stop)
 			serverGroup.PUT("/kill", api.Kill)

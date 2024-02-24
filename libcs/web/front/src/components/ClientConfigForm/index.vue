@@ -41,14 +41,12 @@
     </template>
   </Anchor>
   <el-button type="primary" @click="submit"> {{ $t("cconfig.Submit") }}</el-button>
-  <el-button type="primary" @click="getFromFile">{{ $t("cconfig.GetFromFile") }}</el-button>
-  <el-button type="primary" @click="reloadServices">{{ $t("cconfig.ReloadServices") }}</el-button>
 </template>
 
 <script setup lang="ts" name="ClientConfigForm">
 import { ElMessage, ElMessageBox } from "element-plus";
 import { markRaw, Ref, reactive, ref, watchEffect, onMounted, computed } from "vue";
-import { ClientConfig, transToFrontConfig } from "./interface";
+import { ClientConfig } from "./interface";
 import Anchor, { Tab } from "@/components/Anchor/index.vue";
 import GeneralSetting from "./components/GeneralSetting.vue";
 import SentrySetting from "./components/SentrySetting.vue";
@@ -56,8 +54,7 @@ import WebRTCSetting from "./components/WebRTCSetting.vue";
 import TCPForwardSetting from "./components/TCPForwardSetting.vue";
 import LogSetting from "./components/LogSetting.vue";
 import ServiceSetting from "./components/ServiceSetting.vue";
-import { getClientConfigFromFileApi, getRunningClientConfigApi, saveClientConfigApi } from "@/api/modules/clientConfig";
-import { reloadServicesApi } from "@/api/modules/server";
+import { getClientConfigFromFileApi, saveClientConfigApi } from "@/api/modules/clientConfig";
 import { v4 as uuidv4 } from "uuid";
 import { Config } from "@/api/interface";
 import {
@@ -280,16 +277,6 @@ const updateData = (data: Config.Client.ResConfig) => {
 };
 
 //check if the options are consistent with the running system
-const checkOptionsConsistency = (runningConfig: ClientConfig.Config, sendingConfig: ClientConfig.Config): boolean => {
-  const runningOptions = { ...runningConfig };
-  const sendingOptions = { ...sendingConfig };
-
-  delete runningOptions.Services;
-  delete sendingOptions.Services;
-
-  return JSON.stringify(runningOptions) === JSON.stringify(sendingOptions);
-};
-
 //submit the configuration to save in file
 const submit = async () => {
   try {
@@ -319,41 +306,12 @@ const submit = async () => {
 
 const getFromFile = async () => {
   try {
-    await ElMessageBox.confirm(i18n.global.t("cconfig.GetFromFileConfirm"), i18n.global.t("cconfig.GetFromFileTitle"), {
-      confirmButtonText: i18n.global.t("cconfig.GetFromFileConfirmBtn"),
-      cancelButtonText: i18n.global.t("cconfig.GetFromFileCancelBtn"),
-      type: "info"
-    });
     const { data } = await getClientConfigFromFileApi();
     updateData(transClientConfigRes(data));
     ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
   } catch (e) {
     if (e instanceof Error) {
       ElMessage.error("Error!:" + e.message);
-    } else {
-      ElMessage.error(i18n.global.t("cconfig.FailedOperation"));
-    }
-  }
-};
-
-const reloadServices = async () => {
-  try {
-    await ElMessageBox.confirm(i18n.global.t("cconfig.ReloadServicesConfirm"), i18n.global.t("cconfig.ReloadServicesTitle"), {
-      confirmButtonText: i18n.global.t("cconfig.ReloadServicesConfirmBtn"),
-      cancelButtonText: i18n.global.t("cconfig.ReloadServicesCancelBtn"),
-      type: "info"
-    });
-    const runningConfig = await getRunningClientConfigApi();
-    const fileConfig = await getClientConfigFromFileApi();
-    if (checkOptionsConsistency(transToFrontConfig(runningConfig.data.config), transToFrontConfig(fileConfig.data.config))) {
-      await reloadServicesApi();
-      ElMessage.success(i18n.global.t("cconfig.OperationSuccess"));
-    } else {
-      ElMessage.warning(i18n.global.t("cconfig.InconsistentOptionsWarning"));
-    }
-  } catch (e) {
-    if (e instanceof Error) {
-      ElMessage.error(e.message);
     } else {
       ElMessage.error(i18n.global.t("cconfig.FailedOperation"));
     }

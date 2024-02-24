@@ -8,6 +8,7 @@ export namespace en {
     TLSMinVersion: "The tls min version. Supports values: tls1.1, tls1.2, tls1.3",
     CertFile: "The path to cert file",
     KeyFile: "The path to key file",
+    WebAddr: "WebServer Addr,default:127.0.0.1:8000,if addr:0.0.0.0:8000,it will provide services to external network hosts",
 
     IDs: "The user id",
     Secrets: "The secret for user id",
@@ -93,6 +94,7 @@ export namespace en {
     RemoteIdleConnections: "The number of idle server connections kept in the pool",
     RemoteTimeout: "The timeout of remote connections. Supports values like '30s', '5m'",
     Version: "Show the version of this program",
+    WebAddr: "WebServer Addr,default:127.0.0.1:7000,if addr:0.0.0.0:7000,it will provide services to external network hosts",
 
     // Service Setting
     HostPrefix: "The server will recognize this host prefix and forward data to local",
@@ -131,6 +133,7 @@ export namespace en {
     SelectLogLevel: "Select log level"
   };
   export const sconfig = {
+    WebAddr: "WebAddr",
     APIAddr: "APIAddr",
     APITLSMinVersion: "APITLSMinVersion",
     APICertFile: "APICertFile",
@@ -217,6 +220,7 @@ export namespace en {
     FailedToGetFromRunning: "Failed to get from running system!"
   };
   export const cconfig = {
+    WebAddr: "WebAddr",
     ID: "ID",
     ReconnectDelay: "ReconnectDelay",
     RemoteTimeout: "RemoteTimeout",

@@ -32,6 +32,7 @@ export namespace ServerConfig {
     UserPath: string;
     AuthAPI: string;
     TCPNumber: number;
+    WebAddr: string;
   }
   export interface GeneralSettingProps {
     UserPath: string;
@@ -39,6 +40,7 @@ export namespace ServerConfig {
     TCPs: TCP[];
     TCPNumber: number;
     Host: Host;
+    WebAddr: string;
   }
   export interface NetworkSetting {
     Addr: string;
@@ -108,7 +110,8 @@ export namespace ServerConfig {
   export const defaultGeneralSetting: GeneralSetting = {
     UserPath: "",
     AuthAPI: "",
-    TCPNumber: 0
+    TCPNumber: 0,
+    WebAddr: ""
   };
   export function getDefaultGeneralSettingProps(): GeneralSettingProps {
     return {
@@ -116,7 +119,8 @@ export namespace ServerConfig {
       AuthAPI: "",
       TCPs: [],
       TCPNumber: 0,
-      Host: getDefaultHostSetting()
+      Host: getDefaultHostSetting(),
+      WebAddr: ""
     };
   }
   export const defaultNetworkSetting: NetworkSetting = {

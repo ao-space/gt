@@ -91,6 +91,16 @@
                   <el-input v-model="localSetting.RemoteAPI"></el-input>
                 </el-form-item>
               </el-descriptions-item>
+              <!-- WebAddr -->
+              <el-descriptions-item>
+                <template #label>
+                  {{ $t("cconfig.WebAddr") }}
+                  <UsageTooltip :usage-text="$t('cusage[\'WebAddr\']')" />
+                </template>
+                <el-form-item prop="WebAddr">
+                  <el-input v-model="localSetting.WebAddr"></el-input>
+                </el-form-item>
+              </el-descriptions-item>
               <!-- RemoteCert -->
               <el-descriptions-item>
                 <template #label>

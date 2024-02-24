@@ -2,10 +2,6 @@ import http from "@/api";
 import { Config } from "@/api/interface/index";
 import { ClientConfig, ClientConfigBackend, transToBackendConfig } from "@/components/ClientConfigForm/interface";
 
-export const getRunningClientConfigApi = () => {
-  return http.get<Config.Client.ResConfigBackend>(`/config/running`);
-};
-
 export const getClientConfigFromFileApi = () => {
   return http.get<Config.Client.ResConfigBackend>(`/config/file`);
 };
