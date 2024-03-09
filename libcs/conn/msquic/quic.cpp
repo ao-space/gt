@@ -85,8 +85,10 @@ const char *StringStatus(QUIC_STATUS status) {
         return "stream limit reached";
     case QUIC_STATUS_ALPN_IN_USE:
         return "alpn in use";
+    #ifndef _WIN64
     case QUIC_STATUS_ADDRESS_NOT_AVAILABLE:
         return "address not available";
+    #endif
     case QUIC_STATUS_CLOSE_NOTIFY:
         return "close notify";
     case QUIC_STATUS_BAD_CERTIFICATE:

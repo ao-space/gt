@@ -58,6 +58,11 @@ enum Commands {
 }
 
 fn main() {
+    #[cfg(target_os = "windows")]
+    {
+        cs::InitGtDll();
+    }
+
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     let cli = Cli::parse();
     if let Some(signal) = cli.signal {

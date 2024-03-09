@@ -53,3 +53,5 @@ web/front/*.sw?
 # dist
 server/web/dist
 client/web/dist
+
+/libcs/msvc-build/target

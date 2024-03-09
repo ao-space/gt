@@ -2,6 +2,10 @@
 #include "quic.hpp"
 #include "stream.hpp"
 
+#ifdef _WIN64
+#include "stdlib.h"
+#endif
+
 Stream::Stream(void *context) : context(context) {}
 
 Stream::Stream(HQUIC stream) : stream(stream) {

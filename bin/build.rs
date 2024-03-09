@@ -20,14 +20,14 @@ use std::process::Command;
 
 fn main() {
     let target = env::var("TARGET").unwrap();
-    println!("cargo:rerun-if-changed=libcs/release/{target}");
-    println!("cargo:rustc-link-search=libcs/release/{target}");
-    println!("cargo:rustc-link-lib=static=cs");
-    println!("cargo:rustc-link-lib=static=webrtc");
-    println!("cargo:rustc-link-lib=static=msquic");
     let os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     match os.as_str() {
         "linux" => {
+            println!("cargo:rerun-if-changed=libcs/release/{target}");
+            println!("cargo:rustc-link-search=libcs/release/{target}");
+            println!("cargo:rustc-link-lib=static=cs");
+            println!("cargo:rustc-link-lib=static=webrtc");
+            println!("cargo:rustc-link-lib=static=msquic");
             let output = Command::new(format!(
                 "{}-linux-gnu-gcc",
                 env::var("CARGO_CFG_TARGET_ARCH").unwrap()
@@ -42,6 +42,11 @@ fn main() {
             println!("cargo:rustc-link-lib=static=stdc++");
         }
         "macos" => {
+            println!("cargo:rerun-if-changed=libcs/release/{target}");
+            println!("cargo:rustc-link-search=libcs/release/{target}");
+            println!("cargo:rustc-link-lib=static=cs");
+            println!("cargo:rustc-link-lib=static=webrtc");
+            println!("cargo:rustc-link-lib=static=msquic");
             println!("cargo:rustc-link-lib=dylib=resolv");
             println!("cargo:rustc-link-lib=dylib=c++");
             println!("cargo:rustc-link-lib=dylib=c++abi");
@@ -50,6 +55,9 @@ fn main() {
             println!("cargo:rustc-link-lib=framework=IOKit");
             println!("cargo:rustc-link-lib=framework=CoreMedia");
             println!("cargo:rustc-link-lib=framework=AVFoundation");
+        }
+        "windows"=>{
+            //do nothing
         }
         os => {
             panic!("Unsupported OS: {}", os)
