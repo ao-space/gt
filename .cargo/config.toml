@@ -9,3 +9,7 @@ rustflags = ["-C", "target-feature=+crt-static"]
 [target.riscv64gc-unknown-linux-gnu]
 linker = "riscv64-linux-gnu-gcc"
 rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.x86_64-pc-windows-msvc]
+linker = "link"
+rustflags = ["-C", "target-feature=+crt-static"]

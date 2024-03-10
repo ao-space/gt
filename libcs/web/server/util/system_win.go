@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build windows
 
 package util
 
@@ -42,7 +42,9 @@ func SendSignal(signal string) (err error) {
 		err = errors.New("unknown signal")
 		return
 	}
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		// 	Setpgid: true
+	}
 	err = cmd.Start()
 	if err != nil {
 		return
