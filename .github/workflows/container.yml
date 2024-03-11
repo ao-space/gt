@@ -41,7 +41,7 @@ jobs:
     - name: package-gt
       run: |-
         brew install make git 
-        rustup target add x86_64-unknown-apple-gnu aarch64-unknown-apple-gnu 
+        rustup target add x86_64-apple-darwin aarch64-apple-darwin
         make
 
     - name: Archive GT artifacts
