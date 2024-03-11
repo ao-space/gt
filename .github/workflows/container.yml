@@ -31,25 +31,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-      # with:
-      #   submodules: recursive
+      with:
+        submodules: recursive
   
 
-    # - name: Set up Go
-    #   uses: actions/setup-go@v4
-    #   with:
-    #     go-version: 'stable'
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 'stable'
 
     - name: package-gt
       run: |-
-        arch
-        # brew install make  llvm@16
-        # export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
-        # export PATH="/usr/local/opt/llvm@16/bin:$PATH"
-        # export LDFLAGS="-L/usr/local/opt/llvm@16/lib"
-        # export CPPFLAGS="-I/usr/local/opt/llvm@16/include"
-        # rustup target add x86_64-apple-darwin aarch64-apple-darwin
-        # make
+        brew install make  llvm@16
+        export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
+        export PATH="/usr/local/opt/llvm@16/bin:$PATH"
+        export LDFLAGS="-L/usr/local/opt/llvm@16/lib"
+        export CPPFLAGS="-I/usr/local/opt/llvm@16/include"
+        rustup target add x86_64-apple-darwin aarch64-apple-darwin
+        make
 
     - name: Archive GT artifacts
       uses: actions/upload-artifact@v3
