@@ -50,12 +50,11 @@ jobs:
 
     - name: package-gt
       run: |-
-        brew install make  llvm@16
+        brew install make cmake llvm@16
         export PATH="/usr/local/opt/llvm@16/bin:$PATH"
         export LDFLAGS="-L/usr/local/opt/llvm@16/lib"
         export CPPFLAGS="-I/usr/local/opt/llvm@16/include"
         rustup target add x86_64-apple-darwin aarch64-apple-darwin
-        make clean
         make
 
     - name: Archive GT artifacts
