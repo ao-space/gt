@@ -27,11 +27,17 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      
 
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
+        path: /Users/runner/work/gt/gt/libcs/dep/
+
+    - name: Cache Git submodules
+      uses: actions/cache@v3
+      with:
         path: /Users/runner/work/gt/gt/libcs/dep/
         key: Cache-git
         restore-keys: |
