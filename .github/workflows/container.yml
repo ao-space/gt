@@ -42,7 +42,7 @@ jobs:
 
     - name: package-gt
       run: |-
-        Software Update
+        xcode-select -p
         brew install make  llvm@16 gcc*
         export PATH="/usr/local/opt/llvm@16/bin:$PATH"
         export LDFLAGS="-L/usr/local/opt/llvm@16/lib"
