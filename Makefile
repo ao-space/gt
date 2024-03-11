@@ -30,7 +30,7 @@ linux:
 	cp target/riscv64gc-unknown-linux-gnu/release/gt release/gt-linux-riscv64
 
 darwin:
-    cd ./libcs && TARGET=x86_64-apple-darwin GOOS=darwin GOARCH=amd64 arch -arch x86_64 make release_lib
+	cd ./libcs && TARGET=x86_64-apple-darwin GOOS=darwin GOARCH=amd64 arch -arch x86_64 make release_lib
 	cargo build --target x86_64-apple-darwin -r
 	cd ./libcs &&  TARGET=aarch64-apple-darwin GOOS=darwin GOARCH=arm64 arch -arch arm64 make release_lib
 	cargo build --target aarch64-apple-darwin -r
