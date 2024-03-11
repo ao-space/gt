@@ -40,7 +40,6 @@ jobs:
 
     - name: package-gt
       run: |-
-        brew update
         brew install make  llvm@16 
         export PATH="/usr/local/opt/llvm/bin:$PATH"
         rustup target add x86_64-apple-darwin aarch64-apple-darwin 
