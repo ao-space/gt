@@ -7,17 +7,17 @@ on:
   pull_request:
     branches: [ "*" ]
 
-env:
-  REGISTRY: ghcr.io
-  EULIX_REGISTRY: hub.eulix.xyz
-  HUAWEICLOUD_REGISTRY_SH: swr.cn-east-3.myhuaweicloud.com
-  HUAWEICLOUD_REGISTRY_BJ: swr.cn-north-4.myhuaweicloud.com
-  HUAWEICLOUD_REGISTRY_GZ: swr.cn-south-1.myhuaweicloud.com
-  HUAWEICLOUD_REGISTRY_HK: swr.ap-southeast-1.myhuaweicloud.com
-  HUAWEICLOUD_REGISTRY_SG: swr.ap-southeast-3.myhuaweicloud.com
-  HUAWEICLOUD_REGISTRY_AF: swr.af-south-1.myhuaweicloud.com
-  HUAWEICLOUD_REGISTRY_LA: swr.la-north-2.myhuaweicloud.com
-  IMAGE_NAME: ${{ github.repository }}
+# env:
+#   REGISTRY: ghcr.io
+#   EULIX_REGISTRY: hub.eulix.xyz
+#   HUAWEICLOUD_REGISTRY_SH: swr.cn-east-3.myhuaweicloud.com
+#   HUAWEICLOUD_REGISTRY_BJ: swr.cn-north-4.myhuaweicloud.com
+#   HUAWEICLOUD_REGISTRY_GZ: swr.cn-south-1.myhuaweicloud.com
+#   HUAWEICLOUD_REGISTRY_HK: swr.ap-southeast-1.myhuaweicloud.com
+#   HUAWEICLOUD_REGISTRY_SG: swr.ap-southeast-3.myhuaweicloud.com
+#   HUAWEICLOUD_REGISTRY_AF: swr.af-south-1.myhuaweicloud.com
+#   HUAWEICLOUD_REGISTRY_LA: swr.la-north-2.myhuaweicloud.com
+#   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
 
@@ -30,8 +30,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      # with:
+      #   submodules: recursive
 
     - name: Set up Go
       uses: actions/setup-go@v4
