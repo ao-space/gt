@@ -42,8 +42,8 @@ jobs:
 
     - name: package-gt
       run: |-
-        xcode-select -p
-        brew install make  llvm@16 gcc*
+        xcodebuild -version
+        brew install make  llvm@16 gcc
         export PATH="/usr/local/opt/llvm@16/bin:$PATH"
         export LDFLAGS="-L/usr/local/opt/llvm@16/lib"
         export CPPFLAGS="-I/usr/local/opt/llvm@16/include"
