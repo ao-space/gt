@@ -31,17 +31,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-        # path: /Users/runner/work/gt/gt/libcs/dep/
-
-    # - name: Cache Git submodules
-    #   uses: actions/cache@v3
-    #   with:
-    #     path: /Users/runner/work/gt/gt/libcs/dep/
-    #     key: Cache-git
-    #     restore-keys: |
-    #       Cache-git
+      # with:
+      #   submodules: recursive
+  
 
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -50,7 +42,8 @@ jobs:
 
     - name: package-gt
       run: |-
-        brew install make cmake llvm@16
+        xcode-select --install
+        brew install make  llvm@16 gcc*
         export PATH="/usr/local/opt/llvm@16/bin:$PATH"
         export LDFLAGS="-L/usr/local/opt/llvm@16/lib"
         export CPPFLAGS="-I/usr/local/opt/llvm@16/include"
