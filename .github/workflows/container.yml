@@ -47,6 +47,6 @@ jobs:
     - name: Archive GT artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: gt
+        name: gt-mac
         path: |
           release/*
