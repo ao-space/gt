@@ -43,7 +43,7 @@ jobs:
     - name: package-gt
       run: |-
         brew install make  llvm@16 binutils 
-        curl https://chrome-infra-packages.appspot.com/dl/gn/gn/mac-amd64/+/latest
+        curl -LOJ https://chrome-infra-packages.appspot.com/dl/gn/gn/mac-amd64/+/latest
         unzip gn-mac-amd64.zip
         cd gn-mac-amd64 && chmod +x gn && mv gn /opt/homebrew/opt/llvm@16/bin/
         echo 'export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
