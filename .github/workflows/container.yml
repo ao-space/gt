@@ -49,6 +49,7 @@ jobs:
         echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> /Users/runner/.bash_profile
         export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
         echo $PATH
+        which clang
         # rustup target add x86_64-apple-darwin aarch64-apple-darwin
         # make
         
