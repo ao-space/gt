@@ -42,13 +42,11 @@ jobs:
 
     - name: package-gt
       run: |-
-        brew install make  llvm@16
+        brew install make  llvm@16 binutils
         export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
-        export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"
-        export LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib"
-        export CPPFLAGS="-I/opt/homebrew/opt/llvm@16/include"
+        export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
+        export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
         rustup target add x86_64-apple-darwin aarch64-apple-darwin
-        rm -rf Users/runner/work/gt/gt/libcs/dep/_msquic/out/x86_64-apple-darwin/obj/Release/libmsquic_static.a
         make
         
 
