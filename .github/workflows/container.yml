@@ -45,6 +45,7 @@ jobs:
         brew install make  llvm@16 binutils  ninja
         curl -LOJ https://chrome-infra-packages.appspot.com/dl/gn/gn/mac-amd64/+/latest
         unzip gn-mac-amd64.zip
+        mkdir -pv  /opt/homebrew/opt/
         chmod +x gn && mv gn /usr/local/opt/llvm@16/bin/
         ln -s /usr/local/opt/llvm@16/ /opt/homebrew/opt/llvm/
         ln -s /usr/local/opt/llvm@16/bin/llvm-objcopy /usr/local/opt/llvm@16/bin/llvm-objcopy-mp-15
