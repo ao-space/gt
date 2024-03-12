@@ -45,12 +45,12 @@ jobs:
         brew install make  llvm@16 binutils  ninja
         curl -LOJ https://chrome-infra-packages.appspot.com/dl/gn/gn/mac-amd64/+/latest
         unzip gn-mac-amd64.zip
-        chmod +x gn && mv gn /opt/homebrew/opt/llvm@16/bin/
-        ln -s /opt/homebrew/opt/llvm@16 /opt/homebrew/opt/llvm
-        ln -s /opt/homebrew/opt/llvm@16/bin/llvm-objcopy /opt/homebrew/opt/llvm@16/bin/llvm-objcopy-mp-15
-        echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.bash_profile
-        export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
-        echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> ~/.bash_profile
+        chmod +x gn && mv gn /usr/local/opt/llvm@16/bin/
+        ln -s /usr/local/opt/llvm@16/ /opt/homebrew/opt/llvm/
+        ln -s /usr/local/opt/llvm@16/bin/llvm-objcopy /usr/local/opt/llvm@16/bin/llvm-objcopy-mp-15
+        echo 'export PATH="/usr/local/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
+        export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
+        echo 'export PATH="/usr/local/opt/binutils/bin:$PATH"' >> ~/.bash_profile
         source ~/.bash_profile
         mv /opt/homebrew/opt/llvm/bin/llvm-libtool-darwin /opt/homebrew/opt/llvm/bin/libtool
         rustup target add x86_64-apple-darwin aarch64-apple-darwin
