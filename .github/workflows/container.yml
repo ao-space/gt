@@ -43,6 +43,7 @@ jobs:
     - name: package-gt
       run: |-
         brew install make  llvm@16 binutils xdg-ninja
+        which gn
         # echo 'export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
         # #export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
         # export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
