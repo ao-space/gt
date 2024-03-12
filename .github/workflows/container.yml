@@ -42,20 +42,21 @@ jobs:
 
     - name: package-gt
       run: |-
-        brew install make  llvm@16 binutils  ninja
-        pip3 install --upgrade setuptools
-        curl -LOJ https://chrome-infra-packages.appspot.com/dl/gn/gn/mac-amd64/+/latest
-        unzip gn-mac-amd64.zip
-        chmod +x gn && mv gn /usr/local/opt/llvm@16/bin/
-        ln -s /usr/local/opt /opt/homebrew/opt
-        ln -s /usr/local/opt/llvm@16 /usr/local/opt/llvm
-        ln -s /usr/local/opt/llvm@16/bin/llvm-objcopy /usr/local/opt/llvm@16/bin/llvm-objcopy-mp-15
-        echo 'export PATH="/usr/local/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
-        export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
-        echo 'export PATH="/usr/local/opt/binutils/bin:$PATH"' >> ~/.bash_profile
-        source ~/.bash_profile
-        mv /usr/local/opt/llvm/bin/llvm-libtool-darwin /usr/local/opt/llvm/bin/libtool
-        rustup target add x86_64-apple-darwin aarch64-apple-darwin
+        ls /opt/homebrew
+        # brew install make  llvm@16 binutils  ninja
+        # pip3 install --upgrade setuptools
+        # curl -LOJ https://chrome-infra-packages.appspot.com/dl/gn/gn/mac-amd64/+/latest
+        # unzip gn-mac-amd64.zip
+        # chmod +x gn && mv gn /usr/local/opt/llvm@16/bin/
+        # ln -s /usr/local/opt /opt/homebrew/opt
+        # ln -s /usr/local/opt/llvm@16 /usr/local/opt/llvm
+        # ln -s /usr/local/opt/llvm@16/bin/llvm-objcopy /usr/local/opt/llvm@16/bin/llvm-objcopy-mp-15
+        # echo 'export PATH="/usr/local/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
+        # export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
+        # echo 'export PATH="/usr/local/opt/binutils/bin:$PATH"' >> ~/.bash_profile
+        # source ~/.bash_profile
+        # mv /usr/local/opt/llvm/bin/llvm-libtool-darwin /usr/local/opt/llvm/bin/libtool
+        # rustup target add x86_64-apple-darwin aarch64-apple-darwin
         # cd ./libcs && TARGET=x86_64-apple-darwin GOOS=darwin GOARCH=amd64 arch -arch x86_64 make release_lib
         # cargo build --target x86_64-apple-darwin -r
         # mkdir -p release
