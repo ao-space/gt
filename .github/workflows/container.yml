@@ -42,9 +42,9 @@ jobs:
 
     - name: package-gt
       run: |-
-        brew install make  llvm@16 binutils
-        echo 'export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
-        export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"
+        brew install make  llvm binutils
+        echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.bash_profile
+        export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
         export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
         echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> ~/.bash_profile
         #export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
