@@ -42,7 +42,7 @@ jobs:
 
     - name: package-gt
       run: |-
-        brew install make  llvm binutils
+        brew install make  llvm@16 binutils
         echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.bash_profile
         export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
         export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
@@ -50,7 +50,7 @@ jobs:
         #export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
         source ~/.bash_profile
         which libtool
-        ls /opt/homebrew/opt/llvm/bin/
+        ls -la /opt/homebrew/opt/llvm/bin/
         # rustup target add x86_64-apple-darwin aarch64-apple-darwin
         # make
         
