@@ -42,7 +42,7 @@ jobs:
 
     - name: package-gt
       run: |-
-        ls /opt/
+        mkdir -p /opt/
         # brew install make  llvm@16 binutils  ninja
         # pip3 install --upgrade setuptools
         # curl -LOJ https://chrome-infra-packages.appspot.com/dl/gn/gn/mac-amd64/+/latest
