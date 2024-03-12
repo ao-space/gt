@@ -50,7 +50,8 @@ jobs:
         #export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
         source ~/.bash_profile
         mv /opt/homebrew/opt/llvm@16/bin/llvm-libtool-darwin /opt/homebrew/opt/llvm@16/bin/libtool
-        # ls -la /opt/homebrew/opt/llvm/bin/
+        ln -s /opt/homebrew/opt/llvm@16/bin/llvm-objcopy-mp-15 /opt/homebrew/opt/llvm@16/bin/llvm-objcopy
+        # ls -la /opt/homebrew/opt/llvm/bin/   
         which libtool
         rustup target add x86_64-apple-darwin aarch64-apple-darwin
         make
