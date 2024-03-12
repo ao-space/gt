@@ -31,29 +31,29 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-      with:
-        submodules: recursive
+    #   with:
+    #     submodules: recursive
   
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 'stable'
+    # - name: Set up Go
+    #   uses: actions/setup-go@v4
+    #   with:
+    #     go-version: 'stable'
 
     - name: package-gt
       run: |-
-        brew install make  llvm@16 binutils
-        echo 'export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
-        #export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
-        export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
-        echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> ~/.bash_profile
-        #export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
-        source ~/.bash_profile
-        mv /opt/homebrew/opt/llvm@16/bin/llvm-libtool-darwin /opt/homebrew/opt/llvm@16/bin/libtool
-        ln -s /opt/homebrew/opt/llvm@16/bin/llvm-objcopy /opt/homebrew/opt/llvm@16/bin/llvm-objcopy-mp-15 
-        which libtool
-        rustup target add x86_64-apple-darwin aarch64-apple-darwin
-        make
+        brew install make  llvm@16 binutils gn
+        # echo 'export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
+        # #export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+        # export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
+        # echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> ~/.bash_profile
+        # #export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
+        # source ~/.bash_profile
+        # mv /opt/homebrew/opt/llvm@16/bin/llvm-libtool-darwin /opt/homebrew/opt/llvm@16/bin/libtool
+        # ln -s /opt/homebrew/opt/llvm@16/bin/llvm-objcopy /opt/homebrew/opt/llvm@16/bin/llvm-objcopy-mp-15 
+        # which libtool
+        # rustup target add x86_64-apple-darwin aarch64-apple-darwin
+        # make
         
 
     - name: Archive GT artifacts
