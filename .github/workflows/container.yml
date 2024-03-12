@@ -31,14 +31,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    #   with:
-    #     submodules: recursive
+      with:
+        submodules: recursive
   
 
-    # - name: Set up Go
-    #   uses: actions/setup-go@v4
-    #   with:
-    #     go-version: 'stable'
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 'stable'
 
     - name: package-gt
       run: |-
@@ -54,10 +54,10 @@ jobs:
         source ~/.bash_profile
         mv /usr/local/opt/llvm/bin/llvm-libtool-darwin /usr/local/opt/llvm/bin/libtool
         rustup target add x86_64-apple-darwin aarch64-apple-darwin
-        # cd ./libcs && TARGET=x86_64-apple-darwin GOOS=darwin GOARCH=amd64 arch -arch x86_64 make release_lib
-        # cargo build --target x86_64-apple-darwin -r
-        # mkdir -p release
-        # cp target/x86_64-apple-darwin/release/gt release/gt-darwin-x86_64
+        cd ./libcs && TARGET=x86_64-apple-darwin GOOS=darwin GOARCH=amd64 arch -arch x86_64 make release_lib
+        cargo build --target x86_64-apple-darwin -r
+        mkdir -p release
+        cp target/x86_64-apple-darwin/release/gt release/gt-darwin-x86_64
 
     - name: Archive GT artifacts
       uses: actions/upload-artifact@v3
