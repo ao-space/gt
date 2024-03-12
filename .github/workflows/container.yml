@@ -48,6 +48,7 @@ jobs:
         export LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib"
         export CPPFLAGS="-I/opt/homebrew/opt/llvm@16/include"
         rustup target add x86_64-apple-darwin aarch64-apple-darwin
+        rm -rf Users/runner/work/gt/gt/libcs/dep/_msquic/out/x86_64-apple-darwin/obj/Release/libmsquic_static.a
         make
         
 
