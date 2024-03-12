@@ -60,7 +60,10 @@ jobs:
         cd ./libcs && TARGET=x86_64-apple-darwin GOOS=darwin GOARCH=amd64 arch -arch x86_64 make release_lib
         cargo build --target x86_64-apple-darwin -r
         mkdir -p release
-        cp target/x86_64-apple-darwin/release/gt release/gt-darwin-x86_64
+        ls target/
+        echo "--------------------------------------------"
+        ls target/x86_64-apple-darwin/release/
+        #cp target/x86_64-apple-darwin/release/gt release/gt-darwin-x86_64
 
     - name: Archive GT artifacts
       uses: actions/upload-artifact@v3
