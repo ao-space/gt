@@ -45,7 +45,7 @@ jobs:
         brew install make  llvm@16 binutils 
         curl -LOJ https://chrome-infra-packages.appspot.com/dl/gn/gn/mac-amd64/+/latest
         unzip gn-mac-amd64.zip
-        cd gn-mac-amd64 && chmod +x gn && mv gn /opt/homebrew/opt/llvm@16/bin/
+        chmod +x gn && mv gn /opt/homebrew/opt/llvm@16/bin/
         echo 'export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
         #export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
         export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
