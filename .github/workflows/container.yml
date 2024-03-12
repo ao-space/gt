@@ -43,9 +43,11 @@ jobs:
     - name: package-gt
       run: |-
         brew install make  llvm@16 binutils
+        echo 'export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"' >> /Users/runner/.bash_profile
+        export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"
         export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
+        echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> /Users/runner/.bash_profile
         export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
-        export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
         echo $PATH
         # rustup target add x86_64-apple-darwin aarch64-apple-darwin
         # make
