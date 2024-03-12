@@ -31,14 +31,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      # with:
+      #   submodules: recursive
   
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 'stable'
+    # - name: Set up Go
+    #   uses: actions/setup-go@v4
+    #   with:
+    #     go-version: 'stable'
 
     - name: package-gt
       run: |-
@@ -46,8 +46,9 @@ jobs:
         export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
         export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
         export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
-        rustup target add x86_64-apple-darwin aarch64-apple-darwin
-        make
+        echo $PATH
+        # rustup target add x86_64-apple-darwin aarch64-apple-darwin
+        # make
         
 
     - name: Archive GT artifacts
