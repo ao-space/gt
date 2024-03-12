@@ -49,7 +49,7 @@ jobs:
         echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> ~/.bash_profile
         #export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
         source ~/.bash_profile
-        mv /opt/homebrew/opt/llvm/bin/llvm-libtool-darwin /opt/homebrew/opt/llvm/bin/libtool
+        mv /opt/homebrew/opt/llvm@16/bin/llvm-libtool-darwin /opt/homebrew/opt/llvm@16/bin/libtool
         # ls -la /opt/homebrew/opt/llvm/bin/
         which libtool
         # rustup target add x86_64-apple-darwin aarch64-apple-darwin
