@@ -42,14 +42,13 @@ jobs:
 
     - name: package-gt
       run: |-
-        rm -rf /Library/Developer/CommandLineTools
-        rm -rf /Applications/Xcode.app
         brew install make  llvm@16 binutils
-        echo 'export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"' >> /Users/runner/.bash_profile
+        echo 'export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"' >> /etc/profile
         export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"
         export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
-        echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> /Users/runner/.bash_profile
+        echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> /etc/profile
         export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
+        bash
         rustup target add x86_64-apple-darwin aarch64-apple-darwin
         make
         
