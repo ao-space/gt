@@ -46,7 +46,7 @@ jobs:
         curl -LOJ https://chrome-infra-packages.appspot.com/dl/gn/gn/mac-amd64/+/latest
         unzip gn-mac-amd64.zip
         chmod +x gn && mv gn /opt/homebrew/opt/llvm@16/bin/
-        ln -s /opt/homebrew/opt/llvm@16/bin/ /opt/homebrew/opt/llvm/bin/
+        ln -s /opt/homebrew/opt/llvm@16 /opt/homebrew/opt/llvm
         echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.bash_profile
         #export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
         export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
