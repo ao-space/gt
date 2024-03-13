@@ -47,7 +47,7 @@ jobs:
     - name: Archive GT artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: gt-liunx
+        name: gt-linux
         path: |
           release/*
 
@@ -288,7 +288,6 @@ jobs:
         chmod +x gn && mv gn /usr/local/opt/llvm@16/bin/
         sudo ln -s /usr/local/opt/llvm@16 /opt/homebrew/opt/llvm
         ln -s /usr/local/opt/llvm@16 /usr/local/opt/llvm
-        ln -s /usr/local/opt/llvm@16/bin/llvm-objcopy /usr/local/opt/llvm@16/bin/llvm-objcopy-mp-15
         echo 'export PATH="/usr/local/opt/llvm@16/bin:$PATH"' >> ~/.bash_profile
         export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
         echo 'export PATH="/usr/local/opt/binutils/bin:$PATH"' >> ~/.bash_profile
@@ -299,12 +298,12 @@ jobs:
         cargo build --target x86_64-apple-darwin -r
         cd ..
         mkdir -p release
-        cp target/x86_64-apple-darwin/release/gt release/gt-darwin-x86_64
+        cp target/x86_64-apple-darwin/release/gt release/gt-macos-x86_64
 
     - name: Archive GT artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: gt-x8664-macos
+        name: gt-macos-x86_64
         path: |
           release/*
 
@@ -334,7 +333,6 @@ jobs:
         unzip gn-mac-amd64.zip
         chmod +x gn && mv gn /opt/homebrew/opt/llvm@16/bin/
         ln -s /opt/homebrew/opt/llvm@16 /opt/homebrew/opt/llvm
-        ln -s /opt/homebrew/opt/llvm@16/bin/llvm-objcopy /opt/homebrew/opt/llvm@16/bin/llvm-objcopy-mp-15
         echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.bash_profile
         export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
         echo 'export PATH="/opt/homebrew/opt/binutils/bin:$PATH"' >> ~/.bash_profile
@@ -345,11 +343,11 @@ jobs:
         cargo build --target aarch64-apple-darwin -r
         cd ..
         mkdir -p release
-        cp target/aarch64-apple-darwin/release/gt release/gt-darwin-aarch64
+        cp target/aarch64-apple-darwin/release/gt release/gt-macos-aarch64
 
     - name: Archive GT artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: gt-arm64-macos
+        name: gt-macos-aarch64
         path: |
           release/*

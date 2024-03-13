@@ -35,5 +35,5 @@ darwin:
 	cd ./libcs &&  TARGET=aarch64-apple-darwin GOOS=darwin GOARCH=arm64 arch -arch arm64 make release_lib
 	cargo build --target aarch64-apple-darwin -r
 	mkdir -p release
-	cp target/x86_64-apple-darwin/release/gt release/gt-darwin-x86_64
-	cp target/aarch64-apple-darwin/release/gt release/gt-darwin-aarch64
+	cp target/x86_64-apple-darwin/release/gt release/gt-macos-x86_64
+	cp target/aarch64-apple-darwin/release/gt release/gt-macos-aarch64

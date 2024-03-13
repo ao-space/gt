@@ -59,13 +59,16 @@ ifeq ($(TARGET_OS), apple)
 	export CC=clang
 	export CXX=clang++
 	TARGET_OS=mac
-	OBJCOPY=llvm-objcopy-mp-15
+	OBJCOPY=llvm-objcopy
+	_SETUP_LLVM:=$(shell rm dep/_google-webrtc/src/third_party/llvm-build/Release+Asserts 2> /dev/null)
 	ifeq ($(TARGET_CPU), arm64)
 		RUST_TARGET?=aarch64-apple-darwin
+		_SETUP_LLVM:=$(shell ln -s ./Release+Asserts.mac_arm64 dep/_google-webrtc/src/third_party/llvm-build/Release+Asserts)
 	else
 		ifndef RUST_TARGET
 			RUST_TARGET:=$(TARGET_CPU)-apple-darwin
 		endif
+		_SETUP_LLVM:=$(shell ln -s ./Release+Asserts.mac dep/_google-webrtc/src/third_party/llvm-build/Release+Asserts)
 	endif
 	DEF_WEBRTC_COND?=-DWEBRTC_MAC -DWEBRTC_POSIX
 	DEF_LDFLAGS?=-framework Cocoa
@@ -322,7 +325,6 @@ compile_webrtc: check_webrtc_dependencies update_submodule
 	cd ./dep/_google-webrtc/src && gn gen out/release-$(TARGET) --args=" \
         clang_use_chrome_plugins=false \
         use_xcode_clang=false \
-        clang_base_path=\"/opt/homebrew/opt/llvm\" \
         enable_google_benchmarks=false \
         enable_libaom=false \
         is_component_build=false \
@@ -349,15 +351,6 @@ compile_webrtc: check_webrtc_dependencies update_submodule
         use_lld=true \
         use_rtti=true \
         use_sysroot=false"
-	sed 's| [^ ]*gcc | $(CC) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
-	cat ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
-	rm ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
-	sed 's| [^ ]*g++ | $(CXX) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
-	cat ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
-	rm ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
-	sed 's|"ar"|$(TARGET)-ar|g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
-	cat ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp > ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
-	rm ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja.tmp
 	ninja -C ./dep/_google-webrtc/src/out/release-$(TARGET)
 endif
 
