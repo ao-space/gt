@@ -20,17 +20,18 @@
 #![allow(unused)]
 
 use clap::Args;
+use serde::{Deserialize, Serialize};
 use std::ffi::{c_char, c_void, CString};
 include!("cs_bindings.rs");
 
-#[derive(Args, Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Args, Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct ServerArgs {
     /// Config file path
     #[arg(short, long)]
     pub config: Option<String>,
 }
 
-#[derive(Args, Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Args, Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct ClientArgs {
     /// Config file path
     #[arg(short, long)]

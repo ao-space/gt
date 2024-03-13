@@ -109,7 +109,7 @@ fn main() {
 
     let mut args = env::args();
     if args.len() == 0 {
-        error!("no command provided");
+        error!("no program provided");
         return;
     }
     let program = args.next().unwrap();
