@@ -32,10 +32,10 @@ fn main() {
                 "{}-linux-gnu-gcc",
                 env::var("CARGO_CFG_TARGET_ARCH").unwrap()
             ))
-            .arg("--print-file-name")
-            .arg("libstdc++.a")
-            .output()
-            .unwrap();
+                .arg("--print-file-name")
+                .arg("libstdc++.a")
+                .output()
+                .unwrap();
             let mut path = PathBuf::from(String::from_utf8_lossy(&output.stdout).into_owned());
             path.pop();
             println!("cargo:rustc-link-search=native={}", path.to_str().unwrap());
@@ -56,8 +56,10 @@ fn main() {
             println!("cargo:rustc-link-lib=framework=CoreMedia");
             println!("cargo:rustc-link-lib=framework=AVFoundation");
         }
-        "windows"=>{
-            //do nothing
+        "windows" => {
+            println!("cargo:rerun-if-changed=libcs/release/windows");
+            println!("cargo:rustc-link-search=libcs/release/windows");
+            println!("cargo:rustc-link-lib=static=gt");
         }
         os => {
             panic!("Unsupported OS: {}", os)

@@ -65,6 +65,11 @@ pub fn run_client(client_args: ClientArgs) {
     };
     let (args, go_str) = convert_to_go_slices(&args);
     unsafe {
+        #[cfg(target_os = "windows")]
+        {
+            _rt0_amd64_windows_lib();
+        }
+
         RunClient(args);
     }
 }
@@ -77,6 +82,17 @@ pub fn run_server(server_args: ServerArgs) {
     };
     let (args, go_str) = convert_to_go_slices(&args);
     unsafe {
+        #[cfg(target_os = "windows")]
+        {
+            _rt0_amd64_windows_lib();
+        }
+
         RunServer(args);
     }
+}
+
+
+#[cfg(target_os = "windows")]
+extern "C" {
+    fn _rt0_amd64_windows_lib();
 }

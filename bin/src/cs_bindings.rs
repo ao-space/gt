@@ -188,39 +188,10 @@ fn bindgen_test_layout_GoSlice() {
 }
 
 
-#[cfg(not(target_os = "windows"))]
 extern "C" {
     pub fn RunServer(args: GoSlice);
 }
 
-#[cfg(not(target_os = "windows"))]
 extern "C" {
     pub fn RunClient(args: GoSlice);
-}
-
-#[cfg(target_os = "windows")]
-const DLL_DATA: &'static [u8] = include_bytes!("../../libcs/msvc-build/target/gt.dll");
-
-#[cfg(target_os = "windows")]
-pub fn InitGtDll() {
-    let mut dll_file = File::create( temp_dir().join("gt.dll")).expect("Failed to create DLL file");
-    dll_file.write_all(DLL_DATA).expect("Failed to write DLL data to file");
-}
-
-#[cfg(target_os = "windows")]
-fn RunServer(args: GoSlice) {
-    unsafe {
-        let lib = libloading::Library::new( temp_dir().join("gt.dll")).unwrap();
-        let func: libloading::Symbol<unsafe extern fn(GoSlice)> = lib.get(b"RunServer").unwrap();
-        func(args);
-    }
-}
-
-#[cfg(target_os = "windows")]
-fn RunClient(args: GoSlice) {
-    unsafe {
-        let lib = libloading::Library::new( temp_dir().join("gt.dll")).unwrap();
-        let func: libloading::Symbol<unsafe extern fn(GoSlice)> = lib.get(b"RunClient").unwrap();
-        func(args);
-    }
 }
