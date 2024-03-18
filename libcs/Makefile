@@ -60,18 +60,22 @@ ifeq ($(TARGET_OS), apple)
 	export CXX=clang++
 	TARGET_OS=mac
 	OBJCOPY=llvm-objcopy
-	_SETUP_LLVM:=$(shell rm dep/_google-webrtc/src/third_party/llvm-build/Release+Asserts 2> /dev/null)
 	ifeq ($(TARGET_CPU), arm64)
 		RUST_TARGET?=aarch64-apple-darwin
-		_SETUP_LLVM:=$(shell ln -s ./Release+Asserts.mac_arm64 dep/_google-webrtc/src/third_party/llvm-build/Release+Asserts)
 	else
 		ifndef RUST_TARGET
 			RUST_TARGET:=$(TARGET_CPU)-apple-darwin
 		endif
-		_SETUP_LLVM:=$(shell ln -s ./Release+Asserts.mac dep/_google-webrtc/src/third_party/llvm-build/Release+Asserts)
 	endif
 	DEF_WEBRTC_COND?=-DWEBRTC_MAC -DWEBRTC_POSIX
 	DEF_LDFLAGS?=-framework Cocoa
+	_SETUP_LLVM:=$(shell rm dep/_google-webrtc/src/third_party/llvm-build/Release+Asserts 2> /dev/null)
+	_HOST_ARCH:=$(shell uname -m)
+	ifeq ($(_HOST_ARCH), arm64)
+		_SETUP_LLVM:=$(shell ln -s ./Release+Asserts.mac_arm64 dep/_google-webrtc/src/third_party/llvm-build/Release+Asserts)
+	else
+		_SETUP_LLVM:=$(shell ln -s ./Release+Asserts.mac dep/_google-webrtc/src/third_party/llvm-build/Release+Asserts)
+	endif
 endif
 ifeq ($(TARGET_CPU), native)
 	TARGET_CPU=
