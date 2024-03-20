@@ -1,40 +1,43 @@
-简体中文 | [English](./README.en.md)
+[简体中文](./README.md) | English
 
 <h1 align="center">GT</h1>
 
 <div align="center">
 
-一个高性能的 WebSocket(s)/HTTP(s)/TCP 中转代理。
+A fast WebSocket(s)/HTTP(s)/TCP relay proxy with WebRTC P2P supports.
 
 [![GitHub (pre-)release](https://img.shields.io/github/release/ao-space/gt/all.svg)](https://github.com/ao-space/gt/releases) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ao-space/gt/.github%2Fworkflows%2Fcontainer.yml)](https://github.com/ao-space/gt/actions) [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ao-space/gt/total)](https://github.com/ao-space/gt/releases) [![GitHub issues](https://img.shields.io/github/issues/ao-space/gt.svg)](https://github.com/ao-space/gt/issues) [![GitHub closed issues](https://img.shields.io/github/issues-closed/ao-space/gt.svg)](https://github.com/ao-space/gt/issues?q=is%3Aissue+is%3Aclosed) [![GitHub](https://img.shields.io/github/license/ao-space/gt.svg)](./LICENSE)
 
 </div>
 
-关键设计特点：
+**Key Design Features:**
 
-- 注重稳定性
-  - 高可用，可以在运行时升级版本，无需担心连接丢失、服务中断、停机
-  - 在 reload 过程中，会保持转发可以成功。压力测试过程中 reload，测试结果 0 error
-  - 进程守护，工作进程崩溃自动重启
-- 注重性能，在保持跨平台的前提下，会尝试采用性能更高的技术方案
-  - 减少内存分配来减轻 GC 负担：资源池；LoadOrStore 仅在 Store 时才创建 Value
-  - 减少内存复制：Reader 使用 Peek 和 Discard 取代 Read
-  - 避免系统调用：Virtual Listener、Conn 将请求数据转发到进程内 API 服务
-  - 根据不同的并发场景，使用适当的并发技术
-- 注重易用性
-  - 支持 Web 配置管理
-  - 零参数配置启动，进入 Web 配置初始化
-  - 支持加载配置文件目录，可以同时启动多个服务端和客户端
-  - 客户端支持指向多个服务
-  - 服务端支持多用户功能
-  - 客户端自动根据网络状况，智能选择与服务端的通信协议
-- 注重隐私保护
-  - 服务端的端口复用功能，是基于协议目标的特征位置来实现的。例如：应用层 HTTP 协议转发，基于 TCP 数据流，只定位获取第一个数据包的
-    HTTP 协议头的转发目标，然后将后续数据直接转发
-  - 不打印敏感信息到日志
-  - 支持 HTTPS SNI 端到端加密转发
+- **Stability**
+  - Highly available, can upgrade versions on the fly without worrying about connection loss, service interruptions, or downtime.
+  - During reload, forwarding is maintained successfully. During stress testing, reload resulted in 0 errors.
+  - Process supervision ensures that worker processes automatically restart if they crash.
 
-## 工作原理
+- **Performance**
+  - Aiming for higher performance while maintaining cross-platform compatibility, employing more efficient technical solutions.
+  - Minimize memory allocation to ease the burden on the garbage collector: use resource pools; instantiate a Value in LoadOrStore only during the Store operation.
+  - Minimize memory copying: Reader uses Peek and Discard instead of Read.
+  - Avoid system calls: Virtual Listener and Conn forward request data to in-process API services.
+  - Utilize appropriate concurrency techniques for different concurrency scenarios.
+
+- **Usability**
+  - Supports web-based configuration management.
+  - Zero-parameter startup initiates web configuration setup.
+  - Supports loading configuration file directories, allowing simultaneous startup of multiple servers and clients.
+  - Clients can point to multiple services.
+  - Server supports multi-user functionality.
+  - Clients intelligently choose the communication protocol with the server based on network conditions.
+
+- **Privacy Protection**
+  - The server's port reuse feature is based on the characteristic position of the protocol target. For instance, when forwarding HTTP protocol at the application layer, it is based on the TCP data stream, targeting only the first packet's HTTP protocol header for forwarding, then directly forwarding subsequent data.
+  - Does not log sensitive information.
+  - Supports HTTPS SNI for end-to-end encryption forwarding.
+
+## Working Principle
 
 ```text
       ┌──────────────────────────────────────┐
@@ -52,15 +55,15 @@
 └─────────────┘   └─────────────┘   └─────────────┘
 ```
 
-## 下载
+## Download
 
 ### Github
 
-从 <https://github.com/ao-space/gt/releases> 选择合适的版本下载。
+Choose the appropriate version to download from [https://github.com/ao-space/gt/releases](https://github.com/ao-space/gt/releases).
 
-### Docker 容器
+### Docker Container
 
-更多容器镜像信息可以从 <https://github.com/ao-space/gt/pkgs/container/gt> 获取。
+More container image information can be found at [https://github.com/ao-space/gt/pkgs/container/gt](https://github.com/ao-space/gt/pkgs/container/gt).
 
 ```shell
 docker pull ghcr.io/ao-space/gt:server-dev
@@ -68,7 +71,7 @@ docker pull ghcr.io/ao-space/gt:server-dev
 docker pull ghcr.io/ao-space/gt:client-dev
 ```
 
-## 用法
+## Usage
 
 ```shell
 gt --help
@@ -83,7 +86,7 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          Path to the config file or the directory contains the config files
+          Path to the config file or the directory containing the config files
 
   -s, --signal <SIGNAL>
           Send signal to the running GT processes
@@ -100,51 +103,51 @@ Options:
           Print version
 ```
 
-### 配置文件
+## Configuration File
 
-配置文件可以通过 Web 管理后台编辑生成，推荐直接使用 Web 管理后台编辑。
+Configuration files can be edited and generated through the web management backend.
 
-### 服务端
+### Server
 
-使用默认配置运行，运行后可从日志获取 Web 管理后台地址，用浏览器打开后，进行配置项编辑：
+Run with default configuration, after which you can obtain the web management backend address from the logs, open it with a browser, and edit the configuration items:
 
 ```shell
 gt server
 ```
 
-通过指定配置文件运行：
+Run with a specified configuration file:
 
 ```shell
 gt server -c ./config.yml
 ```
 
-### 客户端
+### Client
 
-使用默认配置运行，运行后可从日志获取 Web 管理后台地址，用浏览器打开后，进行配置项编辑：
+Run with default configuration, after which you can obtain the web management backend address from the logs, open it with a browser, and edit the configuration items:
 
 ```shell
 gt client
 ```
 
-通过指定配置文件运行：
+Run with a specified configuration file:
 
 ```shell
 gt client -c ./config.yml
 ```
 
-### 批量启动
+### Batch Startup
 
-通过指定配置文件目录批量启动：
+Batch startup by specifying the configuration file directory:
 
 ```shell
 gt -c ./conf.d
 ```
 
-## 性能测试
+## Performance Testing
 
-### 第一组（MacOS环境+nginx测试）
+### Group 1 (MacOS Environment + Nginx Test)
 
-通过 wrk 进行压力测试本项目与 frp 进行对比，内网服务指向在本地运行 nginx 的测试页面，测试结果如下：
+Stress test comparison between this project and frp using wrk, with the internal network service pointing to the local nginx test page, results as follows:
 
 ```text
 Model Name: MacBook Pro
@@ -154,7 +157,7 @@ Total Number of Cores: 8 (4 performance and 4 efficiency)
 Memory: 16 GB
 ```
 
-#### GT benchmark
+#### GT Benchmark
 
 ```shell
 $ wrk -c 100 -d 30s -t 10 http://pi.example.com:7001
@@ -193,9 +196,9 @@ $ ps aux
  2976   0.0  0.4 408712832  66112 s005  S+    5:01PM   1:06.51 ./frpc -c ./frpc.ini
 ```
 
-### 第二组（Ubuntu环境+nginx测试）
+### Group 2 (Ubuntu Environment + Nginx Test)
 
-通过 wrk 进行压力测试本项目与 frp 进行对比，内网服务指向在本地运行 nginx 的测试页面，测试结果如下：
+Stress test comparison between this project and frp using wrk, with the internal network service pointing to the local nginx test page, results as follows:
 
 ```text
 System: Ubuntu 22.04
@@ -255,9 +258,9 @@ Requests/sec:  40003.03
 Transfer/sec:     31.82MB
 ```
 
-### 第三组(Ubuntu环境+short request测试)
+### Group 3 (Ubuntu Environment + Short Request Test)
 
-通过 wrk 进行压力测试本项目与 frp 进行对比，每次请求只会返回小于10字节的字段回复，用于模拟HTTP short request，测试结果如下：
+Stress test comparison between this project and frp using wrk, where each request only returns a field response of less than 10 bytes, simulating HTTP short requests, results as follows:
 
 #### GT-TCP
 
@@ -310,19 +313,13 @@ Requests/sec:  41334.52
 Transfer/sec:      5.09MB
 ```
 
-## 社区
+## Community
 
-欢迎加入 [Slack](https://slack.ao.space) 频道进行交流。
+Welcome to join the [Slack](https://slack.ao.space) channel for discussions.
 
-**微信群：**
+## Contributors
 
-可扫描下方二维码，邀请你加入 GT 社区交流群，请备注 **GT**
-| <img src="https://github.com/ao-space/gt/assets/1639632/fa0d94fc-1b17-486b-8568-3a8eb0f45f98" width="180px" align="center"/> |
-| ------------------------------------------------------------ |
-
-## 贡献者
-
-感谢以下开发者为项目做出的贡献：
+Thank you to the following developers for their contributions to the project:
 
 - [zhiyi](https://github.com/vyloy)
 - [jianti](https://github.com/FH0)

@@ -127,7 +127,7 @@ jobs:
           release/*
 
 
-  build-liunx:
+  build-linux:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -374,7 +374,7 @@ jobs:
         cache-to: type=gha,mode=max
         file: Dockerfile-client
 
-  build-x8664-macos:
+  build-macos-x86_64:
     runs-on: macos-13
     permissions:
       contents: read
@@ -423,7 +423,7 @@ jobs:
         path: |
           release/*
 
-  build-arm64-macos:
+  build-macos-arm64:
     runs-on: macos-14
     permissions:
       contents: read
