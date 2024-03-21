@@ -182,10 +182,6 @@ func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 		c.Logger.Info().Str("config", fullPath).Msg("save config to file")
 
 		Reload(ctx)
-		if err != nil {
-			response.FailWithMessage(err.Error(), ctx)
-			return
-		}
 		response.SuccessWithMessage("save config to "+fullPath, ctx)
 	}
 }
