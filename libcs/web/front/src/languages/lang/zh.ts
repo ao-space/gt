@@ -102,7 +102,7 @@ export namespace zh {
     Local: "本地服务的 URL",
     LocalURL: "本地服务的 URL",
     LocalTimeout: "本地连接的超时时间。支持值如 '30s'、'5m'",
-    UseLocalAsHTTPHost: "使用本地主机作为GT-Server主机",
+    UseLocalAsHTTPHost: "使用本地URL作为HTTP Header Host的值",
 
     // Sentry 设置
     SentryDSN: "要使用的 Sentry DSN",
@@ -238,7 +238,7 @@ export namespace zh {
     RemoteTCPRandom: "GT-Server TCP随机端口",
     LocalURL: "本地 URL",
     LocalTimeout: "本地连接超时时间",
-    UseLocalAsHTTPHost: "使用本地主机运行GT-Server",
+    UseLocalAsHTTPHost: "HTTP Header Host替换",
     TcpForwardAddr: "TCP 转发地址",
     TcpForwardHostPrefix: "TCP 转发主机前缀",
     TcpForwardConnections: "TCP 转发连接数",

@@ -10,8 +10,6 @@ import (
 	"github.com/isrc-cas/gt/web/server/model/request"
 	"github.com/isrc-cas/gt/web/server/model/response"
 	"github.com/isrc-cas/gt/web/server/util"
-	"os"
-	"os/exec"
 )
 
 func HealthCheck(ctx *gin.Context) {
@@ -183,7 +181,7 @@ func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 		}
 		c.Logger.Info().Str("config", fullPath).Msg("save config to file")
 
-		err = ReloadServicesCommand(c)
+		Reload(ctx)
 		if err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			return
@@ -191,22 +189,21 @@ func SaveConfigToFile(c *client.Client) gin.HandlerFunc {
 		response.SuccessWithMessage("save config to "+fullPath, ctx)
 	}
 }
-func ReloadServicesCommand(c *client.Client) (err error) {
-	execPath := os.Args[0]
-	command := exec.Command(execPath, "-s", "reload")
-	_, err = command.CombinedOutput()
-	if err != nil {
-		c.Logger.Logger.Info().Msg("failed to exec command-reload:" + err.Error())
-		return
-	}
-	return
-}
 
 // Restart for a brand-new config process,
 // not only reload the services,
 // but also restart the process to load the brand-new config(mainly for options part)
 func Restart(ctx *gin.Context) {
 	err := util.SendSignal("restart")
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.Success(ctx)
+}
+
+func Reload(ctx *gin.Context) {
+	err := util.SendSignal("reload")
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
