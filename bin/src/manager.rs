@@ -73,16 +73,14 @@ enum ProcessConfigEnum {
 }
 
 pub struct Manager {
-    program: String,
     args: ManagerArgs,
     cmds: Arc<Mutex<HashMap<ProcessConfigEnum, Cmd>>>,
     configs: Arc<Mutex<Option<Vec<ProcessConfigEnum>>>>,
 }
 
 impl Manager {
-    pub fn new(program: String, args: ManagerArgs) -> Self {
+    pub fn new(args: ManagerArgs) -> Self {
         Self {
-            program,
             args,
             cmds: Arc::new(Mutex::new(HashMap::new())),
             configs: Arc::new(Mutex::new(None)),
@@ -184,12 +182,11 @@ impl Manager {
     }
 
     fn sync_run(
-        program: String,
         cmd_map: Arc<Mutex<HashMap<ProcessConfigEnum, Cmd>>>,
         configs: Vec<ProcessConfigEnum>,
         sub_cmd: &'static str,
     ) -> BoxFuture<'static, Result<()>> {
-        async move { Self::run(program, cmd_map, configs, sub_cmd).await }.boxed()
+        async move { Self::run(cmd_map, configs, sub_cmd).await }.boxed()
     }
 
     async fn handle_stdout(
@@ -265,7 +262,6 @@ impl Manager {
     }
 
     async fn run(
-        program: String,
         cmd_map: Arc<Mutex<HashMap<ProcessConfigEnum, Cmd>>>,
         configs: Vec<ProcessConfigEnum>,
         sub_cmd: &'static str,
@@ -295,7 +291,7 @@ impl Manager {
             .into_iter()
             .map(|config| {
                 info!("run {sub_cmd} config: {:?}", config);
-                let mut cmd = Command::new(program.clone());
+                let mut cmd = Command::new(env::current_exe()?);
                 cmd.arg(sub_cmd);
                 cmd_config!(cmd, config);
                 cmd.spawn()
@@ -306,7 +302,6 @@ impl Manager {
         let ready_done_counter = Arc::new(AtomicUsize::new(cmds.len()));
 
         for (mut c, config) in cmds {
-            let program = program.clone();
             let cmd_map = cmd_map.clone();
             let ready_done_counter = ready_done_counter.clone();
             tokio::spawn(async move {
@@ -327,11 +322,10 @@ impl Manager {
                         process_shutdown(config.clone(), cmd, send_graceful_shutdown).await;
                     }
                     let reconnect = async {
-                        let program = program.clone();
                         let cmds = cmd_map.clone();
                         let config = config.clone();
                         if let Err(e) =
-                            Self::sync_run(program, cmds, vec![config.clone()], sub_cmd).await
+                            Self::sync_run(cmds, vec![config.clone()], sub_cmd).await
                         {
                             error!("{sub_cmd} ({config:?}) reconnect sync_run failed: {:?}", e);
                         }
@@ -387,7 +381,15 @@ impl Manager {
                     loop {
                         info!("restarting {sub_cmd} ({config:?}) in {wait_time:?}");
                         tokio::time::sleep(wait_time).await;
-                        let mut cmd = Command::new(&program);
+                        let exe = match env::current_exe() {
+                            Ok(exe) => exe,
+                            Err(e) => {
+                                wait_time = Duration::from_secs(3 * 60);
+                                error!("failed to restart {sub_cmd} ({config:?}): {:?}", e);
+                                continue;
+                            }
+                        };
+                        let mut cmd = Command::new(exe);
                         cmd.arg(sub_cmd);
                         cmd_config!(cmd, config);
                         match cmd.spawn() {
@@ -426,7 +428,6 @@ impl Manager {
         }
         if !server_config.is_empty() {
             Self::run(
-                self.program.clone(),
                 self.cmds.clone(),
                 server_config,
                 "sub-server",
@@ -437,7 +438,6 @@ impl Manager {
 
         if !client_config.is_empty() {
             Self::run(
-                self.program.clone(),
                 self.cmds.clone(),
                 client_config,
                 "sub-client",

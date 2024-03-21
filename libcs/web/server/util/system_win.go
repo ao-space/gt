@@ -36,14 +36,12 @@ func SendSignal(signal string) (err error) {
 		cmd = exec.Command(execPath, "-s", "restart")
 	case "stop":
 		cmd = exec.Command(execPath, "-s", "stop")
-	case "kill":
-		cmd = exec.Command(execPath, "-s", "kill")
 	default:
 		err = errors.New("unknown signal")
 		return
 	}
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		// 	Setpgid: true
+		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
 	}
 	err = cmd.Start()
 	if err != nil {

@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 authors = ["Zhiyi Weng"]
-version = "2.2.0"
+version = "2.2.1"
 edition = "2021"
 description = "Fast WebSocket(s)/HTTP(s)/TCP relay proxy with WebRTC P2P supports."
 

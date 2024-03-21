@@ -238,7 +238,7 @@ export namespace zh {
     RemoteTCPRandom: "GT-Server TCP随机端口",
     LocalURL: "本地 URL",
     LocalTimeout: "本地连接超时时间",
-    UseLocalAsHTTPHost: "HTTP Header Host替换",
+    UseLocalAsHTTPHost: "替换 HTTP Header Host",
     TcpForwardAddr: "TCP 转发地址",
     TcpForwardHostPrefix: "TCP 转发主机前缀",
     TcpForwardConnections: "TCP 转发连接数",

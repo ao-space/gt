@@ -36,8 +36,6 @@ func SendSignal(signal string) (err error) {
 		cmd = exec.Command(execPath, "-s", "restart")
 	case "stop":
 		cmd = exec.Command(execPath, "-s", "stop")
-	case "kill":
-		cmd = exec.Command(execPath, "-s", "kill")
 	default:
 		err = errors.New("unknown signal")
 		return

@@ -75,7 +75,11 @@ type opGetOfferSDP struct {
 }
 
 func (pt *peerProcessTask) init() (err error) {
-	cmd := exec.Command(os.Args[0], "sub-p2p")
+	execPath, err := os.Executable()
+	if err != nil {
+		return
+	}
+	cmd := exec.Command(execPath, "sub-p2p")
 	pt.stdin, err = cmd.StdinPipe()
 	if err != nil {
 		return

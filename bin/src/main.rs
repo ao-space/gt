@@ -102,13 +102,7 @@ fn main() {
         }
     }
 
-    let mut args = env::args();
-    if args.len() == 0 {
-        error!("no program provided");
-        return;
-    }
-    let program = args.next().unwrap();
-    let m = manager::Manager::new(program, manager_args);
+    let m = manager::Manager::new(manager_args);
     info!("GT");
     if let Err(e) = m.run_manager() {
         error!("GT Manager error: {:?}", e);
