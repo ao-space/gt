@@ -315,7 +315,7 @@ func (c *conn) readLoop(connID uint) {
 			if rErr != nil {
 				err = wErr
 				if !errors.Is(rErr, net.ErrClosed) {
-					c.Logger.Warn().Err(rErr).Msg("failed to read data in processData")
+					c.Logger.Warn().Err(rErr).Msg("failed to read data in processServiceData")
 				}
 				return
 			}
@@ -327,7 +327,7 @@ func (c *conn) readLoop(connID uint) {
 			}
 			if wErr != nil {
 				if !errors.Is(wErr, net.ErrClosed) {
-					c.Logger.Warn().Err(wErr).Msg("failed to write data in processData")
+					c.Logger.Warn().Err(wErr).Msg("failed to write data in processServiceData")
 				}
 				continue
 			}
@@ -387,22 +387,24 @@ func (c *conn) dial(s *service) (task *httpTask, err error) {
 }
 
 func (c *conn) processServiceData(connID uint, taskID uint32, s *service, r *bufio.LimitedReader) (readErr, writeErr error) {
-	var peekBytes []byte
-	peekBytes, readErr = r.Peek(2)
-	if readErr != nil {
-		return
-	}
-	// first 2 bytes of p2p sdp request is "XP"(0x5850)
-	isP2P := (uint16(peekBytes[1]) | uint16(peekBytes[0])<<8) == 0x5850
-	if isP2P {
-		if len(c.stuns) < 1 {
-			respAndClose(taskID, c, [][]byte{
-				[]byte("HTTP/1.1 403 Forbidden\r\nConnection: Closed\r\n\r\n"),
-			})
+	if r.N > 0 {
+		var peekBytes []byte
+		peekBytes, readErr = r.Peek(2)
+		if readErr != nil {
 			return
 		}
-		c.processP2P(taskID, r)
-		return
+		// first 2 bytes of p2p sdp request is "XP"(0x5850)
+		isP2P := (uint16(peekBytes[1]) | uint16(peekBytes[0])<<8) == 0x5850
+		if isP2P {
+			if len(c.stuns) < 1 {
+				respAndClose(taskID, c, [][]byte{
+					[]byte("HTTP/1.1 403 Forbidden\r\nConnection: Closed\r\n\r\n"),
+				})
+				return
+			}
+			c.processP2P(taskID, r)
+			return
+		}
 	}
 
 	var task *httpTask
@@ -429,18 +431,20 @@ func (c *conn) processServiceData(connID uint, taskID uint32, s *service, r *buf
 	c.tasksRWMtx.Unlock()
 	go task.process(connID, taskID, c)
 
-	_, err := r.WriteTo(task)
-	if err != nil {
-		switch e := err.(type) {
-		case *net.OpError:
-			switch e.Op {
-			case "write":
+	if r.N > 0 {
+		_, err := r.WriteTo(task)
+		if err != nil {
+			switch e := err.(type) {
+			case *net.OpError:
+				switch e.Op {
+				case "write":
+					writeErr = err
+				}
+			case *bufio.WriteErr:
 				writeErr = err
+			default:
+				readErr = err
 			}
-		case *bufio.WriteErr:
-			writeErr = err
-		default:
-			readErr = err
 		}
 	}
 	if task.service.LocalTimeout.Duration > 0 {

@@ -448,7 +448,7 @@ func (c *client) openSpecifiedTCPPort(serviceIndex uint16, l *tcpListener, tcpPo
 		}()
 		tunnel.Logger.Info().Uint16("serviceIndex", serviceIndex).Uint16("tcpPort", tcpPort).Msg("tcp forward start")
 		conn.serviceIndex = serviceIndex
-		conn.handle(func() {
+		conn.handleTCP(func() {
 			err = c.process(conn)
 			if err != nil {
 				conn.Logger.Error().Err(err).Msg("tcp handle")

@@ -172,6 +172,32 @@ func (c *conn) handle(handleFunc func()) {
 	handleFunc()
 }
 
+func (c *conn) handleTCP(handleFunc func()) {
+	startTime := time.Now()
+	reader := pool.GetReader(c.Conn)
+	c.Reader = reader
+	defer func() {
+		c.Close()
+		pool.PutReader(reader)
+		endTime := time.Now()
+		if !predef.Debug {
+			if e := recover(); e != nil {
+				c.Logger.Error().Msgf("recovered panic: %#v\n%s", e, debug.Stack())
+			}
+		}
+		c.Logger.Info().Dur("cost", endTime.Sub(startTime)).Msg("closed")
+	}()
+	if c.server.config.Timeout.Duration > 0 {
+		dl := startTime.Add(c.server.config.Timeout.Duration)
+		err := c.SetReadDeadline(dl)
+		if err != nil {
+			c.Logger.Debug().Err(err).Msg("handle set deadline failed")
+			return
+		}
+	}
+	handleFunc()
+}
+
 func (c *conn) handleProbe(r *bufio.Reader) {
 	op, err := r.ReadByte()
 	if err != nil {
