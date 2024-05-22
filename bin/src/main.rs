@@ -21,8 +21,8 @@ use clap::Subcommand;
 use env_logger::Env;
 use log::{error, info};
 
-use gt::manager::Signal;
 use gt::*;
+use gt::manager::Signal;
 
 use crate::cs::{ClientArgs, ServerArgs};
 use crate::manager::ManagerArgs;
@@ -33,9 +33,12 @@ struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
 
-    /// Path to the config file or the directory contains the config files
+    /// Path to the config file or the directory containing the config files
     #[arg(short, long)]
     config: Option<PathBuf>,
+    /// The maximum allowed depth of the subdirectory to be traversed to search config files
+    #[arg(long)]
+    depth: Option<u8>,
     /// Send signal to the running GT processes
     #[arg(short, long, value_enum)]
     signal: Option<Signal>,
@@ -69,6 +72,7 @@ fn main() {
     }
     let mut manager_args = ManagerArgs {
         config: cli.config,
+        depth: cli.depth,
         server_args: None,
         client_args: None,
     };
