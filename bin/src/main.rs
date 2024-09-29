@@ -18,6 +18,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use clap::Subcommand;
+use cs::ConnectArgs;
 use env_logger::Env;
 use log::{error, info};
 
@@ -50,6 +51,8 @@ enum Commands {
     Server(ServerArgs),
     /// Run GT Client
     Client(ClientArgs),
+    /// Run GT Connect
+    Connect(ConnectArgs),
 
     #[command(hide = true)]
     SubP2P,
@@ -57,6 +60,8 @@ enum Commands {
     SubServer(ServerArgs),
     #[command(hide = true)]
     SubClient(ClientArgs),
+    #[command(hide = true)]
+    SubConnect(ConnectArgs),
 }
 
 fn main() {
@@ -75,6 +80,7 @@ fn main() {
         depth: cli.depth,
         server_args: None,
         client_args: None,
+        connect_args: None,
     };
     if let Some(command) = cli.command {
         match command {
@@ -83,6 +89,9 @@ fn main() {
             }
             Commands::Client(args) => {
                 manager_args.client_args = Some(args);
+            }
+            Commands::Connect(args) => {
+                manager_args.connect_args = Some(args);
             }
             Commands::SubP2P => {
                 info!("GT SubP2P");
@@ -100,6 +109,12 @@ fn main() {
                 info!("GT SubClient");
                 cs::run_client(args);
                 info!("GT SubClient done");
+                return;
+            }
+            Commands::SubConnect(args) => {
+                info!("GT SubConnect");
+                cs::run_connect(args);
+                info!("GT SubConnect done");
                 return;
             }
         }
