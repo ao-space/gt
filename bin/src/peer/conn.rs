@@ -26,7 +26,6 @@ use log::*;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
-use tokio::time::timeout;
 use tokio::{io, select, time};
 use url::Url;
 use webrtc::api::interceptor_registry::register_default_interceptors;
@@ -45,7 +44,7 @@ use webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 use webrtc::peer_connection::RTCPeerConnection;
 
-use crate::peer::{read_json, write_json, LibError, OP};
+use crate::peer::{read_json, write_json, LibError, OP, Config};
 
 pub(crate) struct PeerConnHandler<R, W> {
     http_routes: HashMap<String, String>,
@@ -66,20 +65,29 @@ where
     pub async fn new(reader: R, writer: W) -> Result<Arc<Self>> {
         let reader = Arc::new(Mutex::new(reader));
         let writer = Arc::new(Mutex::new(writer));
-        let json = timeout(Duration::from_secs(5), read_json(Arc::clone(&reader)))
+        // let json = timeout(Duration::from_secs(5), read_json(Arc::clone(&reader)))
+        //     .await
+        //     .context("read config json timeout")?
+        //     .context("read config json")?;
+        // debug!("config json: {}", &json);
+        // let op = serde_json::from_str::<OP>(&json)
+        //     .with_context(|| format!("deserialize config json failed: {}", json))?;
+        let op: OP = OP::Config(Config {
+            stuns: vec!["stun:stun.l.google.com:19302".to_owned()],
+            http_routes: HashMap::from([("@".to_owned(), "http://www.baidu.com".to_owned())]),
+            ..Default::default()
+        });
+        let output = Arc::new(Mutex::new(tokio::io::stdout()));
+        write_json(Arc::clone(&output), &serde_json::to_string(&op).unwrap())
             .await
-            .context("read config json timeout")?
-            .context("read config json")?;
-        debug!("config json: {}", &json);
-        let op = serde_json::from_str::<OP>(&json)
-            .with_context(|| format!("deserialize config json failed: {}", json))?;
+            .map_err(|e| println!("write json error: {:?}", e))
+            .expect("write json");
         let config = match op {
             OP::Config(config) => config,
             _ => {
-                bail!("invalid config json {}", &json);
+                bail!("invalid config json.");
             }
         };
-
         let rtc_config = RTCConfiguration {
             ice_servers: vec![RTCIceServer {
                 urls: config.stuns,
@@ -127,6 +135,23 @@ where
             channel_count: Default::default(),
             no_channel_id: Default::default(),
         }))
+    }
+
+    pub async fn send_offer(self: Arc<Self>) -> Result<()> {
+        let pc = Arc::clone(&self.peer_connection);
+        let offer = pc.create_offer(None).await.context("create offer")?;
+        let sdp = serde_json::to_string(&offer).context("serialize answer")?;
+        let op = OP::OfferSDP(sdp);
+        write_json(
+            Arc::clone(&self.writer),
+            &serde_json::to_string(&op).context("encode op")?,
+        )
+        .await
+        .context("write answer sdp to stdout")?;
+        pc.set_local_description(offer)
+            .await
+            .context("set local description")?;
+        Ok(())
     }
 
     fn setup_data_channel(self: Arc<Self>, d: Arc<RTCDataChannel>) {

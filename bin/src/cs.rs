@@ -20,9 +20,16 @@
 #![allow(unused)]
 
 use clap::Args;
+use log::info;
 use serde::{Deserialize, Serialize};
-use std::ffi::{c_char, c_void, CString};
+use std::{ffi::{c_char, c_void, CString}, fmt::Debug, process::ExitCode};
 include!("cs_bindings.rs");
+
+use std::process;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use crate::peer::*;
 
 #[derive(Args, Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct ServerArgs {
@@ -33,6 +40,13 @@ pub struct ServerArgs {
 
 #[derive(Args, Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct ClientArgs {
+    /// Config file path
+    #[arg(short, long)]
+    pub config: Option<String>,
+}
+
+#[derive(Args, Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+pub struct ConnectArgs {
     /// Config file path
     #[arg(short, long)]
     pub config: Option<String>,
@@ -57,6 +71,31 @@ fn convert_to_go_slices(vec: &Vec<String>) -> (GoSlice, Vec<GoString>) {
         go_slices,
     )
 }
+pub fn run_connect(connect_args: ConnectArgs) {
+    let mut args = if let Some(config) = connect_args.config {
+        vec!["connect".to_owned(), "-config".to_owned(), config]
+    } else {
+        vec!["connect".to_owned()]
+    };
+    let (args, go_str) = convert_to_go_slices(&args);
+    info!("Run connect cmd.");
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(async move {
+        let addr = "127.0.0.1:7000";
+        info!("Runtime started.");
+        let mut stream = tokio::net::TcpStream::connect(&addr).await.unwrap();
+        let (connect_reader, connect_writer) = stream.into_split();
+        info!("connect to client.");
+        // let reader = Arc::new(Mutex::new(connect_reader));
+        // let writer = Arc::new(Mutex::new(connect_writer));
+        if let Err(e) = process(connect_reader, connect_writer).await {
+            eprintln!("process p2p: {}", e);
+            process::exit(1);
+        };
+    });
+    // TODO
+}
+
 pub fn run_client(client_args: ClientArgs) {
     let mut args = if let Some(config) = client_args.config {
         vec!["client".to_owned(), "-config".to_owned(), config]

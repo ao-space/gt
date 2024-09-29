@@ -53,6 +53,15 @@ where
     W: io::AsyncWriteExt + Unpin + Send + 'static,
 {
     let handler = conn::PeerConnHandler::new(reader, writer).await?;
+    let offer_res = handler.clone().send_offer().await;
+    match offer_res {
+        Ok(()) => {
+            info!("offer sended.");
+        }
+        Err(err) => {
+            error!("offer send err: {}", err);
+        }
+    }
     handler.handle().await
 }
 

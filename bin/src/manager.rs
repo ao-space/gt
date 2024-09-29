@@ -41,7 +41,7 @@ use tokio::sync::{mpsc, Mutex, oneshot};
 use tokio::sync::oneshot::{Receiver, Sender};
 use tokio::time::timeout;
 
-use crate::cs::{ClientArgs, ServerArgs};
+use crate::cs::{ClientArgs, ConnectArgs, ServerArgs};
 
 #[derive(Debug)]
 pub struct ManagerArgs {
@@ -49,6 +49,7 @@ pub struct ManagerArgs {
     pub depth: Option<u8>,
     pub server_args: Option<ServerArgs>,
     pub client_args: Option<ClientArgs>,
+    pub connect_args: Option<ConnectArgs>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -71,6 +72,7 @@ enum ProcessConfigEnum {
     Config(PathBuf),
     Server(ServerArgs),
     Client(ClientArgs),
+    Connect(ConnectArgs),
 }
 
 pub struct Manager {
@@ -323,6 +325,11 @@ impl Manager {
                             $cmd.arg("-c").arg(path.clone());
                         }
                     }
+                    ProcessConfigEnum::Connect(args) => {
+                        if let Some(path) = &args.config {
+                            $cmd.arg("-c").arg(path.clone());
+                        }
+                    }
                 }
                 $cmd.stdin(Stdio::piped());
                 $cmd.stdout(Stdio::piped());
@@ -452,17 +459,21 @@ impl Manager {
     async fn run_configs(&self, configs: Vec<ProcessConfigEnum>) -> Result<()> {
         let mut server_config = vec![];
         let mut client_config = vec![];
+        let mut connect_config = vec![];
         for config in configs {
             match &config {
                 ProcessConfigEnum::Config(path) => {
                     if is_client_config_path(path).context("is_client_config_path failed")? {
                         client_config.push(config);
-                    } else {
+                    } else if is_server_config_path(path).context("is_server_config_path failed")? {
                         server_config.push(config);
+                    } else {
+                        connect_config.push(config);
                     }
                 }
                 ProcessConfigEnum::Server(_) => server_config.push(config),
                 ProcessConfigEnum::Client(_) => client_config.push(config),
+                ProcessConfigEnum::Connect(_) => connect_config.push(config),
             }
         }
         if !server_config.is_empty() {
@@ -475,6 +486,12 @@ impl Manager {
             Self::run(self.cmds.clone(), client_config, "sub-client")
                 .await
                 .context("run_client failed")?;
+        }
+
+        if !connect_config.is_empty() {
+            Self::run(self.cmds.clone(), connect_config, "sub-connect")
+                .await
+                .context("run_connect failed")?;
         }
         Ok(())
     }
@@ -802,6 +819,11 @@ fn is_client_config_path(path: &PathBuf) -> Result<bool> {
     is_client_config(&yaml)
 }
 
+fn is_server_config_path(path: &PathBuf) -> Result<bool> {
+    let yaml = fs::read_to_string(path)?;
+    is_server_config(&yaml)
+}
+
 fn is_client_config(yaml: &str) -> Result<bool> {
     let c = serde_yaml::from_str::<Config>(yaml)?;
     if c.services.is_some() {
@@ -811,6 +833,23 @@ fn is_client_config(yaml: &str) -> Result<bool> {
         return match typ.as_str() {
             "client" => Ok(true),
             "server" => Ok(false),
+            "connect" => Ok(false),
+            t => Err(anyhow!("invalid config type {}", t)),
+        };
+    }
+    Ok(false)
+}
+
+fn is_server_config(yaml: &str) -> Result<bool> {
+    let s = serde_yaml::from_str::<Config>(yaml)?;
+    if s.services.is_some() {
+        return Ok(false);
+    }
+    if let Some(typ) = s.typ {
+        return match typ.as_str() {
+            "client" => Ok(false),
+            "server" => Ok(true),
+            "connect" => Ok(false),
             t => Err(anyhow!("invalid config type {}", t)),
         };
     }
