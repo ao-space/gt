@@ -93,6 +93,7 @@ pub fn run_connect(connect_args: ConnectArgs) {
             process::exit(1);
         };
     });
+    unsafe {}
     // TODO
 }
 

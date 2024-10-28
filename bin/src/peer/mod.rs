@@ -27,6 +27,7 @@ use tokio::io::{stdin, stdout};
 use tokio::sync::Mutex;
 
 mod conn;
+mod connect;
 
 pub fn start_peer_connection() {
     let rt = tokio::runtime::Builder::new_current_thread()
@@ -87,6 +88,21 @@ pub enum OP {
         #[serde(rename = "channelName")]
         channel_name: String,
     },
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ConnectConfig {
+    pub typ: String,
+    pub options: ConnectOptions,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ConnectOptions {
+    pub remote: String,
+    pub tcp_forward_addr: String,
+    pub tcp_forward_host_prefix: String,
 }
 
 pub async fn read_json<R>(reader: Arc<Mutex<R>>) -> Result<String>
