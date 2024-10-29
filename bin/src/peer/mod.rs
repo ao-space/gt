@@ -23,8 +23,9 @@ use log::*;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::io;
-use tokio::io::{stdin, stdout};
+use tokio::io::{stdin, stdout, AsyncBufReadExt, BufReader};
 use tokio::sync::Mutex;
+use tokio::sync::mpsc;
 
 mod conn;
 mod connect;
@@ -54,16 +55,36 @@ where
     W: io::AsyncWriteExt + Unpin + Send + 'static,
 {
     let handler = conn::PeerConnHandler::new(reader, writer).await?;
-    let offer_res = handler.clone().send_offer().await;
-    match offer_res {
-        Ok(()) => {
-            info!("offer sended.");
+    handler.handle().await
+}
+
+pub async fn process_connect<R, W>(reader: R, writer: W, args: ConnectConfig) -> Result<()>
+where
+    R: io::AsyncReadExt + Unpin + Send + 'static,
+    W: io::AsyncWriteExt + Unpin + Send + 'static,
+{
+    let handler = connect::ConnectPeerConnHandler::new(reader, writer, args).await?;
+    let _ = Arc::clone(&handler).send_offer();
+    let (tx, mut rx) = mpsc::channel(8);
+    // 在一个独立的任务中读取标准输入
+    tokio::spawn(async move {
+        let mut stdin = BufReader::new(tokio::io::stdin()).lines();
+        while let Some(line) = stdin.next_line().await.unwrap() {
+            tx.send(line).await.unwrap();
         }
-        Err(err) => {
-            error!("offer send err: {}", err);
+    });
+    // 在主任务中处理读取到的行
+    while let Some(line) = rx.recv().await {
+        println!("Received line: {}", line);
+        // 将读取的行发送给服务端转发
+        let handler = Arc::clone(&handler);
+        match handler.forward_data_with_server(&line).await {
+            Ok(_) => println!("Successfully forwarded: {}", line),
+            Err(e) => eprintln!("Error forwarding data: {}", e),
         }
     }
-    handler.handle().await
+    let _ = Arc::clone(&handler).handle().await;
+    Ok(())
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -91,16 +112,18 @@ pub enum OP {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default)]
 pub struct ConnectConfig {
+    #[serde(rename = "type")]
     pub typ: String,
     pub options: ConnectOptions,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default)]
 pub struct ConnectOptions {
     pub remote: String,
+    pub stun_addr: String,
     pub tcp_forward_addr: String,
     pub tcp_forward_host_prefix: String,
 }

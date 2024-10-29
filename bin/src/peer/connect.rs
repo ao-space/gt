@@ -46,6 +46,8 @@
  use reqwest::{Client, header};
 
  use crate::peer::{read_json, write_json, LibError, OP, Config, ConnectConfig};
+
+use super::ConnectOptions;
  
  pub(crate) struct ConnectPeerConnHandler<R, W> {
      http_routes: HashMap<String, String>,
@@ -56,6 +58,7 @@
      no_channel_id: AtomicUsize,
      peer_connection: Arc<RTCPeerConnection>,
      timeout: u16,
+     options: Arc<ConnectOptions>,
  }
  
  impl<R, W> ConnectPeerConnHandler<R, W>
@@ -63,18 +66,12 @@
      R: AsyncReadExt + Unpin + Send + 'static,
      W: AsyncWriteExt + Unpin + Send + 'static,
  {
-     pub async fn new(reader: R, writer: W) -> Result<Arc<Self>> {
+     pub async fn new(reader: R, writer: W, args: ConnectConfig) -> Result<Arc<Self>> {
          let reader = Arc::new(Mutex::new(reader));
          let writer = Arc::new(Mutex::new(writer));
-         // let json = timeout(Duration::from_secs(5), read_json(Arc::clone(&reader)))
-         //     .await
-         //     .context("read config json timeout")?
-         //     .context("read config json")?;
-         // debug!("config json: {}", &json);
-         // let op = serde_json::from_str::<OP>(&json)
-         //     .with_context(|| format!("deserialize config json failed: {}", json))?;
+         let tempargs = Arc::clone(&Arc::new(args.options));
          let op: OP = OP::Config(Config {
-             stuns: vec!["stun:127.0.0.1:3478".to_owned()],
+             stuns: vec![tempargs.stun_addr.to_owned()],
              http_routes: HashMap::from([("@".to_owned(), "http://www.baidu.com".to_owned())]),
              ..Default::default()
          });
@@ -146,6 +143,7 @@
              tcp_routes: config.tcp_routes,
              channel_count: Default::default(),
              no_channel_id: Default::default(),
+             options: tempargs,
          }))
      }
 
@@ -198,17 +196,18 @@
         Ok(body)
     }
     
-    pub async fn forward_data_with_server(self: Arc<Self>, yaml: &str) -> Result<bool> {
-        let ya = serde_yaml::from_str::<ConnectConfig>(yaml)?;
-        let url = ya.options.tcp_forward_addr;
+    pub async fn forward_data_with_server(self: Arc<Self>, msg: &str) -> Result<bool> {
+        // let ya = serde_yaml::from_str::<ConnectConfig>(yaml)?;
+        let options = Arc::clone(&self.options);
+        let url = &options.tcp_forward_addr;
         let method = "GET";
-        let host = Some(ya.options.tcp_forward_host_prefix);
+        let host = Some(options.tcp_forward_host_prefix.as_str());
         let headers = Some(vec![
             ("Users-Agent".to_string(), "gt-connect".to_string()),
         ]);
-        let body = None;
+        let body = Some(msg);
     
-        let resp = self.send_http_request(&url, method, host.as_deref(), headers, body).await?;
+        let resp = self.send_http_request(&url, method, host, headers, body).await?;
         info!("Response from remote: {}", resp);
         Ok(true)
     }

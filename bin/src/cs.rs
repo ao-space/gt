@@ -25,6 +25,8 @@ use serde::{Deserialize, Serialize};
 use std::{ffi::{c_char, c_void, CString}, fmt::Debug, process::ExitCode};
 include!("cs_bindings.rs");
 
+use std::fs;
+use std::path::Path;
 use std::process;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -71,25 +73,78 @@ fn convert_to_go_slices(vec: &Vec<String>) -> (GoSlice, Vec<GoString>) {
         go_slices,
     )
 }
+
+fn load_config(config_path: &str) -> Result<ConnectConfig, Box<dyn std::error::Error>> {
+    // 验证文件是否存在
+    if !Path::new(config_path).exists() {
+        return Err(format!("Config file '{}' does not exist", config_path).into());
+    }
+
+    // 读取文件内容
+    let config_content = fs::read_to_string(config_path)
+        .map_err(|e| format!("Failed to read config file '{}': {}", config_path, e))?;
+
+    // 验证文件不为空
+    if config_content.trim().is_empty() {
+        return Err("Config file is empty".into());
+    }
+
+    // 解析 YAML
+    let config: ConnectConfig = serde_yaml::from_str(&config_content)
+        .map_err(|e| format!("Failed to parse YAML config: {}", e))?;
+
+    match serde_yaml::from_str::<ConnectConfig>(&config_content) {
+        Ok(config) => println!("解析成功: {:?}", config),
+        Err(e) => println!("解析错误: {}", e),
+    }
+    
+    // 验证必要的字段
+    validate_config(&config)?;
+
+    Ok(config)
+}
+
+fn validate_config(config: &ConnectConfig) -> Result<(), Box<dyn std::error::Error>> {
+    // 配置验证
+    if config.options.tcp_forward_addr.trim().is_empty() {
+        return Err("tcp_forward_addr cannot be empty".into());
+    }
+    if config.options.tcp_forward_host_prefix.trim().is_empty() {
+        return Err("tcp_forward_host_prefix cannot be empty".into());
+    }
+    Ok(())
+}
+
+
 pub fn run_connect(connect_args: ConnectArgs) {
-    let mut args = if let Some(config) = connect_args.config {
-        vec!["connect".to_owned(), "-config".to_owned(), config]
+    let mut args = if let Some(config_path) = &connect_args.config {
+        match load_config(config_path) {
+            Ok(config) => {
+                println!("Successfully loaded config from '{}'", config_path);
+                println!("Config details:");
+                println!("  TCP Forward Address: {}", config.options.tcp_forward_addr);
+                println!("  TCP Forward Host Prefix: {}", config.options.tcp_forward_host_prefix);
+                config
+            },
+            Err(e) => {
+                eprintln!("Error loading config: {}", e);
+                process::exit(1);
+            }
+        }
     } else {
-        vec!["connect".to_owned()]
+        println!("No config file specified, using default configuration");
+        ConnectConfig::default()
     };
-    let (args, go_str) = convert_to_go_slices(&args);
     info!("Run connect cmd.");
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async move {
-        let addr = "127.0.0.1:7000";
         info!("Runtime started.");
-        let mut stream = tokio::net::TcpStream::connect(&addr).await.unwrap();
-        let (connect_reader, connect_writer) = stream.into_split();
-        info!("connect to client.");
+        let connect_reader = tokio::io::stdin();
+        let connect_writer = tokio::io::stdout();
         // let reader = Arc::new(Mutex::new(connect_reader));
         // let writer = Arc::new(Mutex::new(connect_writer));
-        if let Err(e) = process(connect_reader, connect_writer).await {
-            eprintln!("process p2p: {}", e);
+        if let Err(e) = process_connect(connect_reader, connect_writer, args).await {
+            eprintln!("process p2p connect: {}", e);
             process::exit(1);
         };
     });
