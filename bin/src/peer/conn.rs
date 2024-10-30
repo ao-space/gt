@@ -73,13 +73,25 @@ where
         debug!("config json: {}", &json);
         let op = serde_json::from_str::<OP>(&json)
             .with_context(|| format!("deserialize config json failed: {}", json))?;
+        // let op: OP = OP::Config(Config {
+        //     stuns: vec!["stun:127.0.0.1:3478".to_owned()],
+        //     http_routes: HashMap::from([("@".to_owned(), "http://www.baidu.com".to_owned())]),
+        //     ..Default::default()
+        // });
+        // write json config to stdout
+        let output = Arc::new(Mutex::new(tokio::io::stdout()));
+        write_json(Arc::clone(&output), &serde_json::to_string(&op).unwrap())
+            .await
+            .map_err(|e| println!("write json error: {:?}", e))
+            .expect("write json");
+        // bind origin op to config
         let config = match op {
             OP::Config(config) => config,
             _ => {
-                bail!("invalid config json {}", &json);
+                bail!("invalid config json.");
             }
         };
-
+        // init webrtc configuration
         let rtc_config = RTCConfiguration {
             ice_servers: vec![RTCIceServer {
                 urls: config.stuns,
@@ -88,35 +100,43 @@ where
             ..Default::default()
         };
 
+        // configure media engine
         let mut m = MediaEngine::default();
         m.register_default_codecs()
             .context("register default codecs")?;
 
+        // register default registry
         let mut registry = Registry::new();
 
         registry = register_default_interceptors(registry, &mut m)
             .context("register default interceptors")?;
 
+        // set min_port and max_port
         let mut s = SettingEngine::default();
         s.set_udp_network(UDPNetwork::Ephemeral(
             udp_network::EphemeralUDP::new(config.port_min, config.port_max)
                 .context("create udp network")?,
         ));
+        // first detach data channel
         s.detach_data_channels();
 
+        // build api with configuration
         let api = APIBuilder::new()
             .with_media_engine(m)
             .with_interceptor_registry(registry)
             .with_setting_engine(s)
             .build();
 
+        // create pc connection
         let peer_connection = Arc::new(
             api.new_peer_connection(rtc_config)
                 .await
                 .context("new pc")?,
         );
 
+        // config max timeout value
         let timeout = config.timeout.max(5);
+        // create pc success
         Ok(Arc::new(PeerConnHandler {
             reader,
             writer,
@@ -128,6 +148,23 @@ where
             no_channel_id: Default::default(),
         }))
     }
+
+    // pub async fn send_offer(self: Arc<Self>) -> Result<()> {
+    //     let pc = Arc::clone(&self.peer_connection);
+    //     let offer = pc.create_offer(None).await.context("create offer")?;
+    //     let sdp = serde_json::to_string(&offer).context("serialize answer")?;
+    //     let op = OP::OfferSDP(sdp);
+    //     write_json(
+    //         Arc::clone(&self.writer),
+    //         &serde_json::to_string(&op).context("encode op")?,
+    //     )
+    //     .await
+    //     .context("write answer sdp to stdout")?;
+    //     pc.set_local_description(offer)
+    //         .await
+    //         .context("set local description")?;
+    //     Ok(())
+    // }
 
     fn setup_data_channel(self: Arc<Self>, d: Arc<RTCDataChannel>) {
         let dc = Arc::clone(&d);
@@ -217,6 +254,7 @@ where
     pub async fn handle(self: Arc<Self>) -> Result<()> {
         let writer_on_ice_candidate = Arc::clone(&self.writer);
         self.peer_connection
+            // register ice_candidate process function
             .on_ice_candidate(Box::new(move |c: Option<RTCIceCandidate>| {
                 info!("on_ice_candidate {:?}", c);
                 let writer_on_ice_candidate = Arc::clone(&writer_on_ice_candidate);
@@ -248,6 +286,7 @@ where
                             error!("failed to write ice candidate: {}", e);
                         }
                     } else {
+                        // build candidate with default value
                         let op = OP::Candidate("".to_owned());
                         let json = match serde_json::to_string(&op) {
                             Err(e) => {
@@ -266,18 +305,42 @@ where
         let (done_tx, mut done_rx) = tokio::sync::mpsc::channel::<Result<()>>(1);
 
         self.peer_connection
+            // register pc state change function
             .on_peer_connection_state_change(Box::new(move |s: RTCPeerConnectionState| {
                 info!("peer Connection State has changed: {s}");
                 match s {
-                    RTCPeerConnectionState::Unspecified => {}
-                    RTCPeerConnectionState::New => {}
-                    RTCPeerConnectionState::Connecting => {}
-                    RTCPeerConnectionState::Connected => {}
-                    RTCPeerConnectionState::Disconnected => {}
+                    RTCPeerConnectionState::Unspecified => {
+                        // 未指定状态，通常不需要特殊处理
+                        info!("Connection state unspecified");
+                    }
+                    RTCPeerConnectionState::New => {
+                        // 新建连接，记录初始ICE连接状态
+                        info!("New peer connection established");
+                    }
+                    RTCPeerConnectionState::Connecting => {
+                        // 正在建立连接
+                        info!("Establishing peer connection...");
+                    }
+                    RTCPeerConnectionState::Connected => {
+                        // 连接成功建立
+                        info!("Peer connection successfully established");
+                    }
+                    RTCPeerConnectionState::Disconnected => {
+                        // 连接断开，可以尝试重连
+                        warn!("Peer connection disconnected, may attempt reconnection");
+                        // 可以在这里添加重连逻辑
+                    }
                     RTCPeerConnectionState::Failed => {
+                        // 连接失败，发送错误信号
+                        error!("Peer connection failed");
                         let _ = done_tx.try_send(Err(anyhow!("peer connection state failed")));
                     }
-                    RTCPeerConnectionState::Closed => {}
+                    RTCPeerConnectionState::Closed => {
+                        // 连接已关闭
+                        info!("Peer connection closed");
+                        // 可以在这里进行清理工作
+                        let _ = done_tx.try_send(Ok(()));
+                    }
                 }
 
                 Box::pin(async {})
@@ -285,6 +348,7 @@ where
 
         let handler = Arc::clone(&self);
         self.peer_connection
+            // register data channel build function
             .on_data_channel(Box::new(move |d: Arc<RTCDataChannel>| {
                 info!("new dataChannel {} {}", d.label(), d.id());
                 let handler = Arc::clone(&handler);
@@ -328,6 +392,7 @@ where
 
             let pc = Arc::clone(&self.peer_connection);
             match op {
+                // receive offer from remote, return answer to remote
                 OP::OfferSDP(sdp) => {
                     let sdp = serde_json::from_str::<RTCSessionDescription>(&sdp)
                         .context("offer sdp from op")?;
@@ -347,6 +412,7 @@ where
                         .await
                         .context("set local description")?;
                 }
+                // receive candidate from remote, add candidate
                 OP::Candidate(candidate) => {
                     if candidate.is_empty() {
                         continue;
@@ -357,6 +423,7 @@ where
                         .await
                         .context("add candidate")?;
                 }
+                // create data channel and local offer
                 OP::GetOfferSDP { channel_name } => {
                     let data_channel = pc
                         .create_data_channel(&channel_name, None)
@@ -377,6 +444,7 @@ where
                         .await
                         .context("set local description")?;
                 }
+                // receive answer from remote, set remote sdp
                 OP::AnswerSDP(sdp) => {
                     let sdp = serde_json::from_str::<RTCSessionDescription>(&sdp)
                         .context("answer sdp from op")?;

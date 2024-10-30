@@ -24,3 +24,5 @@ webrtc = "0.9.0"
 serde_yaml = "0.9.30"
 notify = { version = "6.1.1", default-features = false, features = ["macos_kqueue"] }
 futures = "0.3.30"
+time = "0.3.35"
+reqwest = { version = "0.11", features = ["json"] }
